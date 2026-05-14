@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Talia — Inscription candidat</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+:root{
+  --navy:#0033a0;--navy-d:#00258a;--navy-l:#e8edf8;
+  --yellow:#FFCC00;--bg:#f7f9fc;--surface:#fff;
+  --border:#e5e9f0;--radius:10px;--radius-lg:16px;
+  --text:#1a2035;--text-s:#4a5568;--muted:#9aa5b4;
+  --green:#22c55e;--green-l:#f0fdf4;--red:#ef4444;
+  font-family:'Plus Jakarta Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);min-height:100vh;}
+
+.header{background:linear-gradient(135deg,#0a1f6e,#0033a0);padding:0 24px;display:flex;align-items:center;gap:16px;height:60px;}
+.logo{font-size:22px;font-weight:800;color:#fff;letter-spacing:-0.5px;}
+.logo span{color:var(--yellow);}
+
+.main{max-width:680px;margin:0 auto;padding:32px 20px 60px;}
+
+.form-card{background:#fff;border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:32px;box-shadow:0 4px 24px rgba(0,0,0,0.05);}
+.form-title{font-size:24px;font-weight:800;color:var(--navy);margin-bottom:4px;}
+.form-title span{color:var(--yellow);}
+.form-sub{font-size:13px;color:var(--muted);margin-bottom:28px;line-height:1.6;}
+
+.form-section{margin-bottom:24px;}
+.form-section-title{font-size:12px;font-weight:800;color:var(--navy);text-transform:uppercase;letter-spacing:0.06em;border-bottom:2px solid var(--navy-l);padding-bottom:6px;margin-bottom:14px;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+.form-row.full{grid-template-columns:1fr;}
+.form-group{display:flex;flex-direction:column;gap:5px;}
+.form-group label{font-size:11px;font-weight:700;color:var(--text-s);text-transform:uppercase;letter-spacing:0.04em;}
+.form-group label .req{color:var(--red);}
+.form-group input,.form-group select,.form-group textarea{
+  padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--radius);
+  font-size:13px;font-family:inherit;color:var(--text);outline:none;
+  transition:border-color 0.15s;background:#fff;
+}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--navy);}
+.form-group textarea{resize:vertical;min-height:80px;}
+
+/* Upload CV */
+.upload-zone{border:2px dashed var(--border);border-radius:var(--radius);padding:28px 20px;text-align:center;cursor:pointer;transition:all 0.15s;position:relative;}
+.upload-zone:hover,.upload-zone.dragover{border-color:var(--navy);background:var(--navy-l);}
+.upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;}
+.upload-ico{font-size:32px;margin-bottom:8px;}
+.upload-label{font-size:13px;color:var(--text-s);font-weight:600;}
+.upload-hint{font-size:11px;color:var(--muted);margin-top:4px;}
+.upload-filename{font-size:12px;color:var(--green);font-weight:700;margin-top:8px;}
+
+/* Consentement RGPD */
+.rgpd-block{background:var(--navy-l);border:1.5px solid rgba(0,51,160,0.15);border-radius:var(--radius);padding:14px 16px;margin-bottom:20px;}
+.rgpd-block label{display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:12.5px;color:var(--text-s);line-height:1.5;}
+.rgpd-block input[type=checkbox]{margin-top:2px;accent-color:var(--navy);flex-shrink:0;width:16px;height:16px;}
+
+/* Submit */
+.submit-btn{width:100%;padding:14px;background:linear-gradient(135deg,var(--navy),var(--navy-d));color:#fff;border:none;border-radius:var(--radius);font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;transition:all 0.2s;}
+.submit-btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,51,160,0.25);}
+.submit-btn:disabled{opacity:0.55;cursor:not-allowed;transform:none;}
+
+/* Progress */
+.progress-bar{height:4px;background:var(--border);border-radius:2px;margin-bottom:28px;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--navy),var(--yellow));border-radius:2px;transition:width 0.4s;}
+
+/* Succès */
+.success-card{text-align:center;padding:48px 28px;}
+.success-ico{font-size:64px;margin-bottom:16px;}
+.success-title{font-size:24px;font-weight:800;color:var(--navy);margin-bottom:8px;}
+.success-sub{font-size:14px;color:var(--muted);line-height:1.7;margin-bottom:24px;}
+.portal-link{display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:var(--navy);color:#fff;border-radius:var(--radius);font-size:14px;font-weight:700;text-decoration:none;transition:all 0.2s;}
+.portal-link:hover{background:var(--navy-d);}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);padding:12px 20px;border-radius:10px;font-size:13px;font-weight:700;color:#fff;z-index:9999;pointer-events:none;}
+.toast.success{background:#059669;}.toast.error{background:var(--red);}.toast.info{background:var(--navy);}
+
+@media(max-width:600px){.form-row{grid-template-columns:1fr;}.form-card{padding:20px;}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">T<span>.</span></div>
+  <div style="font-size:13px;color:rgba(255,255,255,0.6);font-weight:500;">Inscription candidat</div>
+</div>
+
+<div class="main">
+  <div class="form-card" id="form-card">
+
+    <!-- Barre de progression -->
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+
+    <div class="form-title">Rejoindre <span>Talia</span></div>
+    <div class="form-sub">Complétez ce formulaire pour créer votre dossier de candidature. Un conseiller vous contactera sous 48h.</div>
+
+    <form id="intake-form" onsubmit="handleSubmit(event)" novalidate>
+
+      <!-- Identité -->
+      <div class="form-section">
+        <div class="form-section-title">👤 Identité</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Prénom <span class="req">*</span></label>
+            <input id="f-prenom" type="text" placeholder="Ex : Marie" required/>
+          </div>
+          <div class="form-group">
+            <label>Nom <span class="req">*</span></label>
+            <input id="f-nom" type="text" placeholder="Ex : Dupont" required/>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Email <span class="req">*</span></label>
+            <input id="f-email" type="email" placeholder="marie.dupont@gmail.com" required/>
+          </div>
+          <div class="form-group">
+            <label>Téléphone <span class="req">*</span></label>
+            <input id="f-tel" type="tel" placeholder="06 xx xx xx xx" required/>
+          </div>
+        </div>
+      </div>
+
+      <!-- Formation -->
+      <div class="form-section">
+        <div class="form-section-title">🎓 Formation & Projet</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Formation souhaitée <span class="req">*</span></label>
+            <select id="f-formation" required>
+              <option value="">— Choisir —</option>
+              <option>BTS MCO</option><option>BTS NDRC</option><option>BTS Compta</option>
+              <option>Bachelor RH</option><option>Bachelor Commerce</option>
+              <option>Bachelor Marketing Digital</option><option>Bachelor Management</option>
+              <option>Mastère Marketing</option><option>Mastère RH</option>
+              <option>MBA Management</option><option>Autre</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Campus <span class="req">*</span></label>
+            <select id="f-campus" required>
+              <option value="">— Choisir —</option>
+              <option>Montpellier</option><option>Marseille</option><option>Bordeaux</option>
+              <option>Toulouse</option><option>Lille</option><option>Lyon</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Poste visé en alternance</label>
+            <input id="f-poste" type="text" placeholder="Ex : Chargé(e) de communication"/>
+          </div>
+          <div class="form-group">
+            <label>Disponibilité <span class="req">*</span></label>
+            <select id="f-dispo" required>
+              <option value="">— Choisir —</option>
+              <option>Septembre 2025</option><option>Janvier 2026</option>
+              <option>Septembre 2026</option><option>Dès que possible</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row full">
+          <div class="form-group">
+            <label>Présentation rapide (motivations, parcours)</label>
+            <textarea id="f-motivations" placeholder="En quelques lignes, présentez votre projet professionnel et vos motivations pour l'alternance…"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- CV -->
+      <div class="form-section">
+        <div class="form-section-title">📄 CV</div>
+        <div class="upload-zone" id="upload-zone">
+          <input type="file" id="f-cv" accept=".pdf,.doc,.docx" onchange="onFileSelect(this)"/>
+          <div class="upload-ico">📎</div>
+          <div class="upload-label">Glissez votre CV ici ou cliquez pour parcourir</div>
+          <div class="upload-hint">PDF, Word — 5 Mo max</div>
+          <div class="upload-filename" id="upload-filename"></div>
+        </div>
+        <p style="font-size:11px;color:var(--muted);margin-top:8px;">Si vous n'avez pas encore de CV, votre conseiller vous aidera à en créer un avec notre outil de génération.</p>
+      </div>
+
+      <!-- RGPD -->
+      <div class="rgpd-block">
+        <label>
+          <input type="checkbox" id="f-rgpd" required/>
+          <span>J'accepte que mes données personnelles soient traitées par Talia dans le cadre de ma recherche d'alternance. Conformément au RGPD, je dispose d'un droit d'accès, de rectification et de suppression de mes données. <a href="portail-candidat.html" style="color:var(--navy);">En savoir plus ↗</a></span>
+        </label>
+      </div>
+
+      <button type="submit" class="submit-btn" id="submit-btn">
+        <span id="submit-label">🚀 Envoyer ma candidature</span>
+      </button>
+    </form>
+
+    <!-- Écran succès -->
+    <div id="success-screen" class="success-card" style="display:none;">
+      <div class="success-ico">🎉</div>
+      <div class="success-title">Candidature reçue !</div>
+      <div class="success-sub">
+        Merci <strong id="success-name"></strong> — votre dossier a bien été enregistré.<br/>
+        Un conseiller Talia vous contactera sous <strong>48 heures</strong>.<br/>
+        En attendant, vous pouvez suivre l'avancement de votre dossier.
+      </div>
+      <a href="portail-candidat.html" class="portal-link">🎓 Accéder à mon espace candidat</a>
+    </div>
+
+  </div><!-- /form-card -->
+</div>
+
+<script>
+const SUPABASE_URL = 'https://dankawtulegneeggmarg.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_d3_Kw4jvLuLErfEsRVBaRw_Eq8ACWv_';
+const sb = window.supabase?.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let selectedFile = null;
+
+function onFileSelect(input){
+  selectedFile = input.files[0];
+  const label = document.getElementById('upload-filename');
+  if(selectedFile){
+    label.textContent = '✅ ' + selectedFile.name;
+    if(selectedFile.size > 5*1024*1024){ toast('Fichier trop volumineux (5 Mo max)', 'error'); selectedFile = null; label.textContent = ''; }
+  }
+}
+
+// Drag & drop
+const zone = document.getElementById('upload-zone');
+zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+zone.addEventListener('drop', e => {
+  e.preventDefault(); zone.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if(file){ document.getElementById('f-cv').files = e.dataTransfer.files; onFileSelect(document.getElementById('f-cv')); }
+});
+
+// Barre de progression au scroll / focus
+document.querySelectorAll('input,select,textarea').forEach((el,i,arr) => {
+  el.addEventListener('focus', () => {
+    const pct = Math.round(((i+1)/arr.length)*100);
+    document.getElementById('progress-fill').style.width = pct + '%';
+  });
+});
+
+async function handleSubmit(e){
+  e.preventDefault();
+  const prenom   = document.getElementById('f-prenom').value.trim();
+  const nom      = document.getElementById('f-nom').value.trim();
+  const email    = document.getElementById('f-email').value.trim();
+  const tel      = document.getElementById('f-tel').value.trim();
+  const formation = document.getElementById('f-formation').value;
+  const campus   = document.getElementById('f-campus').value;
+  const dispo    = document.getElementById('f-dispo').value;
+  const rgpd     = document.getElementById('f-rgpd').checked;
+
+  if(!prenom||!nom||!email||!tel||!formation||!campus||!dispo){
+    toast('Merci de compléter tous les champs obligatoires (*)', 'error'); return;
+  }
+  if(!rgpd){ toast('Vous devez accepter la politique de données', 'error'); return; }
+  if(!email.includes('@')){ toast('Email invalide', 'error'); return; }
+
+  const btn = document.getElementById('submit-btn');
+  const lbl = document.getElementById('submit-label');
+  btn.disabled = true; lbl.textContent = '⏳ Envoi en cours…';
+  document.getElementById('progress-fill').style.width = '100%';
+
+  let cvUrl = null;
+
+  try {
+    // Upload CV si fourni
+    if(selectedFile && sb){
+      const path = `cv/${Date.now()}_${selectedFile.name.replace(/\s/g,'_')}`;
+      const { data: upData, error: upErr } = await sb.storage.from('candidats-cv').upload(path, selectedFile);
+      if(!upErr && upData){
+        const { data: urlData } = sb.storage.from('candidats-cv').getPublicUrl(path);
+        cvUrl = urlData?.publicUrl || null;
+      }
+    }
+
+    // Insérer dans Supabase
+    const candidat = {
+      prenom, nom, email, telephone: tel,
+      formation, campus, ville: campus,
+      poste: document.getElementById('f-poste').value.trim(),
+      statut: 'Nouveau',
+      cv_url: cvUrl,
+      consentement_date: new Date().toISOString(),
+      derniere_activite: new Date().toISOString(),
+    };
+
+    if(sb){
+      const { error } = await sb.from('candidats').insert([candidat]);
+      if(error && !error.message.includes('duplicate')){ throw error; }
+    }
+
+    // Afficher succès
+    document.getElementById('intake-form').style.display = 'none';
+    document.getElementById('success-screen').style.display = '';
+    document.getElementById('success-name').textContent = prenom;
+    document.querySelector('.progress-fill').style.background = '#059669';
+
+  } catch(err){
+    toast('Erreur lors de l\'envoi : ' + err.message, 'error');
+    btn.disabled = false; lbl.textContent = '🚀 Envoyer ma candidature';
+  }
+}
+
+function toast(msg, type='info', dur=3500){
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), dur);
+}
+</script>
+</body>
+</html>

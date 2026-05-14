@@ -1,0 +1,22 @@
+# Clés API et secrets
+API*.txt
+*.key
+*.env
+.env*
+
+# Fichiers temporaires
+C:Users*
+*.tmp
+*.log
+
+# Versions de travail / backup
+*VERSION AVANT CODE*
+*(1).html
+*(2)*.html
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude
+.claude/

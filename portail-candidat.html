@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="theme-color" content="#0033a0"/>
+<title>Talia — Mon espace candidat</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+/* ── Tokens ── */
+:root{
+  --navy:#0033a0;--navy-d:#00258a;--navy-l:#e8edf8;
+  --yellow:#FFCC00;--bg:#f7f9fc;--surface:#fff;
+  --border:#e5e9f0;--radius:10px;--radius-lg:16px;
+  --text:#1a2035;--text-s:#4a5568;--muted:#9aa5b4;
+  --green:#22c55e;--green-l:#f0fdf4;
+  --amber:#f59e0b;--amber-l:#fffbeb;
+  --red:#ef4444;--red-l:#fef2f2;
+  font-family:'Plus Jakarta Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);min-height:100vh;}
+
+/* ── Header ── */
+.header{background:linear-gradient(135deg,#0a1f6e,#0033a0);padding:0 24px;display:flex;align-items:center;gap:16px;height:60px;}
+.logo{font-size:22px;font-weight:800;color:#fff;letter-spacing:-0.5px;}
+.logo span{color:var(--yellow);}
+.header-sub{font-size:13px;color:rgba(255,255,255,0.6);font-weight:500;}
+
+/* ── Layout ── */
+.main{max-width:720px;margin:0 auto;padding:28px 20px 60px;}
+
+/* ── Auth screen ── */
+.auth-card{background:#fff;border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:36px 32px;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,0.06);}
+.auth-ico{font-size:48px;margin-bottom:16px;}
+.auth-title{font-size:22px;font-weight:800;color:var(--navy);margin-bottom:8px;}
+.auth-sub{font-size:14px;color:var(--muted);margin-bottom:24px;line-height:1.6;}
+.auth-input{width:100%;padding:12px 16px;border:1.5px solid var(--border);border-radius:var(--radius);font-size:14px;font-family:inherit;outline:none;transition:border-color 0.15s;margin-bottom:12px;}
+.auth-input:focus{border-color:var(--navy);}
+.auth-btn{width:100%;padding:13px;background:linear-gradient(135deg,var(--navy),var(--navy-d));color:#fff;border:none;border-radius:var(--radius);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:all 0.2s;}
+.auth-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,51,160,0.25);}
+.auth-btn:disabled{opacity:0.6;cursor:not-allowed;transform:none;}
+.auth-note{font-size:12px;color:var(--muted);margin-top:14px;line-height:1.5;}
+
+/* ── Dashboard candidat ── */
+.cand-welcome{background:linear-gradient(135deg,var(--navy),var(--navy-d));color:#fff;border-radius:var(--radius-lg);padding:24px 28px;margin-bottom:24px;display:flex;align-items:center;gap:20px;}
+.cand-avatar{width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,0.15);border:2px solid rgba(255,255,255,0.3);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;flex-shrink:0;}
+.cand-name{font-size:20px;font-weight:800;}
+.cand-meta{font-size:13px;opacity:0.7;margin-top:3px;}
+.logout-btn{margin-left:auto;padding:8px 16px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.22);color:#fff;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;}
+
+/* ── Statut pipeline ── */
+.pipeline-card{background:#fff;border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:22px 24px;margin-bottom:18px;}
+.card-title{font-size:14px;font-weight:800;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.pipeline-steps{display:flex;align-items:flex-start;gap:0;overflow-x:auto;padding-bottom:8px;}
+.pip-step{flex:1;min-width:80px;display:flex;flex-direction:column;align-items:center;position:relative;}
+.pip-step:not(:last-child)::after{content:'';position:absolute;top:16px;left:50%;width:100%;height:2px;background:var(--border);z-index:0;}
+.pip-step.reached:not(:last-child)::after{background:var(--navy);}
+.pip-circle{width:34px;height:34px;border-radius:50%;background:var(--bg);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:14px;position:relative;z-index:1;}
+.pip-step.reached .pip-circle{background:var(--navy);border-color:var(--navy);color:#fff;box-shadow:0 0 0 4px rgba(0,51,160,0.12);}
+.pip-step.current .pip-circle{background:var(--yellow);border-color:var(--yellow);box-shadow:0 0 0 4px rgba(255,204,0,0.2);}
+.pip-label{font-size:10px;font-weight:600;color:var(--muted);margin-top:7px;text-align:center;line-height:1.3;}
+.pip-step.reached .pip-label,.pip-step.current .pip-label{color:var(--navy);font-weight:700;}
+
+/* ── Statut badge ── */
+.statut-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:700;}
+.s-nouveau{background:#f1f5f9;color:#475569;}
+.s-envoye{background:#e0f2fe;color:#0369a1;}
+.s-entretien{background:var(--amber-l);color:#92400e;}
+.s-valide{background:var(--green-l);color:#166534;}
+.s-signe{background:var(--navy-l);color:var(--navy);}
+.s-contrat{background:#f3e8ff;color:#7c3aed;}
+.s-diplome{background:var(--green-l);color:#166534;}
+
+/* ── Entretiens ── */
+.entretien-card{background:var(--bg);border:1.5px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;display:flex;gap:14px;align-items:flex-start;}
+.ent-date-box{background:var(--navy-l);border-radius:10px;padding:10px 14px;text-align:center;min-width:60px;flex-shrink:0;}
+.ent-date-day{font-size:22px;font-weight:800;color:var(--navy);}
+.ent-date-mois{font-size:10px;font-weight:700;color:var(--navy);text-transform:uppercase;}
+.ent-date-heure{font-size:12px;font-weight:700;color:var(--navy);}
+.ent-infos{flex:1;}
+.ent-company{font-size:14px;font-weight:700;color:var(--text);}
+.ent-lieu{font-size:12px;color:var(--muted);margin-top:3px;}
+.ent-actions{display:flex;flex-direction:column;gap:6px;flex-shrink:0;}
+.ent-confirm-btn{padding:6px 12px;border:1.5px solid var(--green);background:var(--green-l);color:#166534;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;}
+.ent-cancel-btn{padding:6px 12px;border:1.5px solid rgba(239,68,68,0.3);background:var(--red-l);color:var(--red);border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;}
+
+/* ── CV download ── */
+.cv-download-btn{display:flex;align-items:center;gap:10px;padding:14px 18px;background:linear-gradient(135deg,var(--navy),var(--navy-d));color:#fff;border:none;border-radius:var(--radius);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;width:100%;transition:all 0.2s;}
+.cv-download-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,51,160,0.25);}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);padding:12px 20px;border-radius:10px;font-size:13px;font-weight:700;color:#fff;z-index:9999;animation:fadeIn 0.2s;pointer-events:none;}
+.toast.success{background:#059669;}.toast.error{background:var(--red);}.toast.info{background:var(--navy);}
+@keyframes fadeIn{from{opacity:0;transform:translateX(-50%) translateY(8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+
+/* ── Empty ── */
+.empty-state{text-align:center;padding:32px 16px;color:var(--muted);}
+.empty-ico{font-size:40px;margin-bottom:10px;opacity:0.4;}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="logo">T<span>.</span></div>
+  <div class="header-sub">Mon espace candidat</div>
+</div>
+
+<div class="main">
+
+  <!-- ÉCRAN AUTH -->
+  <div id="screen-auth">
+    <div class="auth-card">
+      <div class="auth-ico">🎓</div>
+      <div class="auth-title">Accéder à mon dossier</div>
+      <div class="auth-sub">Entrez votre email pour recevoir un lien de connexion sécurisé.<br/>Aucun mot de passe requis.</div>
+      <input id="auth-email" type="email" class="auth-input" placeholder="votre.email@exemple.com"/>
+      <button id="auth-btn" class="auth-btn" onclick="sendMagicLink()">📧 Recevoir mon lien de connexion</button>
+      <p class="auth-note">🔒 Connexion sécurisée · Vos données sont protégées conformément au RGPD</p>
+    </div>
+  </div>
+
+  <!-- CONFIRMATION ENVOI LIEN -->
+  <div id="screen-sent" style="display:none;">
+    <div class="auth-card">
+      <div class="auth-ico">📬</div>
+      <div class="auth-title">Email envoyé !</div>
+      <div class="auth-sub">Vérifiez votre boîte mail et cliquez sur le lien de connexion.<br/>Il est valable 1 heure.</div>
+      <button class="auth-btn" style="background:var(--bg);color:var(--navy);border:1.5px solid var(--border);" onclick="document.getElementById('screen-sent').style.display='none';document.getElementById('screen-auth').style.display='';">← Revenir</button>
+    </div>
+  </div>
+
+  <!-- DASHBOARD CANDIDAT -->
+  <div id="screen-dashboard" style="display:none;">
+
+    <!-- Accueil personnalisé -->
+    <div class="cand-welcome">
+      <div class="cand-avatar" id="dash-initials">?</div>
+      <div>
+        <div class="cand-name" id="dash-name">Chargement…</div>
+        <div class="cand-meta" id="dash-meta"></div>
+      </div>
+      <button class="logout-btn" onclick="logout()">Déconnexion</button>
+    </div>
+
+    <!-- Statut pipeline -->
+    <div class="pipeline-card">
+      <div class="card-title">📊 Mon parcours</div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+        <div>Statut actuel :</div>
+        <div id="dash-statut-badge"></div>
+      </div>
+      <div class="pipeline-steps" id="dash-pipeline"></div>
+    </div>
+
+    <!-- Entretiens à venir -->
+    <div class="pipeline-card">
+      <div class="card-title">📅 Mes entretiens à venir</div>
+      <div id="dash-entretiens">
+        <div class="empty-state"><div class="empty-ico">📅</div>Aucun entretien planifié pour l'instant.</div>
+      </div>
+    </div>
+
+    <!-- Télécharger CV -->
+    <div class="pipeline-card">
+      <div class="card-title">📄 Mon CV Talia</div>
+      <div id="dash-cv-section">
+        <div class="empty-state"><div class="empty-ico">📄</div>Votre CV Talia n'est pas encore disponible.<br/>Contactez votre conseiller.</div>
+      </div>
+    </div>
+
+  </div><!-- /screen-dashboard -->
+
+</div><!-- /main -->
+
+<script>
+// ════ CONFIG — même URL/KEY que talia-app.html ════
+const SUPABASE_URL = 'https://dankawtulegneeggmarg.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_d3_Kw4jvLuLErfEsRVBaRw_Eq8ACWv_';
+const sb = window.supabase?.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ════ PIPELINE STEPS ════
+const PIPELINE = [
+  {id:'Nouveau',    ico:'🆕', label:'Nouveau'},
+  {id:'CV envoyé',  ico:'📤', label:'CV envoyé'},
+  {id:'Entretien',  ico:'🤝', label:'Entretien'},
+  {id:'Validé',     ico:'✅', label:'Validé'},
+  {id:'Signé',      ico:'📝', label:'Signé'},
+  {id:'En contrat', ico:'🚀', label:'En contrat'},
+  {id:'Diplômé',    ico:'🎓', label:'Diplômé'},
+];
+const STATUT_CLS = {
+  'Nouveau':'s-nouveau','CV envoyé':'s-envoye','Entretien':'s-entretien',
+  'Validé':'s-valide','Signé':'s-signe','En contrat':'s-contrat','Diplômé':'s-diplome',
+};
+
+// ════ AUTH ════
+async function sendMagicLink(){
+  const email = document.getElementById('auth-email').value.trim();
+  if(!email || !email.includes('@')){ toast('Email invalide', 'error'); return; }
+  const btn = document.getElementById('auth-btn');
+  btn.disabled = true; btn.textContent = '⏳ Envoi en cours…';
+  try {
+    const { error } = await sb.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: window.location.href }
+    });
+    if(error) throw error;
+    document.getElementById('screen-auth').style.display = 'none';
+    document.getElementById('screen-sent').style.display = '';
+  } catch(e){
+    toast('Erreur : ' + e.message, 'error');
+    btn.disabled = false; btn.textContent = '📧 Recevoir mon lien de connexion';
+  }
+}
+
+async function logout(){
+  await sb.auth.signOut();
+  document.getElementById('screen-dashboard').style.display = 'none';
+  document.getElementById('screen-auth').style.display = '';
+}
+
+// ════ INIT ════
+window.addEventListener('load', async () => {
+  if(!sb){ showError('Supabase non configuré.'); return; }
+
+  // Gérer le retour du lien magique (hash #access_token=...)
+  const { data: { session } } = await sb.auth.getSession();
+  if(session){
+    await loadDashboard(session.user);
+  } else {
+    // Écouter l'event de connexion (retour du lien magique)
+    sb.auth.onAuthStateChange(async (event, sess) => {
+      if(sess) await loadDashboard(sess.user);
+    });
+  }
+});
+
+async function loadDashboard(user){
+  document.getElementById('screen-auth').style.display      = 'none';
+  document.getElementById('screen-sent').style.display      = 'none';
+  document.getElementById('screen-dashboard').style.display = '';
+
+  // Chercher le candidat dans Supabase par email
+  let candidat = null;
+  try {
+    const { data } = await sb.from('candidats')
+      .select('*')
+      .eq('email', user.email)
+      .maybeSingle();
+    candidat = data;
+  } catch(e){}
+
+  if(!candidat){
+    // Mode démo — afficher données minimales depuis l'email
+    const name = user.email.split('@')[0];
+    renderDashboard({ prenom: name, nom: '', formation: '', statut: 'Nouveau', email: user.email }, [], null);
+    return;
+  }
+
+  // Entretiens
+  let entretiens = [];
+  try {
+    const { data } = await sb.from('entretiens')
+      .select('*')
+      .eq('candidat_id', candidat.id)
+      .gte('datetime', new Date().toISOString())
+      .order('datetime');
+    entretiens = data || [];
+  } catch(e){}
+
+  renderDashboard(candidat, entretiens, candidat.cv_url);
+
+  // Log accès portail
+  try {
+    await sb.from('logs_acces').insert([{
+      candidat_id: candidat.id,
+      action: 'portail_view',
+      utilisateur_email: user.email,
+      details: { source: 'portail-candidat' }
+    }]);
+  } catch(e){}
+}
+
+function renderDashboard(c, entretiens, cvUrl){
+  const initials = ((c.prenom||'?')[0] + (c.nom||'?')[0]).toUpperCase();
+  document.getElementById('dash-initials').textContent = initials;
+  document.getElementById('dash-name').textContent = [c.prenom, c.nom].filter(Boolean).join(' ') || c.email;
+  document.getElementById('dash-meta').textContent = [c.formation, c.campus || c.ville].filter(Boolean).join(' · ') || 'Candidat Talia';
+
+  // Badge statut
+  const statut = c.statut || 'Nouveau';
+  const cls = STATUT_CLS[statut] || 's-nouveau';
+  document.getElementById('dash-statut-badge').innerHTML = `<span class="statut-badge ${cls}">${statut}</span>`;
+
+  // Pipeline
+  const stepIdx = PIPELINE.findIndex(s => s.id === statut);
+  document.getElementById('dash-pipeline').innerHTML = PIPELINE.map((s,i) => {
+    const reached  = i <= stepIdx;
+    const current  = i === stepIdx;
+    return `<div class="pip-step ${reached?'reached':''} ${current?'current':''}">
+      <div class="pip-circle">${s.ico}</div>
+      <div class="pip-label">${s.label}</div>
+    </div>`;
+  }).join('');
+
+  // Entretiens
+  const entEl = document.getElementById('dash-entretiens');
+  if(entretiens.length){
+    entEl.innerHTML = entretiens.map(e => {
+      const d = new Date(e.datetime);
+      return `<div class="entretien-card">
+        <div class="ent-date-box">
+          <div class="ent-date-day">${d.getDate()}</div>
+          <div class="ent-date-mois">${d.toLocaleDateString('fr-FR',{month:'short'})}</div>
+          <div class="ent-date-heure">${d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</div>
+        </div>
+        <div class="ent-infos">
+          <div class="ent-company">🏢 ${esc(e.entreprise_nom || e.contact || 'Entreprise')}</div>
+          <div class="ent-lieu">📍 ${esc(e.lieu||'Lieu à confirmer')}</div>
+          ${e.telephone ? `<div class="ent-lieu">📞 Conseiller : ${esc(e.telephone)}</div>` : ''}
+        </div>
+        <div class="ent-actions">
+          <button class="ent-confirm-btn" onclick="confirmEntretien('${e.id}','confirmé')">✅ Confirmer</button>
+          <button class="ent-cancel-btn"  onclick="confirmEntretien('${e.id}','annulé')">❌ Annuler</button>
+        </div>
+      </div>`;
+    }).join('');
+  } else {
+    entEl.innerHTML = '<div class="empty-state"><div class="empty-ico">📅</div>Aucun entretien à venir pour l\'instant.</div>';
+  }
+
+  // CV
+  const cvEl = document.getElementById('dash-cv-section');
+  if(cvUrl){
+    cvEl.innerHTML = `<button class="cv-download-btn" onclick="window.open('${cvUrl}','_blank')">📄 Télécharger mon CV Talia</button>`;
+  } else {
+    cvEl.innerHTML = '<div class="empty-state"><div class="empty-ico">📄</div>CV non encore disponible — contactez votre conseiller.</div>';
+  }
+}
+
+async function confirmEntretien(id, newStatut){
+  try {
+    const { error } = await sb.from('entretiens').update({ statut: newStatut }).eq('id', id);
+    if(error) throw error;
+    toast(newStatut === 'confirmé' ? '✅ Entretien confirmé !' : '❌ Entretien annulé', newStatut === 'confirmé' ? 'success' : 'error');
+    // Recharger
+    const { data: { session } } = await sb.auth.getSession();
+    if(session) await loadDashboard(session.user);
+  } catch(e){
+    toast('Erreur : ' + e.message, 'error');
+  }
+}
+
+function esc(str){ return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function toast(msg, type='info', dur=3000){
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), dur);
+}
+
+function showError(msg){
+  document.getElementById('screen-auth').innerHTML = `<div class="auth-card"><div class="auth-ico">⚠️</div><div class="auth-title">Erreur</div><div class="auth-sub">${msg}</div></div>`;
+}
+</script>
+</body>
+</html>

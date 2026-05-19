@@ -4392,8 +4392,8 @@ const MS_TENANT_ID     = 'common'; // 'common' ou ton tenant ID Azure AD
 const GMAIL_CLIENT_ID  = '';   // Google Cloud → APIs & Services → OAuth 2.0 → Client ID Web
 
 // ════ SUPABASE CONFIG ════
-const SUPABASE_URL  = 'https://dankawtulegneeggmarg.supabase.co';
-const SUPABASE_KEY  = 'sb_publishable_d3_Kw4jvLuLErfEsRVBaRw_Eq8ACWv_';
+const SUPABASE_URL  = 'https://zxiroikfhrwsyzgqflzb.supabase.co';
+const SUPABASE_KEY  = 'sb_publishable_-L-hyDnwHXaktspwiz36jw_W_6yoOko';
 let supabase = null;
 let sb = null;
 function initSupabase(){
@@ -8507,6 +8507,20 @@ Réponds UNIQUEMENT avec les missions reformulées, une par ligne.`;
     cv.lastSavedAt = Date.now();
     cv.dirty = false;
     this.updateSaveStatus();
+    // Sync Supabase cv_history (sans le thumbnail pour économiser l'espace)
+    if(sb){
+      sb.auth.getUser().then(({ data }) => {
+        if(!data?.user) return;
+        sb.from('cv_history').upsert([{
+          id:        entry.id,
+          user_id:   data.user.id,
+          name:      entry.name,
+          formation: entry.formation,
+          date_str:  entry.date,
+          cv_data:   entry.cv
+        }], { onConflict: 'id' }).catch(()=>{});
+      });
+    }
     if(!silent) this.toast('CV enregistré dans l\'historique', 'success');
   },
 
@@ -8593,10 +8607,37 @@ Réponds UNIQUEMENT avec les missions reformulées, une par ligne.`;
   delHist(id){
     if(!confirm('Supprimer ce CV de l\'historique ?')) return;
     this.setHist(this.getHist().filter(h => h.id !== id));
+    // Sync Supabase
+    if(sb){ sb.from('cv_history').delete().eq('id', id).catch(()=>{}); }
     this.renderHist();
     this.renderCatalog();
     this.buildHistCount();
     this.toast('CV supprimé', 'success');
+  },
+
+  async loadHistFromSupabase(){
+    if(!sb) return;
+    const { data: user } = await sb.auth.getUser();
+    if(!user?.user) return;
+    const { data } = await sb.from('cv_history')
+      .select('*').eq('user_id', user.user.id)
+      .order('id', { ascending: false })
+      .catch(() => ({ data: null }));
+    if(!data?.length) return;
+    const hist = this.getHist();
+    const localIds = new Set(hist.map(h => h.id));
+    let added = 0;
+    data.forEach(row => {
+      if(localIds.has(row.id)) return; // déjà en local
+      hist.push({ id: row.id, name: row.name, formation: row.formation,
+                  date: row.date_str, thumb: '', cv: row.cv_data });
+      added++;
+    });
+    if(added > 0){
+      this.setHist(hist);
+      this.renderHist?.();
+      this.renderCatalog?.();
+    }
   },
 
   toggleCardMenu(id, ev){
@@ -15989,6 +16030,8 @@ window.addEventListener('load', async () => {
   if(hasSupa){
     await Dashboard.loadFromSupabase();
     Dashboard.subscribeRealtime();
+    // Charger l'historique CV depuis Supabase (multi-device)
+    try { await App.loadHistFromSupabase(); } catch(e){ console.warn('loadHistFromSupabase:', e.message); }
   }
   if(GOOGLE_CLIENT_ID && typeof gapi !== 'undefined'){
     Dashboard.initGapi();

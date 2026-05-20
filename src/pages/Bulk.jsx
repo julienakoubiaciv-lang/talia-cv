@@ -5,6 +5,7 @@ import {
   adaptPoste, renderCVFromData, saveEditorState, saveToHist,
   saveBulkSession, loadBulkSession,
 } from '@/lib/cvData';
+import { useSettings } from '@/hooks/useSettings.jsx';
 
 // ─── Colors ──────────────────────────────────────────────────────────────────
 const C = {
@@ -388,7 +389,7 @@ export default function Bulk() {
   const navigate = useNavigate();
   const { toasts, show: showToast, remove: removeToast } = useToast();
 
-  const [apiKey, setApiKey]       = useState(() => sessionStorage.getItem('talia_api_key') || '');
+  const { apiKey } = useSettings();
   const [sessionMode, setSessionMode] = useState('build'); // 'build' | 'review'
   const [groups, setGroups]       = useState([{
     uid: uid(), label:'Groupe 1', formationVal:'', dateVal:'', genre:'',
@@ -415,11 +416,6 @@ export default function Bulk() {
     if (sessionMode === 'review') saveBulkSession(groups);
   }, [groups, sessionMode]);
 
-  const handleApiKeyChange = (val) => {
-    setApiKey(val);
-    if (val) sessionStorage.setItem('talia_api_key', val);
-    else sessionStorage.removeItem('talia_api_key');
-  };
 
   // ── Group operations ──
   const addGroup = () => {
@@ -663,11 +659,10 @@ export default function Bulk() {
               {totalProc>0   && <span style={{ fontSize:11, fontWeight:700, color:C.bluePrimary, background:C.blueSoft, padding:'2px 10px', borderRadius:99 }}>⟳ {totalProc}</span>}
             </div>
           )}
-          {/* API key */}
-          <div style={{ position:'relative', display:'flex', alignItems:'center' }}>
-            <input type="password" value={apiKey} onChange={e => handleApiKeyChange(e.target.value)} placeholder="Clé API Anthropic…"
-              style={{ width:180, padding:'7px 28px 7px 12px', border:'1px solid '+C.rule, borderRadius:10, fontSize:12, color:C.ink, background:C.surface, fontFamily:'Manrope,sans-serif', outline:'none' }} />
-            {apiKey && <span style={{ position:'absolute', right:10, width:7, height:7, borderRadius:'50%', background:C.green }} />}
+          {/* Statut clé API → ⚙️ Paramètres */}
+          <div style={{ display:'flex', alignItems:'center', gap:7, padding:'7px 12px', border:'1px solid '+C.rule, borderRadius:10, background:C.surface }}>
+            <span style={{ fontSize:12, color: apiKey ? C.ink : C.mute }}>{apiKey ? 'Clé configurée' : 'Mode démo — ⚙️'}</span>
+            {apiKey && <span style={{ width:7, height:7, borderRadius:'50%', background:C.green }} />}
           </div>
         </div>
       </div>

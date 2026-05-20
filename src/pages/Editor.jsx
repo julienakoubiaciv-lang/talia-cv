@@ -7,6 +7,7 @@ import {
   saveEditorState, loadEditorState, saveToHist, updateHist, getHist, loadBulkSession,
 } from '@/lib/cvData';
 import { useTheme } from '@/hooks/useTheme';
+import { useSettings } from '@/hooks/useSettings.jsx';
 import { useFocusMode } from '@/hooks/useFocusMode';
 import { useSectionOrder } from '@/hooks/useSectionOrder';
 import { BananaScore } from '@/components/BananaScore';
@@ -157,7 +158,7 @@ export default function Editor() {
   const [croppedPhoto, setCroppedPhoto] = useState('');
   const [logoDataURL, setLogoDataURL] = useState('');
   const [candidateName, setCandidateName] = useState('');
-  const [apiKey, setApiKey] = useState('');
+  const { apiKey } = useSettings();
 
   /* panel visibility */
   const [dlMenuOpen, setDlMenuOpen] = useState(false);
@@ -323,7 +324,6 @@ export default function Editor() {
     croppedPhotoRef.current = photo;
     logoDataURLRef.current  = logo;
     setCandidateName(s.name || (cData ? (cData.prenom||'') + ' ' + (cData.nom||'') : ''));
-    setApiKey(s.apiKey || '');
     const savedTemplateId = s.templateId || 'classic';
     setTemplateId(savedTemplateId);
     templateIdRef.current = savedTemplateId;
@@ -360,10 +360,9 @@ export default function Editor() {
       croppedPhoto,
       logoDataURL,
       name: candidateName,
-      apiKey,
       templateId,
     });
-  }, [generatedHTML, cvData, selectedPal, croppedPhoto, logoDataURL, candidateName, apiKey, templateId]);
+  }, [generatedHTML, cvData, selectedPal, croppedPhoto, logoDataURL, candidateName, templateId]);
 
   /* ── get current HTML in iframe ────────────────────────────────────────── */
   const getCurrentHTML = useCallback(() => {

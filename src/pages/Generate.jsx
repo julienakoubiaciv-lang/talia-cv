@@ -4,6 +4,7 @@ import {
   FORMATIONS, DATES, POSTES, COMP_TECH, COMP_SOFT, PALETTES,
   adaptPoste, renderCVFromData, saveEditorState, saveToHist, escH
 } from '@/lib/cvData';
+import { useSettings } from '@/hooks/useSettings.jsx';
 
 // ─── Color tokens ───────────────────────────────────────────────────────────────
 const C = {
@@ -267,9 +268,8 @@ export default function Home() {
   const navigate = useNavigate();
   const { toasts, show: showToast, remove: removeToast } = useToast();
 
-  // API key state (stored in sessionStorage, no gate)
-  const [apiKey, setApiKey] = useState(() => sessionStorage.getItem('talia_api_key') || '');
-  const [apiKeyVisible, setApiKeyVisible] = useState(false);
+  // Clé API : centralisée et protégée par PIN (voir ⚙️ Paramètres)
+  const { apiKey } = useSettings();
 
   // Form state
   const [genre,        setGenre]        = useState('');
@@ -367,13 +367,6 @@ export default function Home() {
     words.forEach(w => { freq[w] = (freq[w] || 0) + 1; });
     const kw = Object.entries(freq).filter(([w]) => !stopWords.has(w)).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([w]) => w);
     setAnnonceKeywords(kw);
-  };
-
-  // ── API key change ──
-  const handleApiKeyChange = (val) => {
-    setApiKey(val);
-    if (val) sessionStorage.setItem('talia_api_key', val);
-    else sessionStorage.removeItem('talia_api_key');
   };
 
   // ── Generate ──
@@ -617,43 +610,8 @@ RÈGLES :
           </button>
         </div>
 
-        {/* Right: API key + Dernier CV */}
+        {/* Right: Dernier CV (clé API → ⚙️ Paramètres) */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-            <input
-              type={apiKeyVisible ? 'text' : 'password'}
-              value={apiKey}
-              onChange={e => handleApiKeyChange(e.target.value)}
-              placeholder="Clé API Anthropic…"
-              style={{
-                width: 190, padding: '7px 32px 7px 12px',
-                border: '1px solid ' + C.rule, borderRadius: 10,
-                fontSize: 12, color: C.ink, background: C.surface,
-                fontFamily: 'Manrope, sans-serif', outline: 'none',
-              }}
-            />
-            <button
-              onClick={() => setApiKeyVisible(v => !v)}
-              style={{
-                position: 'absolute', right: 8,
-                background: 'none', border: 'none', cursor: 'pointer',
-                color: C.mute, display: 'flex', alignItems: 'center',
-                padding: 0,
-              }}
-              title={apiKeyVisible ? 'Masquer' : 'Afficher'}
-            >
-              {apiKeyVisible
-                ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-              }
-            </button>
-            {apiKey && (
-              <span style={{
-                position: 'absolute', right: -10, top: '50%', transform: 'translate(100%, -50%)',
-                width: 7, height: 7, borderRadius: '50%', background: '#22c55e', flexShrink: 0,
-              }} title="Clé présente" />
-            )}
-          </div>
           <button
             onClick={() => navigate('/editor')}
             style={{
@@ -1052,34 +1010,20 @@ RÈGLES :
           <div style={{ background: C.bg, border: '1px solid ' + C.rule, borderRadius: 16, padding: 20 }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: C.ink, marginBottom: 16 }}>Récapitulatif</div>
 
-            {/* API key field in sidebar */}
+            {/* Statut clé API (configurée via ⚙️ Paramètres) */}
             <div style={{ marginBottom: 16 }}>
               <FieldLabel>Clé API Anthropic</FieldLabel>
-              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                <input
-                  type={apiKeyVisible ? 'text' : 'password'}
-                  value={apiKey}
-                  onChange={e => handleApiKeyChange(e.target.value)}
-                  placeholder="sk-ant-…"
-                  style={{
-                    ...textareaStyle,
-                    padding: '8px 32px 8px 12px',
-                    resize: 'none', lineHeight: 'normal',
-                  }}
-                />
-                {apiKey && (
-                  <span style={{
-                    position: 'absolute', right: 10,
-                    width: 7, height: 7, borderRadius: '50%',
-                    background: '#22c55e', flexShrink: 0,
-                  }} />
-                )}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', border: '1px solid ' + C.rule, borderRadius: 10, background: C.surface }}>
+                <span style={{ flex: 1, fontSize: 12, color: apiKey ? C.ink : C.mute }}>
+                  {apiKey ? 'Clé configurée' : 'Aucune clé — mode démo'}
+                </span>
+                {apiKey && <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#22c55e' }} />}
               </div>
-              {!apiKey && (
-                <p style={{ fontSize: 11, color: C.mute, marginTop: 5, lineHeight: 1.5 }}>
-                  Sans clé, le mode démo génère des données fictives.
-                </p>
-              )}
+              <p style={{ fontSize: 11, color: C.mute, marginTop: 5, lineHeight: 1.5 }}>
+                {apiKey
+                  ? 'Modifiable dans ⚙️ Paramètres (PIN requis).'
+                  : 'Configure ta clé dans ⚙️ Paramètres (en bas à droite). Sans clé, données fictives.'}
+              </p>
             </div>
 
             {/* Recap rows */}

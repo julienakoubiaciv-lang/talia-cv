@@ -321,6 +321,149 @@ function StatCard({ icon, value, label, sub, badge }) {
   );
 }
 
+/* ─── Onboarding Tour ────────────────────────────────────────────────────── */
+function OnboardingTour({ onClose, onAction }) {
+  const [step, setStep] = useState(0);
+  const steps = [
+    {
+      emoji: '👋',
+      title: 'Bienvenue sur TaliaCV',
+      subtitle: 'Le générateur de CV intelligent pour Talia',
+      text: "Génère des CV professionnels en quelques clics — l'IA reformule, met en page et optimise pour l'alternance.",
+      cta: 'Commencer la visite →',
+      bg: 'linear-gradient(135deg, #1539B7, #1F4FE0)',
+    },
+    {
+      emoji: '✨',
+      title: 'Créer un CV en 3 étapes',
+      subtitle: 'Formation → Contenu → Génération',
+      text: "Choisis la formation Talia, dépose le CV du candidat (PDF/image) ou colle son texte, et laisse l'IA faire le reste. Un stepper visuel te guide à chaque étape.",
+      cta: 'Étape suivante →',
+      bg: 'linear-gradient(135deg, #1539B7, #7c3aed)',
+    },
+    {
+      emoji: '📚',
+      title: 'Générer en masse',
+      subtitle: 'Plusieurs CV en une fois',
+      text: "Organise les candidats par groupes (par formation, par session). Génère tous les CV en parallèle puis ouvre-les un par un pour les finaliser dans l'éditeur.",
+      cta: 'Étape suivante →',
+      bg: 'linear-gradient(135deg, #7c3aed, #db2777)',
+    },
+    {
+      emoji: '🎨',
+      title: 'Éditeur intelligent',
+      subtitle: 'Modifie, reformule, perfectionne',
+      text: "Édite chaque section avec aperçu en temps réel. Clique sur ✨ à côté d'une mission pour 3 reformulations IA. Le score qualité te guide vers l'optimal.",
+      cta: 'Étape suivante →',
+      bg: 'linear-gradient(135deg, #059669, #1539B7)',
+    },
+    {
+      emoji: '🔍',
+      title: 'Retrouve tes CV',
+      subtitle: 'Recherche, filtre, regroupe',
+      text: "Tes CV sont sauvegardés ici. Utilise la recherche, filtre par formation, trie comme tu veux, ou regroupe par lot pour voir les CV générés ensemble.",
+      cta: 'C\'est parti !',
+      bg: 'linear-gradient(135deg, #d97706, #dc2626)',
+    },
+  ];
+  const current = steps[step];
+  const isLast = step === steps.length - 1;
+
+  return (
+    <div style={{
+      position:'fixed', inset:0, zIndex:9500,
+      background:'rgba(11,16,32,0.55)', backdropFilter:'blur(8px)',
+      display:'flex', alignItems:'center', justifyContent:'center', padding:24,
+      animation:'fadeIn .25s ease', fontFamily:FONT,
+    }}>
+      <div style={{
+        width:'min(540px, 96vw)', background:'#fff', borderRadius:24,
+        overflow:'hidden', boxShadow:'0 40px 100px rgba(11,16,32,.4)',
+        animation:'fadeInUp .35s cubic-bezier(.16,.84,.24,1)',
+      }}>
+        {/* Header coloré */}
+        <div style={{
+          background: current.bg, padding:'34px 32px 30px', color:'#fff',
+          position:'relative', overflow:'hidden', textAlign:'center',
+        }}>
+          <div style={{ position:'absolute', top:-30, right:-30, width:140, height:140, borderRadius:'50%', background:'rgba(255,255,255,.12)' }} />
+          <div style={{ position:'absolute', bottom:-40, left:-40, width:120, height:120, borderRadius:'50%', background:'rgba(255,255,255,.08)' }} />
+          <button onClick={onClose} style={{
+            position:'absolute', top:14, right:14, width:32, height:32,
+            border:'1px solid rgba(255,255,255,.3)', borderRadius:8,
+            background:'rgba(255,255,255,.15)', color:'#fff', cursor:'pointer',
+            display:'flex', alignItems:'center', justifyContent:'center',
+            transition:'background .15s',
+          }} onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,.25)'}
+             onMouseLeave={e => e.currentTarget.style.background='rgba(255,255,255,.15)'}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+          <div style={{ fontSize:54, marginBottom:6, position:'relative', animation:'fadeIn .5s ease' }} key={step}>{current.emoji}</div>
+          <div style={{ fontSize:11, fontWeight:700, opacity:0.85, letterSpacing:'2px', textTransform:'uppercase', marginBottom:8, position:'relative' }}>
+            Étape {step+1} / {steps.length}
+          </div>
+          <h2 style={{ fontSize:24, fontWeight:800, letterSpacing:'-0.5px', marginBottom:4, position:'relative' }}>{current.title}</h2>
+          <div style={{ fontSize:13.5, opacity:0.85, position:'relative' }}>{current.subtitle}</div>
+        </div>
+
+        {/* Body */}
+        <div style={{ padding:'26px 32px 24px' }}>
+          <p style={{ fontSize:14.5, color:C.ink2, lineHeight:1.65, marginBottom:22, textAlign:'center' }}>
+            {current.text}
+          </p>
+
+          {/* Progress dots */}
+          <div style={{ display:'flex', justifyContent:'center', gap:6, marginBottom:22 }}>
+            {steps.map((_, i) => (
+              <button key={i} onClick={() => setStep(i)} style={{
+                width: i === step ? 24 : 6, height: 6, borderRadius:99,
+                background: i <= step ? C.bluePrimary : C.rule,
+                border:'none', padding:0, cursor:'pointer',
+                transition:'all .3s cubic-bezier(.16,.84,.24,1)',
+              }} />
+            ))}
+          </div>
+
+          {/* CTAs */}
+          <div style={{ display:'flex', gap:10, alignItems:'center' }}>
+            {step > 0 && (
+              <button onClick={() => setStep(step-1)} style={{
+                padding:'11px 18px', border:`1px solid ${C.rule}`, borderRadius:10,
+                background:'#fff', fontSize:13, fontWeight:600, color:C.ink2,
+                cursor:'pointer', fontFamily:FONT, display:'flex', alignItems:'center', gap:5,
+              }}>
+                ← Précédent
+              </button>
+            )}
+            <button onClick={() => {
+              if (isLast) { onClose(); onAction?.('done'); }
+              else setStep(step+1);
+            }} style={{
+              flex:1, padding:'12px 18px', border:'none', borderRadius:10,
+              background: C.ink, color:'#fff',
+              fontSize:13.5, fontWeight:700, cursor:'pointer', fontFamily:FONT,
+              display:'flex', alignItems:'center', justifyContent:'center', gap:6,
+              transition:'opacity .15s',
+            }} onMouseEnter={e => e.currentTarget.style.opacity='.85'}
+               onMouseLeave={e => e.currentTarget.style.opacity='1'}>
+              {current.cta}
+            </button>
+          </div>
+          {!isLast && (
+            <button onClick={onClose} style={{
+              width:'100%', marginTop:10, padding:'8px', border:'none',
+              background:'transparent', color:C.mute, fontSize:12, fontWeight:500,
+              cursor:'pointer', fontFamily:FONT,
+            }}>
+              Passer la visite
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ─── Main ───────────────────────────────────────────────────────────────── */
 export default function Home() {
   const navigate = useNavigate();
@@ -331,8 +474,20 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedForms, setSelectedForms] = useState([]); // formations sélectionnées
   const [groupByBulk, setGroupByBulk] = useState(false);
+  const [tourOpen, setTourOpen] = useState(false);
 
   useEffect(() => { setCvList(getHist()); }, []);
+
+  // Première visite → ouvre le tour
+  useEffect(() => {
+    if (!localStorage.getItem('talia_onboarding_done')) {
+      setTimeout(() => setTourOpen(true), 600);
+    }
+  }, []);
+  const closeTour = () => {
+    setTourOpen(false);
+    localStorage.setItem('talia_onboarding_done', '1');
+  };
 
   // ── Liste unique des formations présentes ──
   const formations = React.useMemo(() => {
@@ -425,6 +580,14 @@ export default function Home() {
           onMouseLeave={e => e.currentTarget.style.borderColor = C.rule}>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
           En masse
+        </button>
+        <button onClick={() => setTourOpen(true)} title="Visite guidée"
+          style={{ marginLeft:8, width:38, height:38, background:C.surface, color:C.ink2, border:`1px solid ${C.rule}`, borderRadius:'50%', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', transition:'all .15s' }}
+          onMouseEnter={e => { e.currentTarget.style.background=C.blueSoft; e.currentTarget.style.color=C.bluePrimary; e.currentTarget.style.borderColor=`${C.bluePrimary}55`; }}
+          onMouseLeave={e => { e.currentTarget.style.background=C.surface; e.currentTarget.style.color=C.ink2; e.currentTarget.style.borderColor=C.rule; }}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
         </button>
       </header>
 
@@ -659,6 +822,7 @@ export default function Home() {
 
       <PreviewModal item={viewCV} onModify={handleModify} onClose={() => setViewCV(null)} />
       {deleteTarget && <ConfirmModal name={deleteTarget.name} onConfirm={handleDeleteConfirm} onCancel={() => setDeleteTarget(null)} />}
+      {tourOpen && <OnboardingTour onClose={closeTour} onAction={(a) => { if (a==='done') navigate('/generate'); }} />}
     </div>
   );
 }

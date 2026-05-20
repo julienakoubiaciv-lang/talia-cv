@@ -887,6 +887,67 @@ export default function Editor() {
     finally { setAiLoading(false); setAiSection(''); }
   }, [apiKey, cvData, showToast]);
 
+  /* ── Reformuler une mission individuelle (3 variantes) ─────────────────── */
+  const [reformOpen, setReformOpen] = useState(null); // { expIdx, missionIdx, variants, loading }
+
+  const reformulateMission = useCallback(async (expIdx, missionIdx) => {
+    if (!edFields) return;
+    const exp = edFields.experiences?.[expIdx];
+    const mission = exp?.missions?.[missionIdx] || '';
+    if (!mission.trim()) { showToast('Mission vide', 'info'); return; }
+
+    setReformOpen({ expIdx, missionIdx, variants: [], loading: true });
+
+    // Mode démo sans clé API : variantes pré-construites
+    if (!apiKey) {
+      await new Promise(r => setTimeout(r, 600));
+      const verbs = ['Piloter', 'Coordonner', 'Optimiser'];
+      const variants = verbs.map(v => {
+        const base = mission.replace(/^[A-ZÀ-Ÿ][a-zà-ÿ]+\s+/, '').replace(/^[a-zà-ÿ]/, c => c.toLowerCase());
+        return `${v} ${base}`;
+      });
+      setReformOpen({ expIdx, missionIdx, variants, loading: false });
+      return;
+    }
+
+    try {
+      const ctx = `Poste : ${exp.poste||''} | Entreprise : ${exp.entreprise||''} | Période : ${exp.periode||''}`;
+      const prompt = `Tu es un expert RH spécialisé en CV. Reformule la mission ci-dessous en 3 variantes courtes (max 14 mots chacune), chacune commençant par un verbe d'action différent et fort. Garde le fond exact — ne change pas le sens, ne ajoute pas d'informations inventées. Retourne UNIQUEMENT un tableau JSON de 3 strings, rien d'autre.
+
+Contexte : ${ctx}
+Mission actuelle : "${mission}"
+
+Format de réponse attendu : ["variante 1", "variante 2", "variante 3"]`;
+      const text = await callAnthropicAPI({
+        model: 'claude-opus-4-5',
+        max_tokens: 400,
+        messages: [{ role: 'user', content: prompt }],
+      }, apiKey);
+      const match = text.match(/\[[\s\S]*\]/);
+      const variants = match ? JSON.parse(match[0]).slice(0, 3) : [];
+      if (variants.length === 0) throw new Error('Aucune variante générée');
+      setReformOpen({ expIdx, missionIdx, variants, loading: false });
+    } catch (err) {
+      showToast('Erreur reformulation : ' + err.message, 'error');
+      setReformOpen(null);
+    }
+  }, [edFields, apiKey, showToast]);
+
+  const applyReformulation = useCallback((variant) => {
+    if (!reformOpen) return;
+    const { expIdx, missionIdx } = reformOpen;
+    setIsDirty(true);
+    setEdFields(prev => {
+      const next = JSON.parse(JSON.stringify(prev));
+      if (next.experiences?.[expIdx]?.missions) {
+        next.experiences[expIdx].missions[missionIdx] = variant;
+      }
+      return next;
+    });
+    showToast('Mission reformulée ✓', 'success');
+    setReformOpen(null);
+  }, [reformOpen, showToast]);
+
   /* ── download PDF ──────────────────────────────────────────────────────── */
   const downloadPDF = useCallback(async () => {
     const doc = iframeRef.current?.contentDocument;
@@ -1072,6 +1133,8 @@ export default function Editor() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&display=swap');
         @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes savePulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.7)} }
         * { box-sizing: border-box; }
         .ed-input {
@@ -1519,8 +1582,78 @@ export default function Editor() {
                       <div><label className="ed-label">Lieu</label><input className="ed-input" value={exp.lieu||''} onChange={e => handleEdListItem('experiences', i, 'lieu', e.target.value)} /></div>
                       <div><label className="ed-label">Période</label><input className="ed-input" value={exp.periode||''} onChange={e => handleEdListItem('experiences', i, 'periode', e.target.value)} /></div>
                     </div>
-                    <label className="ed-label">Missions (une par ligne)</label>
-                    <textarea className="ed-textarea" rows={3} value={(exp.missions||[]).join('\n')} onChange={e => handleEdListItem('experiences', i, 'missions', e.target.value.split('\n'))} />
+                    <label className="ed-label" style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+                      <span>Missions</span>
+                      <span style={{ fontSize:10, color:C.mute, fontWeight:500, textTransform:'none', letterSpacing:0 }}>
+                        {(exp.missions||[]).length} {(exp.missions||[]).length>1?'missions':'mission'} · clique sur ✨ pour reformuler
+                      </span>
+                    </label>
+                    <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+                      {(exp.missions||[]).map((m, mIdx) => (
+                        <div key={mIdx} style={{ display:'flex', alignItems:'flex-start', gap:6 }}>
+                          <span style={{ fontSize:11, color:C.mute, fontWeight:700, marginTop:9, flexShrink:0, width:18, textAlign:'center' }}>•</span>
+                          <textarea
+                            className="ed-input"
+                            rows={1}
+                            value={m}
+                            onChange={e => {
+                              const newMissions = [...(exp.missions||[])];
+                              newMissions[mIdx] = e.target.value;
+                              handleEdListItem('experiences', i, 'missions', newMissions);
+                            }}
+                            style={{ flex:1, minHeight:32, resize:'vertical', fontFamily:'inherit', lineHeight:1.5, padding:'7px 10px' }}
+                            placeholder="Décris une mission concrète…"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => reformulateMission(i, mIdx)}
+                            disabled={!m.trim() || (reformOpen && reformOpen.loading)}
+                            title="Reformuler avec l'IA (3 variantes)"
+                            style={{
+                              flexShrink:0, width:30, height:30, borderRadius:8,
+                              background:'linear-gradient(135deg, #EEF2FF, #f5f3ff)',
+                              border:'1px solid #7c3aed44', color:'#7c3aed',
+                              cursor: m.trim() ? 'pointer' : 'not-allowed',
+                              display:'flex', alignItems:'center', justifyContent:'center',
+                              opacity: m.trim() ? 1 : 0.4, transition:'all .15s', marginTop:1,
+                            }}
+                            onMouseEnter={e => { if (m.trim()) e.currentTarget.style.transform='scale(1.08)'; }}
+                            onMouseLeave={e => e.currentTarget.style.transform='scale(1)'}
+                          >
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M12 2l1.88 5.76L20 9l-4.5 4.39 1.06 6.17L12 16.77l-4.56 2.79L8.5 13.39 4 9l6.12-1.24L12 2z"/>
+                            </svg>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newMissions = (exp.missions||[]).filter((_, x) => x !== mIdx);
+                              handleEdListItem('experiences', i, 'missions', newMissions);
+                            }}
+                            title="Supprimer cette mission"
+                            style={{
+                              flexShrink:0, width:30, height:30, borderRadius:8,
+                              background:'#fff', border:'1px solid '+C.rule, color:C.mute,
+                              cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
+                              transition:'all .15s', marginTop:1,
+                            }}
+                            onMouseEnter={e => { e.currentTarget.style.color='#dc2626'; e.currentTarget.style.borderColor='#fca5a5'; }}
+                            onMouseLeave={e => { e.currentTarget.style.color=C.mute; e.currentTarget.style.borderColor=C.rule; }}
+                          >
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                          </button>
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => handleEdListItem('experiences', i, 'missions', [...(exp.missions||[]), ''])}
+                        style={{
+                          alignSelf:'flex-start', padding:'5px 12px', fontSize:11.5, fontWeight:600,
+                          background:'#fff', border:'1px dashed '+C.rule, borderRadius:8, color:C.ink2,
+                          cursor:'pointer', fontFamily:'inherit', marginTop:2,
+                        }}
+                      >+ Ajouter une mission</button>
+                    </div>
                   </div>
                 ))}
                 <button className="add-btn" onClick={() => addEdListItem('experiences', { poste:'', entreprise:'', lieu:'', periode:'', missions:[''] })}>
@@ -1930,6 +2063,71 @@ export default function Editor() {
       {/* Hidden inputs */}
       <input ref={photoInputRef} type="file" accept="image/*" style={{ display:'none' }} onChange={handlePhotoFileSelect} />
       <input ref={logoInputRef} type="file" accept="image/*" style={{ display:'none' }} onChange={handleLogoUpload} />
+
+      {/* ── Modal Reformulation ─────────────────────────────────────────── */}
+      {reformOpen && (
+        <div onClick={() => !reformOpen.loading && setReformOpen(null)}
+          style={{ position:'fixed', inset:0, zIndex:9100, background:'rgba(11,16,32,0.55)', backdropFilter:'blur(8px)', display:'flex', alignItems:'center', justifyContent:'center', padding:24, animation:'fadeIn .2s ease' }}>
+          <div onClick={e => e.stopPropagation()}
+            style={{ width:'min(560px, 96vw)', background:'#fff', borderRadius:20, padding:'30px 30px 24px', boxShadow:'0 40px 100px rgba(11,16,32,.4)', fontFamily:"'Manrope',sans-serif", animation:'fadeInUp .3s cubic-bezier(.16,.84,.24,1)' }}>
+            <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:18 }}>
+              <div style={{ width:44, height:44, borderRadius:12, background:'linear-gradient(135deg, #7c3aed, #1539B7)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2l1.88 5.76L20 9l-4.5 4.39 1.06 6.17L12 16.77l-4.56 2.79L8.5 13.39 4 9l6.12-1.24L12 2z"/>
+                </svg>
+              </div>
+              <div style={{ flex:1 }}>
+                <div style={{ fontSize:18, fontWeight:800, color:'#0B1020', letterSpacing:'-0.3px' }}>Reformuler avec l'IA</div>
+                <div style={{ fontSize:12, color:'#9AA0AE', marginTop:2 }}>Choisis la formulation qui te parle</div>
+              </div>
+              {!reformOpen.loading && (
+                <button onClick={() => setReformOpen(null)} style={{ width:32, height:32, border:'1px solid #ECEDF1', borderRadius:8, background:'#fff', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'#9AA0AE' }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+              )}
+            </div>
+
+            {/* Mission originale */}
+            <div style={{ padding:'12px 14px', background:'#F7F8FA', border:'1px solid #ECEDF1', borderRadius:10, marginBottom:16 }}>
+              <div style={{ fontSize:10.5, fontWeight:700, color:'#9AA0AE', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:5 }}>Mission actuelle</div>
+              <div style={{ fontSize:13, color:'#3A4156', lineHeight:1.5 }}>
+                {edFields?.experiences?.[reformOpen.expIdx]?.missions?.[reformOpen.missionIdx]}
+              </div>
+            </div>
+
+            {/* Loading or variants */}
+            {reformOpen.loading ? (
+              <div style={{ display:'flex', flexDirection:'column', alignItems:'center', padding:'30px 0', gap:12 }}>
+                <div style={{ width:36, height:36, border:'3px solid #ECEDF1', borderTopColor:'#7c3aed', borderRadius:'50%', animation:'spin .7s linear infinite' }} />
+                <div style={{ fontSize:13, color:'#9AA0AE', fontWeight:600 }}>Génération des 3 variantes…</div>
+              </div>
+            ) : (
+              <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+                <div style={{ fontSize:10.5, fontWeight:700, color:'#9AA0AE', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:2 }}>Propositions IA</div>
+                {reformOpen.variants.map((v, idx) => (
+                  <button key={idx} onClick={() => applyReformulation(v)}
+                    style={{ display:'flex', alignItems:'flex-start', gap:10, padding:'13px 14px', background:'#fff', border:'1.5px solid #ECEDF1', borderRadius:12, cursor:'pointer', textAlign:'left', fontFamily:'inherit', transition:'all .15s' }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor='#7c3aed'; e.currentTarget.style.background='#faf5ff'; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor='#ECEDF1'; e.currentTarget.style.background='#fff'; }}>
+                    <div style={{ width:24, height:24, borderRadius:'50%', background:'#f5f3ff', color:'#7c3aed', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:800, flexShrink:0, marginTop:1 }}>{idx+1}</div>
+                    <div style={{ flex:1, fontSize:13.5, color:'#0B1020', lineHeight:1.5 }}>{v}</div>
+                  </button>
+                ))}
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:6 }}>
+                  <button onClick={() => reformulateMission(reformOpen.expIdx, reformOpen.missionIdx)}
+                    style={{ padding:'6px 12px', background:'transparent', border:'none', color:'#7c3aed', fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', gap:4 }}>
+                    ↺ Re-générer
+                  </button>
+                  <button onClick={() => setReformOpen(null)}
+                    style={{ padding:'8px 16px', background:'transparent', border:'1px solid #ECEDF1', borderRadius:8, color:'#3A4156', fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
+                    Garder l'original
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <ToastContainer toasts={toasts} />
     </div>

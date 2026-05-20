@@ -878,26 +878,27 @@ body{font-family:'Manrope',sans-serif;background:#fff;color:#1a1a1a;}
 }
 /* Circular photo — overflows the band via negative margin */
 .block-photo{
-  width:72px;
-  height:72px;
+  width:108px;
+  height:108px;
   border-radius:50%;
   overflow:hidden;
-  border:3px solid rgba(255,255,255,0.45);
+  border:3.5px solid rgba(255,255,255,0.5);
   background:rgba(255,255,255,0.12);
   flex-shrink:0;
-  margin-top:-10px;
-  margin-bottom:-10px;
+  margin-top:-18px;
+  margin-bottom:-18px;
   position:relative;
   z-index:2;
   display:flex;
   align-items:center;
   justify-content:center;
+  box-shadow:0 6px 20px rgba(0,0,0,0.15);
 }
 .block-photo-inner{width:100%;height:100%;}
 .block-photo-inner img{width:100%;height:100%;object-fit:cover;display:block;}
 .photo-placeholder-wrap{width:100%;height:100%;display:flex;align-items:center;justify-content:center;}
 .photo-placeholder-inner{display:flex;flex-direction:column;align-items:center;gap:2px;}
-.photo-placeholder-inner span{font-size:22px;opacity:0.5;}
+.photo-placeholder-inner span{font-size:32px;opacity:0.5;}
 .photo-placeholder-inner p{display:none;}
 /* Poste */
 .cv-poste{

@@ -747,42 +747,49 @@ export default function Home() {
             <p style={{ fontSize: 12, color: C.mute, marginTop: 14 }}>Gratuit · Aucune inscription requise</p>
           </div>
         ) : (
-          /* Grid — only shown when there are CVs */
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 20 }}>
-            {/* Create card */}
-            <div onClick={() => navigate('/generate')} style={{ border: `1.5px dashed ${C.rule}`, borderRadius: 16, padding: '48px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, cursor: 'pointer', background: C.bg, transition: 'border-color .2s, background .2s', minHeight: 220, animation: 'cardIn 0.65s cubic-bezier(.16,.84,.24,1) 0s both' }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = C.bluePrimary; e.currentTarget.style.background = C.blueSoft; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = C.rule; e.currentTarget.style.background = C.bg; }}>
-              <div style={{ width: 56, height: 56, borderRadius: '50%', background: C.blueSoft, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, color: C.bluePrimary, fontWeight: 400 }}>
-                <IconPlus s={22} />
+          <>
+            {/* Quick actions — toujours en haut, indépendamment du mode */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 20, marginBottom: 28 }}>
+              {/* Create card */}
+              <div onClick={() => navigate('/generate')} style={{ border: `1.5px dashed ${C.rule}`, borderRadius: 16, padding: '32px 24px', display: 'flex', alignItems: 'center', gap: 16, cursor: 'pointer', background: C.bg, transition: 'border-color .2s, background .2s', minHeight: 110, animation: 'cardIn 0.65s cubic-bezier(.16,.84,.24,1) 0s both' }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = C.bluePrimary; e.currentTarget.style.background = C.blueSoft; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = C.rule; e.currentTarget.style.background = C.bg; }}>
+                <div style={{ width: 48, height: 48, borderRadius: '50%', background: C.blueSoft, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.bluePrimary, flexShrink: 0 }}>
+                  <IconPlus s={20} />
+                </div>
+                <div>
+                  <div style={{ fontSize: 14.5, fontWeight: 700, color: C.ink, marginBottom: 3, letterSpacing: '-0.2px' }}>Créer un nouveau CV</div>
+                  <div style={{ fontSize: 12.5, color: C.mute }}>Commencer depuis zéro</div>
+                </div>
               </div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 15, fontWeight: 700, color: C.ink, marginBottom: 5, letterSpacing: '-0.2px' }}>Créer un nouveau CV</div>
-                <div style={{ fontSize: 13, color: C.mute }}>Commencer depuis zéro</div>
+
+              {/* Bulk card */}
+              <div onClick={() => navigate('/bulk')} style={{ border: `1.5px dashed ${C.rule}`, borderRadius: 16, padding: '32px 24px', display: 'flex', alignItems: 'center', gap: 16, cursor: 'pointer', background: C.bg, transition: 'border-color .2s, background .2s', minHeight: 110, animation: 'cardIn 0.65s cubic-bezier(.16,.84,.24,1) 0.05s both' }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = '#7c3aed'; e.currentTarget.style.background = '#f5f3ff'; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = C.rule; e.currentTarget.style.background = C.bg; }}>
+                <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#f5f3ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#7c3aed', flexShrink: 0 }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/>
+                    <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+                  </svg>
+                </div>
+                <div>
+                  <div style={{ fontSize: 14.5, fontWeight: 700, color: C.ink, marginBottom: 3, letterSpacing: '-0.2px' }}>Générer en masse</div>
+                  <div style={{ fontSize: 12.5, color: C.mute }}>Plusieurs CV en une fois</div>
+                </div>
               </div>
             </div>
 
-            {/* Bulk card */}
-            <div onClick={() => navigate('/bulk')} style={{ border: `1.5px dashed ${C.rule}`, borderRadius: 16, padding: '48px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, cursor: 'pointer', background: C.bg, transition: 'border-color .2s, background .2s', minHeight: 220, animation: 'cardIn 0.65s cubic-bezier(.16,.84,.24,1) 0.05s both' }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = '#7c3aed'; e.currentTarget.style.background = '#f5f3ff'; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = C.rule; e.currentTarget.style.background = C.bg; }}>
-              <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#f5f3ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#7c3aed' }}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/>
-                  <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
-                </svg>
+            {/* Grille des CV existants (mode classique) */}
+            {!groupByBulk && filtered.length > 0 && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 20 }}>
+                {filtered.map((item, i) => (
+                  <CVCard key={item.id} item={item} animDelay={Math.min((i + 1) * 0.05, 0.4)}
+                    onModify={handleModify} onView={setViewCV} onDelete={setDeleteTarget} />
+                ))}
               </div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 15, fontWeight: 700, color: C.ink, marginBottom: 5, letterSpacing: '-0.2px' }}>Générer en masse</div>
-                <div style={{ fontSize: 13, color: C.mute }}>Plusieurs CV en une fois</div>
-              </div>
-            </div>
-
-            {!groupByBulk && filtered.map((item, i) => (
-              <CVCard key={item.id} item={item} animDelay={Math.min((i + 1) * 0.05, 0.4)}
-                onModify={handleModify} onView={setViewCV} onDelete={setDeleteTarget} />
-            ))}
-          </div>
+            )}
+          </>
         )}
 
         {/* Empty filtered state */}

@@ -1,0 +1,2192 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Talia — Dashboard École</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<script src="https://apis.google.com/js/api.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+/* ════ TOKENS ════ */
+:root{
+  --navy:#0033a0;
+  --navy-d:#00258a;
+  --navy-l:#e8edf8;
+  --yellow:#FFCC00;
+  --bg:#f7f9fc;
+  --surface:#ffffff;
+  --border:#e5e9f0;
+  --radius:10px;
+  --radius-lg:16px;
+  --text:#1a2035;
+  --text-s:#4a5568;
+  --muted:#9aa5b4;
+  --red:#ef4444;
+  --red-l:#fef2f2;
+  --amber:#f59e0b;
+  --amber-l:#fffbeb;
+  --green:#22c55e;
+  --green-l:#f0fdf4;
+  --ease:cubic-bezier(.4,0,.2,1);
+  font-family:'Plus Jakarta Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);min-height:100vh;}
+
+/* ════ NAV PRINCIPALE ════ */
+.app-nav{
+  position:sticky;top:0;z-index:101;
+  background:#0a1f6e;
+  display:flex;align-items:center;
+  padding:0 24px;
+  border-bottom:1px solid rgba(255,255,255,0.08);
+}
+.app-nav-logo{
+  font-size:20px;font-weight:800;color:#fff;
+  letter-spacing:-0.5px;display:flex;align-items:center;gap:6px;
+  margin-right:24px;padding:14px 0;
+  flex-shrink:0;
+}
+.app-nav-logo span{color:var(--yellow);}
+.app-nav-tabs{display:flex;align-items:flex-end;gap:2px;flex:1;}
+.app-nav-tab{
+  display:flex;align-items:center;gap:7px;
+  padding:16px 18px 14px;
+  color:rgba(255,255,255,0.55);
+  font-size:13px;font-weight:600;
+  border:none;background:none;cursor:pointer;
+  border-bottom:3px solid transparent;
+  transition:all 0.18s;
+  font-family:inherit;
+  position:relative;
+  white-space:nowrap;
+}
+.app-nav-tab:hover{color:rgba(255,255,255,0.85);}
+.app-nav-tab.active{
+  color:#fff;
+  border-bottom-color:var(--yellow);
+}
+.app-nav-tab .nav-ico{font-size:16px;}
+.app-nav-tab .nav-badge{
+  background:var(--yellow);color:var(--navy);
+  font-size:10px;font-weight:800;
+  padding:1px 6px;border-radius:10px;
+}
+.app-nav-right{
+  display:flex;align-items:center;gap:12px;
+  margin-left:auto;padding-left:24px;flex-shrink:0;
+}
+.app-nav-user{font-size:12px;color:rgba(255,255,255,0.7);font-weight:600;}
+.app-nav-login{
+  padding:7px 14px;border-radius:8px;border:none;cursor:pointer;
+  font-size:12px;font-weight:700;font-family:inherit;
+  background:var(--yellow);color:var(--navy);transition:all 0.2s;
+}
+.app-nav-login:hover{background:#ffe033;}
+
+/* ════ VUES PRINCIPALES ════ */
+.app-view{display:none;}
+.app-view.active{display:block;}
+#view-generator{padding:0;}
+.generator-frame{
+  width:100%;
+  height:calc(100vh - 57px);
+  border:none;
+  display:block;
+}
+
+/* ════ TOPBAR (ancien, maintenant intégré dans app-nav) ════ */
+.topbar{
+  display:none; /* remplacé par app-nav */
+}
+.topbar-logo{
+  font-size:20px;font-weight:800;color:#fff;
+  letter-spacing:-0.5px;display:flex;align-items:center;gap:8px;
+}
+.topbar-logo span{color:var(--yellow);}
+.topbar-title{font-size:13px;font-weight:600;color:rgba(255,255,255,0.7);margin-left:4px;}
+.topbar-spacer{flex:1;}
+.topbar-auth{display:flex;align-items:center;gap:10px;}
+.topbar-user{font-size:12px;color:rgba(255,255,255,0.8);font-weight:600;}
+.btn-auth{
+  padding:7px 16px;border-radius:var(--radius);border:none;cursor:pointer;
+  font-size:12px;font-weight:700;font-family:inherit;
+  background:var(--yellow);color:var(--navy);
+  transition:all 0.2s;
+}
+.btn-auth:hover{background:#ffe033;}
+
+/* ════ LAYOUT ════ */
+.main{max-width:1280px;margin:0 auto;padding:24px 24px 60px;}
+
+/* ════ STAT BAR ════ */
+.stat-bar{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:14px;
+  margin-bottom:24px;
+}
+.stat-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-lg);padding:16px 20px;
+  display:flex;flex-direction:column;gap:4px;
+}
+.stat-card-num{font-size:28px;font-weight:800;color:var(--navy);}
+.stat-card-label{font-size:12px;font-weight:600;color:var(--text-s);text-transform:uppercase;letter-spacing:0.05em;}
+.stat-card-sub{font-size:11px;color:var(--muted);}
+
+/* ════ ACTIONS BAR ════ */
+.actions-bar{
+  display:flex;align-items:center;gap:12px;
+  margin-bottom:18px;flex-wrap:wrap;
+}
+.btn{
+  padding:9px 18px;border-radius:var(--radius);border:none;cursor:pointer;
+  font-size:13px;font-weight:700;font-family:inherit;
+  transition:all 0.2s;
+}
+.btn-primary{background:var(--navy);color:#fff;box-shadow:0 3px 10px rgba(0,51,160,0.2);}
+.btn-primary:hover{background:var(--navy-d);transform:translateY(-1px);}
+.btn-secondary{background:var(--surface);color:var(--text-s);border:1.5px solid var(--border);}
+.btn-secondary:hover{border-color:var(--navy);color:var(--navy);}
+.btn-warning{background:var(--amber);color:#fff;}
+.btn-warning:hover{background:#e08c00;}
+.btn-danger{background:var(--red);color:#fff;}
+.btn-danger:hover{background:#dc2626;}
+.btn-score{
+  padding:5px 12px;border-radius:6px;
+  background:var(--navy-l);color:var(--navy);
+  border:1px solid rgba(0,51,160,0.15);
+  font-size:11px;font-weight:700;cursor:pointer;
+  transition:all 0.2s;white-space:nowrap;
+}
+.btn-score:hover{background:var(--navy);color:#fff;}
+.btn-score:disabled{opacity:0.5;cursor:not-allowed;}
+.btn-score-all{
+  padding:9px 18px;border-radius:var(--radius);
+  background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;
+  border:none;font-size:13px;font-weight:700;cursor:pointer;
+  font-family:inherit;transition:all 0.2s;
+  box-shadow:0 3px 10px rgba(124,58,237,0.25);
+}
+.btn-score-all:hover{transform:translateY(-1px);box-shadow:0 5px 14px rgba(124,58,237,0.32);}
+.btn-score-all:disabled{opacity:0.5;cursor:not-allowed;transform:none;}
+
+.search-box{
+  flex:1;min-width:200px;
+  padding:9px 14px;border:1.5px solid var(--border);border-radius:var(--radius);
+  font-size:13px;font-family:inherit;background:var(--surface);
+  outline:none;color:var(--text);
+}
+.search-box:focus{border-color:var(--navy);}
+
+.filter-select{
+  padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--radius);
+  font-size:13px;font-family:inherit;background:var(--surface);
+  outline:none;color:var(--text);cursor:pointer;
+}
+.filter-select:focus{border-color:var(--navy);}
+
+/* ════ TABLE ════ */
+.table-wrap{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-lg);overflow:hidden;
+  box-shadow:0 2px 8px rgba(0,0,0,0.04);
+}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+thead{background:var(--bg);border-bottom:1px solid var(--border);}
+th{
+  padding:11px 14px;text-align:left;
+  font-size:11px;font-weight:700;color:var(--text-s);
+  text-transform:uppercase;letter-spacing:0.05em;
+  white-space:nowrap;cursor:pointer;user-select:none;
+}
+th:hover{color:var(--navy);}
+th.sorted{color:var(--navy);}
+th .sort-icon{margin-left:4px;opacity:0.5;}
+th.sorted .sort-icon{opacity:1;}
+td{
+  padding:12px 14px;border-bottom:1px solid var(--border);
+  vertical-align:middle;
+}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--bg);}
+.td-name{font-weight:700;color:var(--text);}
+.td-email{color:var(--text-s);font-size:12px;}
+.td-date{color:var(--muted);font-size:12px;white-space:nowrap;}
+
+/* ════ BADGES ════ */
+.badge{
+  display:inline-flex;align-items:center;
+  padding:3px 9px;border-radius:20px;
+  font-size:11px;font-weight:700;white-space:nowrap;
+}
+.badge-soumis{background:#dbeafe;color:#1d4ed8;}
+.badge-en-cours{background:var(--amber-l);color:#92400e;}
+.badge-accepte{background:var(--green-l);color:#166534;}
+.badge-refuse{background:var(--red-l);color:#991b1b;}
+.badge-formation{background:var(--navy-l);color:var(--navy);}
+
+/* Score badges */
+.score-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:4px 10px;border-radius:20px;
+  font-size:12px;font-weight:800;cursor:help;
+  position:relative;
+}
+.score-badge.score-low{background:var(--red-l);color:var(--red);}
+.score-badge.score-mid{background:var(--amber-l);color:#92400e;}
+.score-badge.score-high{background:var(--green-l);color:#166534;}
+.score-badge.score-pending{background:var(--bg);color:var(--muted);font-weight:600;font-size:11px;}
+
+/* Tooltip score */
+.score-tooltip{
+  display:none;position:absolute;z-index:200;
+  bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);
+  background:#1a2035;color:#fff;
+  border-radius:10px;padding:12px 14px;
+  min-width:200px;box-shadow:0 8px 24px rgba(0,0,0,0.25);
+  font-size:11px;font-weight:500;
+}
+.score-badge:hover .score-tooltip{display:block;}
+.score-tooltip-title{font-weight:700;font-size:12px;margin-bottom:8px;color:var(--yellow);}
+.score-row{display:flex;justify-content:space-between;gap:16px;margin-bottom:4px;}
+.score-row:last-child{margin-bottom:0;}
+.score-row-label{color:rgba(255,255,255,0.7);}
+.score-row-val{font-weight:700;color:#fff;}
+
+/* ════ EMPTY STATE ════ */
+.empty-state{
+  text-align:center;padding:60px 20px;color:var(--muted);
+}
+.empty-state-ico{font-size:40px;margin-bottom:12px;}
+.empty-state-title{font-size:15px;font-weight:700;color:var(--text-s);margin-bottom:6px;}
+.empty-state-desc{font-size:13px;}
+
+/* ════ LOADING ════ */
+.spinner{
+  display:inline-block;width:14px;height:14px;
+  border:2px solid rgba(0,51,160,0.2);border-top-color:var(--navy);
+  border-radius:50%;animation:spin 0.7s linear infinite;
+  vertical-align:middle;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ════ TOAST ════ */
+#toast-container{
+  position:fixed;bottom:24px;right:24px;
+  display:flex;flex-direction:column;gap:8px;
+  z-index:9999;pointer-events:none;
+}
+.toast{
+  background:#1a2035;color:#fff;
+  padding:12px 18px;border-radius:var(--radius);
+  font-size:13px;font-weight:600;
+  box-shadow:0 4px 16px rgba(0,0,0,0.2);
+  display:flex;align-items:center;gap:10px;
+  pointer-events:auto;
+  animation:toastIn 0.3s var(--ease);
+  max-width:360px;
+}
+.toast.success{background:#166534;border-left:4px solid var(--green);}
+.toast.error{background:#991b1b;border-left:4px solid var(--red);}
+.toast.info{background:var(--navy);border-left:4px solid var(--yellow);}
+@keyframes toastIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+
+/* ════ MODAL ════ */
+.modal-overlay{
+  display:none;position:fixed;inset:0;z-index:500;
+  background:rgba(0,0,0,0.4);backdrop-filter:blur(3px);
+  align-items:center;justify-content:center;
+}
+.modal-overlay.on{display:flex;}
+.modal-box{
+  background:var(--surface);border-radius:var(--radius-lg);
+  padding:28px;width:500px;max-width:95vw;
+  box-shadow:0 20px 60px rgba(0,0,0,0.2);
+  position:relative;
+}
+.modal-title{font-size:17px;font-weight:800;color:var(--navy);margin-bottom:16px;}
+.modal-close{
+  position:absolute;top:16px;right:16px;
+  background:none;border:none;cursor:pointer;
+  font-size:18px;color:var(--muted);
+}
+.modal-close:hover{color:var(--text);}
+.modal-field{margin-bottom:14px;}
+.modal-field label{display:block;font-size:12px;font-weight:600;color:var(--text-s);margin-bottom:5px;}
+.modal-field select,.modal-field textarea,.modal-field input{
+  width:100%;padding:9px 12px;border:1.5px solid var(--border);
+  border-radius:var(--radius);font-size:13px;font-family:inherit;
+  outline:none;color:var(--text);background:var(--surface);
+}
+.modal-field select:focus,.modal-field textarea:focus,.modal-field input:focus{border-color:var(--navy);}
+.modal-field textarea{min-height:80px;resize:vertical;}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px;}
+
+/* ════ PAGINATION ════ */
+.pagination{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 16px;border-top:1px solid var(--border);
+  font-size:12px;color:var(--text-s);
+}
+.page-btns{display:flex;gap:6px;}
+.page-btn{
+  padding:5px 10px;border-radius:6px;border:1px solid var(--border);
+  background:var(--surface);color:var(--text-s);cursor:pointer;font-size:12px;
+}
+.page-btn.active{background:var(--navy);color:#fff;border-color:var(--navy);}
+.page-btn:hover:not(.active){border-color:var(--navy);color:var(--navy);}
+.page-btn:disabled{opacity:0.4;cursor:not-allowed;}
+
+/* ════ RESPONSIVE ════ */
+@media(max-width:900px){
+  .stat-bar{grid-template-columns:repeat(2,1fr);}
+  .topbar-title{display:none;}
+  table{font-size:12px;}
+  td,th{padding:9px 10px;}
+}
+@media(max-width:600px){
+  .stat-bar{grid-template-columns:1fr 1fr;}
+  .main{padding:16px 12px 60px;}
+  .actions-bar{gap:8px;}
+  .col-hide{display:none;}
+}
+
+/* ════ KANBAN ════ */
+.kanban-view{display:none;padding:20px;overflow-x:auto;}
+.kanban-view.active{display:flex;gap:16px;min-height:calc(100vh - 200px);}
+.kanban-col{
+  min-width:240px;flex:1;
+  background:var(--bg);
+  border-radius:14px;
+  padding:14px;
+  display:flex;flex-direction:column;gap:10px;
+}
+.kanban-col-head{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:6px;
+}
+.kanban-col-title{font-size:13px;font-weight:700;color:var(--text);}
+.kanban-col-count{
+  background:var(--navy);color:#fff;
+  padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;
+}
+.kanban-card{
+  background:var(--surface);
+  border:1.5px solid var(--border);
+  border-radius:10px;padding:12px;
+  cursor:grab;
+  transition:all 0.2s;
+  box-shadow:0 1px 2px rgba(15,23,42,0.04);
+}
+.kanban-card:hover{border-color:var(--navy);box-shadow:0 4px 12px rgba(15,23,42,0.06);}
+.kanban-card.dragging{opacity:0.4;cursor:grabbing;}
+.kanban-card-name{font-size:13px;font-weight:700;color:var(--text);}
+.kanban-card-meta{font-size:11px;color:var(--muted);margin-top:3px;}
+.kanban-card-score{
+  margin-top:8px;font-size:11px;font-weight:700;
+  padding:3px 8px;border-radius:6px;display:inline-block;
+}
+.kanban-col.dragover{
+  background:var(--navy-l);
+  border:2px dashed var(--navy);
+}
+
+/* Toggle vue */
+.view-toggle{display:flex;gap:4px;padding:4px;background:var(--bg);border-radius:10px;border:1px solid var(--border);}
+.view-toggle-btn{padding:6px 14px;border:none;border-radius:7px;font-size:12px;font-weight:600;color:var(--text-s);cursor:pointer;background:transparent;transition:all 0.15s;}
+.view-toggle-btn.active{background:var(--surface);color:var(--navy);box-shadow:0 1px 2px rgba(15,23,42,0.04);}
+/* ════ FICHE CANDIDAT (modal détail) ════ */
+.candidate-modal-overlay{
+  position:fixed;inset:0;z-index:300;
+  background:rgba(15,23,42,0.6);backdrop-filter:blur(6px);
+  display:flex;align-items:flex-start;justify-content:flex-end;
+  opacity:0;pointer-events:none;transition:opacity 0.25s;
+}
+.candidate-modal-overlay.on{opacity:1;pointer-events:all;}
+.candidate-modal{
+  width:min(600px,100vw);height:100vh;overflow-y:auto;
+  background:var(--surface);
+  box-shadow:-8px 0 40px rgba(0,0,0,0.15);
+  display:flex;flex-direction:column;
+  transform:translateX(40px);
+  transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+.candidate-modal-overlay.on .candidate-modal{transform:translateX(0);}
+
+.cand-header{
+  background:linear-gradient(135deg,var(--navy),var(--navy-d));
+  padding:24px;color:#fff;position:sticky;top:0;z-index:10;
+}
+.cand-header-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;}
+.cand-avatar{
+  width:52px;height:52px;border-radius:50%;
+  background:var(--yellow);color:var(--navy);
+  font-size:20px;font-weight:800;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+}
+.cand-name{font-size:20px;font-weight:800;color:#fff;}
+.cand-formation{font-size:12px;color:rgba(255,255,255,0.7);margin-top:2px;}
+.cand-close{background:rgba(255,255,255,0.15);border:none;color:#fff;width:32px;height:32px;border-radius:8px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.cand-close:hover{background:rgba(255,255,255,0.25);}
+.cand-tags{display:flex;gap:8px;flex-wrap:wrap;}
+.cand-tag{padding:4px 12px;background:rgba(255,255,255,0.15);border-radius:20px;font-size:11px;font-weight:600;color:#fff;}
+
+.cand-body{flex:1;padding:20px;display:flex;flex-direction:column;gap:20px;}
+
+.cand-section{background:var(--bg);border-radius:12px;padding:16px;}
+.cand-section-title{font-size:12px;font-weight:700;color:var(--text-s);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.cand-section-title .ico{font-size:14px;}
+
+/* Infos de contact */
+.cand-info-row{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);}
+.cand-info-row:last-child{border-bottom:none;}
+.cand-info-ico{font-size:14px;width:20px;text-align:center;flex-shrink:0;}
+.cand-info-val{font-size:13px;color:var(--text);flex:1;}
+.cand-info-val a{color:var(--navy);text-decoration:none;font-weight:600;}
+.cand-info-val a:hover{text-decoration:underline;}
+
+/* Expériences mini */
+.exp-mini-item{
+  display:flex;gap:10px;align-items:flex-start;
+  padding:8px 0;border-bottom:1px solid var(--border);
+}
+.exp-mini-item:last-child{border-bottom:none;}
+.exp-mini-dot{width:8px;height:8px;border-radius:50%;background:var(--navy);margin-top:5px;flex-shrink:0;}
+.exp-mini-content{}
+.exp-mini-poste{font-size:13px;font-weight:700;color:var(--text);}
+.exp-mini-meta{font-size:11px;color:var(--muted);margin-top:1px;}
+.exp-mini-empty{font-size:12px;color:var(--muted);font-style:italic;}
+
+/* Commentaires */
+.comment-thread{display:flex;flex-direction:column;gap:10px;margin-bottom:12px;max-height:280px;overflow-y:auto;}
+.comment-item{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:10px;padding:10px 12px;position:relative;
+}
+.comment-item.pinned{border-color:var(--amber);background:#fffdf0;}
+.comment-pin-badge{
+  position:absolute;top:8px;right:8px;
+  font-size:10px;font-weight:700;color:var(--amber);
+  background:#fff8e1;padding:2px 7px;border-radius:8px;
+}
+.comment-author{font-size:11px;font-weight:700;color:var(--navy);margin-bottom:3px;}
+.comment-date{font-size:10px;color:var(--muted);margin-left:6px;font-weight:400;}
+.comment-text{font-size:12.5px;color:var(--text);line-height:1.5;}
+.comment-actions{display:flex;gap:6px;margin-top:6px;}
+.comment-action-btn{padding:2px 8px;border-radius:6px;border:1px solid var(--border);background:none;font-size:10px;font-weight:600;cursor:pointer;color:var(--text-s);transition:all 0.15s;}
+.comment-action-btn:hover{border-color:var(--navy);color:var(--navy);}
+.comment-action-btn.pin{color:var(--amber);}
+.comment-action-btn.del{color:var(--red);}
+
+.comment-form{display:flex;flex-direction:column;gap:8px;}
+.comment-input{
+  width:100%;padding:10px 12px;
+  border:1.5px solid var(--border);border-radius:10px;
+  font-size:12.5px;font-family:inherit;
+  resize:vertical;min-height:70px;
+  transition:border-color 0.15s;
+}
+.comment-input:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px rgba(0,51,160,0.08);}
+.comment-submit{
+  align-self:flex-end;padding:8px 18px;
+  background:var(--navy);color:#fff;border:none;border-radius:8px;
+  font-size:12px;font-weight:700;cursor:pointer;
+  font-family:inherit;transition:all 0.2s;
+}
+.comment-submit:hover{background:var(--navy-d);transform:translateY(-1px);}
+
+/* Tabs dans la fiche */
+.cand-tabs{display:flex;gap:2px;background:var(--bg);border-radius:10px;padding:3px;border:1px solid var(--border);margin-bottom:16px;}
+.cand-tab{flex:1;padding:7px 10px;border:none;background:none;border-radius:8px;font-size:12px;font-weight:600;color:var(--text-s);cursor:pointer;transition:all 0.15s;font-family:inherit;}
+.cand-tab.active{background:var(--surface);color:var(--navy);box-shadow:0 1px 4px rgba(0,0,0,0.08);}
+.cand-tab-content{display:none;}
+.cand-tab-content.active{display:block;}
+
+/* Bouton "Ouvrir fiche" dans le tableau */
+.btn-fiche{
+  padding:5px 10px;border-radius:6px;
+  background:var(--navy);color:#fff;
+  border:none;font-size:11px;font-weight:700;cursor:pointer;
+  font-family:inherit;transition:all 0.15s;
+}
+.btn-fiche:hover{background:var(--navy-d);}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<!-- NAVIGATION PRINCIPALE -->
+<nav class="app-nav">
+  <div class="app-nav-logo">T<span>.</span></div>
+  <div class="app-nav-tabs">
+    <button class="app-nav-tab active" id="nav-tab-dashboard" onclick="Dashboard.switchAppView('dashboard')">
+      <span class="nav-ico">📊</span> Dashboard
+    </button>
+    <button class="app-nav-tab" id="nav-tab-generator" onclick="Dashboard.switchAppView('generator')">
+      <span class="nav-ico">✨</span> Générateur CV
+    </button>
+    <button class="app-nav-tab" id="nav-tab-kanban" onclick="Dashboard.switchAppView('kanban-full')">
+      <span class="nav-ico">🗂</span> Kanban
+    </button>
+    <button class="app-nav-tab" id="nav-tab-planning" onclick="Dashboard.switchAppView('planning')">
+      <span class="nav-ico">📅</span> Planning entretiens
+    </button>
+  </div>
+  <div class="app-nav-right">
+    <div id="supabase-status" style="font-size:11px;color:rgba(255,255,255,0.6);display:flex;align-items:center;gap:5px;">
+      <span id="supabase-dot" style="width:6px;height:6px;border-radius:50%;background:#9aa5b4;display:inline-block;"></span>
+      <span id="supabase-label">Hors ligne</span>
+    </div>
+    <span class="app-nav-user" id="topbar-user" style="display:none;"></span>
+    <button class="app-nav-login" id="btn-login" onclick="Dashboard.login()">Google</button>
+    <button class="app-nav-login" id="btn-logout" onclick="Dashboard.logout()" style="display:none;background:rgba(255,255,255,0.15);color:#fff;">Déco</button>
+  </div>
+</nav>
+
+<!-- VUE GÉNÉRATEUR CV -->
+<div class="app-view active" id="view-generator" style="display:none;">
+  <iframe class="generator-frame" id="generator-frame" src="talia-cv-v12.html" title="Générateur CV Talia"></iframe>
+</div>
+
+<!-- VUE KANBAN COMPLET -->
+<div class="app-view" id="view-kanban-full" style="display:none;">
+  <div style="padding:24px;">
+    <h2 style="font-size:18px;font-weight:800;color:var(--text);margin-bottom:16px;">🗂 Pipeline Kanban</h2>
+    <div id="kanban-full-board" style="display:flex;gap:16px;overflow-x:auto;min-height:calc(100vh - 180px);"></div>
+  </div>
+</div>
+
+<!-- VUE PLANNING ENTRETIENS -->
+<div class="app-view" id="view-planning" style="display:none;">
+  <div style="max-width:900px;margin:0 auto;padding:24px;">
+    <h2 style="font-size:18px;font-weight:800;color:var(--text);margin-bottom:6px;">📅 Planning des entretiens</h2>
+    <p style="font-size:13px;color:var(--text-s);margin-bottom:20px;">Tous les entretiens planifiés, triés par date</p>
+    <div id="planning-list"></div>
+  </div>
+</div>
+
+<!-- VUE DASHBOARD (existante) -->
+<div class="app-view active" id="view-dashboard">
+<div class="main">
+
+  <!-- STAT BAR -->
+  <div class="stat-bar">
+    <div class="stat-card">
+      <div class="stat-card-num" id="stat-total">—</div>
+      <div class="stat-card-label">CV soumis</div>
+      <div class="stat-card-sub" id="stat-period">Chargement…</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card-num" id="stat-scored">—</div>
+      <div class="stat-card-label">Scorés IA</div>
+      <div class="stat-card-sub" id="stat-avg">Score moyen : —</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card-num" id="stat-accepted">—</div>
+      <div class="stat-card-label">Acceptés</div>
+      <div class="stat-card-sub">Statut "Accepté"</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card-num" id="stat-monday">—</div>
+      <div class="stat-card-label">Monday items</div>
+      <div class="stat-card-sub">Synchronisés</div>
+    </div>
+  </div>
+
+  <!-- Toggle Tableau / Kanban -->
+  <div style="display:flex;align-items:center;gap:12px;padding:12px 0 8px;border-bottom:1px solid var(--border);margin-bottom:12px;">
+    <div class="view-toggle">
+      <button class="view-toggle-btn active" id="btn-view-table" onclick="Dashboard.switchView('table')">☰ Tableau</button>
+      <button class="view-toggle-btn" id="btn-view-kanban" onclick="Dashboard.switchView('kanban')">🗂 Kanban</button>
+    </div>
+  </div>
+  <!-- Zone Kanban -->
+  <div class="kanban-view" id="kanban-view">
+    <div class="kanban-col" id="kanban-Soumis" data-statut="Soumis">
+      <div class="kanban-col-head"><div class="kanban-col-title">📥 Soumis</div><div class="kanban-col-count" id="kcount-Soumis">0</div></div>
+    </div>
+    <div class="kanban-col" id="kanban-En cours" data-statut="En cours">
+      <div class="kanban-col-head"><div class="kanban-col-title">🔄 En cours</div><div class="kanban-col-count" id="kcount-En cours">0</div></div>
+    </div>
+    <div class="kanban-col" id="kanban-Accepté" data-statut="Accepté">
+      <div class="kanban-col-head"><div class="kanban-col-title">✅ Accepté</div><div class="kanban-col-count" id="kcount-Accepté">0</div></div>
+    </div>
+    <div class="kanban-col" id="kanban-Transmis" data-statut="Transmis">
+      <div class="kanban-col-head"><div class="kanban-col-title">📤 Transmis</div><div class="kanban-col-count" id="kcount-Transmis">0</div></div>
+    </div>
+    <div class="kanban-col" id="kanban-Refusé" data-statut="Refusé">
+      <div class="kanban-col-head"><div class="kanban-col-title">❌ Refusé</div><div class="kanban-col-count" id="kcount-Refusé">0</div></div>
+    </div>
+  </div>
+
+  <!-- ACTIONS -->
+  <div class="actions-bar" id="filters-bar">
+    <input class="search-box" type="text" id="search-input" placeholder="🔍 Rechercher par nom, email, formation…" oninput="Dashboard.applyFilters()"/>
+    <select class="filter-select" id="filter-formation" onchange="Dashboard.applyFilters()">
+      <option value="">Toutes les formations</option>
+    </select>
+    <select class="filter-select" id="filter-statut" onchange="Dashboard.applyFilters()">
+      <option value="">Tous les statuts</option>
+      <option value="Soumis">Soumis</option>
+      <option value="En cours">En cours</option>
+      <option value="Accepté">Accepté</option>
+      <option value="Refusé">Refusé</option>
+    </select>
+    <button class="btn btn-secondary" onclick="Dashboard.refresh()">↻ Actualiser</button>
+    <button class="btn-score-all" id="btn-score-all" onclick="Dashboard.scoreAll()" disabled>⚡ Tout scorer</button>
+    <button class="btn btn-primary" onclick="Dashboard.openExport()">⬇ Exporter</button>
+  </div>
+
+  <!-- TABLE -->
+  <div class="table-wrap" id="table-wrapper">
+    <table id="main-table">
+      <thead>
+        <tr>
+          <th onclick="Dashboard.sort('date')">Date <span class="sort-icon" id="sort-date">↕</span></th>
+          <th onclick="Dashboard.sort('nom')">Candidat <span class="sort-icon" id="sort-nom">↕</span></th>
+          <th class="col-hide">Email</th>
+          <th onclick="Dashboard.sort('formation')">Formation <span class="sort-icon" id="sort-formation">↕</span></th>
+          <th class="col-hide">Poste visé</th>
+          <th onclick="Dashboard.sort('statut')">Statut <span class="sort-icon" id="sort-statut">↕</span></th>
+          <th onclick="Dashboard.sort('score')">Score IA <span class="sort-icon" id="sort-score">↕</span></th>
+          <th>💬</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="table-body">
+        <tr>
+          <td colspan="9">
+            <div class="empty-state">
+              <div class="empty-state-ico">🔐</div>
+              <div class="empty-state-title">Connexion requise</div>
+              <div class="empty-state-desc">Connectez-vous avec votre compte Google pour accéder aux données.</div>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="pagination" id="pagination" style="display:none;">
+      <span id="pagination-info"></span>
+      <div class="page-btns" id="page-btns"></div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div id="toast-container"></div>
+
+<!-- MODAL STATUT -->
+<div class="modal-overlay" id="modal-statut">
+  <div class="modal-box">
+    <button class="modal-close" onclick="Dashboard.closeModal('statut')">✕</button>
+    <div class="modal-title">Modifier le statut</div>
+    <div class="modal-field">
+      <label>Candidat</label>
+      <input type="text" id="modal-statut-name" readonly/>
+    </div>
+    <div class="modal-field">
+      <label>Nouveau statut</label>
+      <select id="modal-statut-val">
+        <option value="Soumis">Soumis</option>
+        <option value="En cours">En cours</option>
+        <option value="Accepté">Accepté</option>
+        <option value="Refusé">Refusé</option>
+      </select>
+    </div>
+    <div class="modal-field">
+      <label>Note (optionnel)</label>
+      <textarea id="modal-statut-note" placeholder="Commentaire interne…"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="Dashboard.closeModal('statut')">Annuler</button>
+      <button class="btn btn-primary" onclick="Dashboard.saveStatut()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EXPORT -->
+<div class="modal-overlay" id="modal-export">
+  <div class="modal-box">
+    <button class="modal-close" onclick="Dashboard.closeModal('export')">✕</button>
+    <div class="modal-title">Exporter les données</div>
+    <div class="modal-field">
+      <label>Format</label>
+      <select id="export-format">
+        <option value="csv">CSV</option>
+        <option value="json">JSON</option>
+      </select>
+    </div>
+    <div class="modal-field">
+      <label>Filtres actifs</label>
+      <input type="text" id="export-desc" readonly/>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="Dashboard.closeModal('export')">Annuler</button>
+      <button class="btn btn-primary" onclick="Dashboard.doExport()">⬇ Télécharger</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════
+//  CONFIG — à remplir avant déploiement
+// ════════════════════════════════════════════════════
+const SHEETS_ID        = '';   // ID Google Sheet de suivi
+const GOOGLE_CLIENT_ID = '';   // OAuth2 Client ID Web
+const MONDAY_TOKEN     = '';   // Monday API v2 token
+const MONDAY_BOARD_ID  = '';   // Monday Board ID
+const ANTHROPIC_KEY    = '';   // Clé API Anthropic
+
+// ════ SUPABASE CONFIG ════
+const SUPABASE_URL  = 'https://dankawtulegneeggmarg.supabase.co';
+const SUPABASE_KEY  = 'sb_publishable_d3_Kw4jvLuLErfEsRVBaRw_Eq8ACWv_';
+let sb = null;
+function initSupabase(){
+  if(SUPABASE_URL && SUPABASE_KEY && window.supabase){
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    return true;
+  }
+  return false;
+}
+
+// ════════════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════════════
+const state = {
+  rows: [],           // données brutes du Sheet
+  filtered: [],       // après filtres
+  sortCol: 'date',
+  sortAsc: false,
+  page: 1,
+  pageSize: 25,
+  editingRowIdx: null,
+  gapiReady: false,
+  signedIn: false,
+  comments: {}, // { [idx]: [{id, text, author, date, pinned}] }
+  interviews: {}, // { [idx]: [{id, ...}] }
+  useSupabase: false,
+};
+
+// ════════════════════════════════════════════════════
+//  DASHBOARD CONTROLLER
+// ════════════════════════════════════════════════════
+const Dashboard = {
+
+  // ── AUTH ──────────────────────────────────────────
+  initGapi(){
+    gapi.load('client:auth2', async () => {
+      try {
+        await gapi.client.init({
+          clientId: GOOGLE_CLIENT_ID,
+          scope: [
+            'https://www.googleapis.com/auth/spreadsheets',
+            'https://www.googleapis.com/auth/drive.readonly',
+            'email','profile'
+          ].join(' '),
+          discoveryDocs: [
+            'https://sheets.googleapis.com/$discovery/rest?version=v4',
+            'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'
+          ]
+        });
+        state.gapiReady = true;
+        const auth = gapi.auth2.getAuthInstance();
+        auth.isSignedIn.listen(s => this.onAuthChange(s));
+        this.onAuthChange(auth.isSignedIn.get());
+      } catch(e){
+        this.toast('Erreur initialisation Google API : ' + e.message, 'error');
+      }
+    });
+  },
+
+  onAuthChange(signedIn){
+    state.signedIn = signedIn;
+    const user = signedIn ? gapi.auth2.getAuthInstance().currentUser.get().getBasicProfile() : null;
+    document.getElementById('topbar-user').style.display = signedIn ? '' : 'none';
+    document.getElementById('topbar-user').textContent = signedIn ? user.getName() : '';
+    document.getElementById('btn-login').style.display = signedIn ? 'none' : '';
+    document.getElementById('btn-logout').style.display = signedIn ? '' : 'none';
+    document.getElementById('btn-score-all').disabled = !signedIn || !ANTHROPIC_KEY;
+    if(signedIn) this.loadData();
+    else this.renderEmpty('Connectez-vous avec votre compte Google pour accéder aux données.');
+  },
+
+  async login(){
+    if(!GOOGLE_CLIENT_ID){ this.toast('Configurez GOOGLE_CLIENT_ID dans les constantes', 'error'); return; }
+    if(!state.gapiReady){ this.toast('API Google en cours de chargement…', 'info'); return; }
+    try { await gapi.auth2.getAuthInstance().signIn(); }
+    catch(e){ this.toast('Connexion annulée ou échouée', 'error'); }
+  },
+
+  async logout(){
+    try { await gapi.auth2.getAuthInstance().signOut(); }
+    catch(e){}
+  },
+
+  // ── DONNÉES ───────────────────────────────────────
+  async loadData(){
+    if(!SHEETS_ID){ this.renderDemo(); return; }
+    try {
+      this.renderLoading();
+      const res = await gapi.client.sheets.spreadsheets.values.get({
+        spreadsheetId: SHEETS_ID,
+        range: 'Sheet1!A:K'
+      });
+      const values = res.result.values || [];
+      // Colonnes : Date, Prénom, Nom, Email, Téléphone, Formation, Poste, Ville, Statut, SessionID, Lien Drive
+      const rows = values.slice(1).map((r, i) => ({
+        idx: i,
+        date: r[0] || '',
+        prenom: r[1] || '',
+        nom: r[2] || '',
+        email: r[3] || '',
+        telephone: r[4] || '',
+        formation: r[5] || '',
+        poste: r[6] || '',
+        ville: r[7] || '',
+        statut: r[8] || 'Soumis',
+        sessionId: r[9] || '',
+        driveLien: r[10] || '',
+        score: null,
+        scoreDetails: null,
+        sheetRow: i + 2, // 1-indexed + header
+      }));
+      state.rows = rows;
+      this.applyFilters();
+      this.updateStats();
+      this.buildFormationFilter();
+      this.toast(`${rows.length} candidat(s) chargé(s)`, 'success');
+    } catch(e){
+      this.toast('Erreur chargement Sheet : ' + e.message, 'error');
+      this.renderEmpty('Erreur de chargement. Vérifiez que SHEETS_ID est correct et que le Sheet est partagé.');
+    }
+  },
+
+  renderDemo(){
+    // Données de démo si pas de SHEETS_ID
+    state.rows = [
+      {idx:0,date:'24/04/2026 09:12',prenom:'Sarah',nom:'Martinez',email:'s.martinez@email.com',telephone:'06 12 34 56 78',formation:'BTS Assistanat',poste:'Assistante de direction',ville:'Paris',statut:'Soumis',sessionId:'demo1',driveLien:'',score:null,scoreDetails:null,sheetRow:2},
+      {idx:1,date:'24/04/2026 10:03',prenom:'Lucas',nom:'Dubois',email:'l.dubois@email.com',telephone:'07 23 45 67 89',formation:'BTS Commerce International',poste:'Chargé de développement',ville:'Lyon',statut:'En cours',sessionId:'demo2',driveLien:'',score:82,scoreDetails:{accroche:18,experiences:22,competences:17,coherence:14,presentation:11},sheetRow:3},
+      {idx:2,date:'23/04/2026 14:30',prenom:'Amina',nom:'Benali',email:'a.benali@email.com',telephone:'06 34 56 78 90',formation:'Mastère Marketing Digital',poste:'Chef de projet digital',ville:'Bordeaux',statut:'Accepté',sessionId:'demo3',driveLien:'',score:91,scoreDetails:{accroche:20,experiences:24,competences:19,coherence:16,presentation:12},sheetRow:4},
+      {idx:3,date:'23/04/2026 11:15',prenom:'Théo',nom:'Garnier',email:'t.garnier@email.com',telephone:'06 45 67 89 01',formation:'BTS NTC',poste:'Technicien réseau',ville:'Marseille',statut:'Soumis',sessionId:'demo4',driveLien:'',score:38,scoreDetails:{accroche:6,experiences:10,competences:8,coherence:7,presentation:7},sheetRow:5},
+      {idx:4,date:'22/04/2026 16:45',prenom:'Léa',nom:'Fontaine',email:'l.fontaine@email.com',telephone:'07 56 78 90 12',formation:'BTS Assistanat',poste:'Secrétaire médicale',ville:'Nantes',statut:'Refusé',sessionId:'demo5',driveLien:'',score:55,scoreDetails:{accroche:11,experiences:14,competences:12,coherence:10,presentation:8},sheetRow:6},
+    ];
+    this.applyFilters();
+    this.updateStats();
+    this.buildFormationFilter();
+    this.toast('Mode démo — configurez SHEETS_ID pour les vraies données', 'info');
+  },
+
+  async refresh(){
+    state.rows = [];
+    state.filtered = [];
+    await this.loadData();
+  },
+
+  // ── FILTRES & TRI ─────────────────────────────────
+  applyFilters(){
+    const q = document.getElementById('search-input').value.toLowerCase();
+    const fFormation = document.getElementById('filter-formation').value;
+    const fStatut = document.getElementById('filter-statut').value;
+
+    state.filtered = state.rows.filter(r => {
+      const matchQ = !q ||
+        r.nom.toLowerCase().includes(q) ||
+        r.prenom.toLowerCase().includes(q) ||
+        r.email.toLowerCase().includes(q) ||
+        r.formation.toLowerCase().includes(q) ||
+        r.poste.toLowerCase().includes(q);
+      const matchF = !fFormation || r.formation === fFormation;
+      const matchS = !fStatut || r.statut === fStatut;
+      return matchQ && matchF && matchS;
+    });
+
+    this.sortData();
+    state.page = 1;
+    this.renderTable();
+    this.renderPagination();
+  },
+
+  sort(col){
+    if(state.sortCol === col) state.sortAsc = !state.sortAsc;
+    else { state.sortCol = col; state.sortAsc = true; }
+    // Update icons
+    ['date','nom','formation','statut','score'].forEach(c => {
+      const el = document.getElementById('sort-'+c);
+      if(el) el.textContent = state.sortCol === c ? (state.sortAsc ? '↑' : '↓') : '↕';
+    });
+    document.querySelectorAll('th').forEach(th => th.classList.remove('sorted'));
+    this.sortData();
+    this.renderTable();
+  },
+
+  sortData(){
+    const col = state.sortCol;
+    const asc = state.sortAsc;
+    state.filtered.sort((a,b) => {
+      let va = a[col], vb = b[col];
+      if(col === 'score'){
+        va = va ?? -1; vb = vb ?? -1;
+        return asc ? va-vb : vb-va;
+      }
+      va = String(va||'').toLowerCase();
+      vb = String(vb||'').toLowerCase();
+      if(va < vb) return asc ? -1 : 1;
+      if(va > vb) return asc ? 1 : -1;
+      return 0;
+    });
+  },
+
+  buildFormationFilter(){
+    const sel = document.getElementById('filter-formation');
+    const formations = [...new Set(state.rows.map(r => r.formation).filter(Boolean))].sort();
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">Toutes les formations</option>' +
+      formations.map(f => `<option value="${this.esc(f)}"${f===cur?' selected':''}>${this.esc(f)}</option>`).join('');
+  },
+
+  // ── RENDU TABLE ───────────────────────────────────
+  renderTable(){
+    const tbody = document.getElementById('table-body');
+    const start = (state.page-1)*state.pageSize;
+    const pageRows = state.filtered.slice(start, start+state.pageSize);
+
+    if(pageRows.length === 0){
+      tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state">
+        <div class="empty-state-ico">🔍</div>
+        <div class="empty-state-title">Aucun résultat</div>
+        <div class="empty-state-desc">Modifiez vos filtres de recherche.</div>
+      </div></td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = pageRows.map(r => `
+      <tr>
+        <td class="td-date">${this.esc(r.date)}</td>
+        <td>
+          <div class="td-name">${this.esc(r.prenom)} ${this.esc(r.nom)}</div>
+          <div class="td-email">${this.esc(r.telephone)}</div>
+        </td>
+        <td class="td-email col-hide" style="cursor:pointer;" onclick="Dashboard.openFiche(${r.idx})" title="Cliquer pour envoyer un email">${this.esc(r.email)}</td>
+        <td><span class="badge badge-formation">${this.esc(r.formation||'—')}</span></td>
+        <td class="col-hide" style="font-size:12px;color:var(--text-s);">${this.esc(r.poste||'—')}</td>
+        <td>${this.renderStatutBadge(r.statut)}</td>
+        <td>${this.renderScoreBadge(r)}</td>
+        <td style="text-align:center;">
+          ${(state.comments[r.idx]||[]).length > 0 ? `<span style="background:var(--navy);color:#fff;border-radius:10px;padding:2px 7px;font-size:10px;font-weight:700;cursor:pointer;" onclick="Dashboard.openFiche(${r.idx});setTimeout(()=>Dashboard.switchCandTab('comments',null),100)">${(state.comments[r.idx]||[]).length}</span>` : `<span style="color:var(--muted);font-size:11px;cursor:pointer;" onclick="Dashboard.openFiche(${r.idx})">+</span>`}
+        </td>
+        <td>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="btn-fiche" onclick="Dashboard.openFiche(${r.idx})">📋 Fiche</button>
+            <button class="btn-score" onclick="Dashboard.scoreOne(${r.idx})" ${!ANTHROPIC_KEY||r.score!==null?'disabled':''} title="${r.score!==null?'Déjà scoré':'Scorer ce candidat'}">
+              ${r.score!==null?'✓ Scoré':'⚡ Scorer'}
+            </button>
+            <button class="btn btn-secondary" style="padding:5px 10px;font-size:11px;" onclick="Dashboard.openStatutModal(${r.idx})">✏ Statut</button>
+            ${r.driveLien ? `<a href="${this.esc(r.driveLien)}" target="_blank" class="btn btn-secondary" style="padding:5px 10px;font-size:11px;text-decoration:none;">☁ Drive</a>` : ''}
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  },
+
+  renderStatutBadge(statut){
+    const map = {
+      'Soumis':'badge-soumis',
+      'En cours':'badge-en-cours',
+      'Accepté':'badge-accepte',
+      'Refusé':'badge-refuse',
+    };
+    return `<span class="badge ${map[statut]||'badge-soumis'}">${this.esc(statut||'Soumis')}</span>`;
+  },
+
+  renderScoreBadge(r){
+    if(r.score === null) return `<span class="score-badge score-pending">— à scorer</span>`;
+    const cls = r.score >= 75 ? 'score-high' : r.score >= 50 ? 'score-mid' : 'score-low';
+    const emoji = r.score >= 75 ? '★' : r.score >= 50 ? '◆' : '▲';
+    const details = r.scoreDetails;
+    const tooltip = details ? `
+      <div class="score-tooltip">
+        <div class="score-tooltip-title">Détail du score IA</div>
+        <div class="score-row"><span class="score-row-label">Accroche</span><span class="score-row-val">${details.accroche}/20</span></div>
+        <div class="score-row"><span class="score-row-label">Expériences</span><span class="score-row-val">${details.experiences}/25</span></div>
+        <div class="score-row"><span class="score-row-label">Compétences</span><span class="score-row-val">${details.competences}/20</span></div>
+        <div class="score-row"><span class="score-row-label">Cohérence</span><span class="score-row-val">${details.coherence}/20</span></div>
+        <div class="score-row"><span class="score-row-label">Présentation</span><span class="score-row-val">${details.presentation}/15</span></div>
+      </div>` : '';
+    return `<span class="score-badge ${cls}">${emoji} ${r.score}/100${tooltip}</span>`;
+  },
+
+  renderLoading(){
+    document.getElementById('table-body').innerHTML = `
+      <tr><td colspan="9" style="text-align:center;padding:40px;">
+        <div class="spinner"></div>&nbsp; Chargement…
+      </td></tr>`;
+  },
+
+  renderEmpty(msg){
+    document.getElementById('table-body').innerHTML = `
+      <tr><td colspan="9"><div class="empty-state">
+        <div class="empty-state-ico">🔐</div>
+        <div class="empty-state-title">Données indisponibles</div>
+        <div class="empty-state-desc">${this.esc(msg)}</div>
+      </div></td></tr>`;
+  },
+
+  renderPagination(){
+    const total = state.filtered.length;
+    const pages = Math.ceil(total / state.pageSize);
+    const el = document.getElementById('pagination');
+    const info = document.getElementById('pagination-info');
+    const btns = document.getElementById('page-btns');
+    if(total === 0){ el.style.display='none'; return; }
+    el.style.display='flex';
+    const start = (state.page-1)*state.pageSize+1;
+    const end = Math.min(state.page*state.pageSize, total);
+    info.textContent = `${start}–${end} sur ${total} candidat(s)`;
+    let html = `<button class="page-btn" onclick="Dashboard.goPage(${state.page-1})" ${state.page===1?'disabled':''}>‹</button>`;
+    for(let i=1;i<=pages;i++){
+      if(pages <= 7 || Math.abs(i-state.page)<=1 || i===1 || i===pages){
+        html += `<button class="page-btn${i===state.page?' active':''}" onclick="Dashboard.goPage(${i})">${i}</button>`;
+      } else if(Math.abs(i-state.page)===2){
+        html += `<span style="padding:5px 4px;color:var(--muted);">…</span>`;
+      }
+    }
+    html += `<button class="page-btn" onclick="Dashboard.goPage(${state.page+1})" ${state.page===pages?'disabled':''}>›</button>`;
+    btns.innerHTML = html;
+  },
+
+  goPage(n){
+    const pages = Math.ceil(state.filtered.length / state.pageSize);
+    if(n < 1 || n > pages) return;
+    state.page = n;
+    this.renderTable();
+    this.renderPagination();
+  },
+
+  // ── STATS ─────────────────────────────────────────
+  updateStats(){
+    const rows = state.rows;
+    document.getElementById('stat-total').textContent = rows.length;
+    const scored = rows.filter(r => r.score !== null);
+    document.getElementById('stat-scored').textContent = scored.length;
+    const avg = scored.length ? Math.round(scored.reduce((s,r)=>s+r.score,0)/scored.length) : null;
+    document.getElementById('stat-avg').textContent = avg !== null ? `Score moyen : ${avg}/100` : 'Score moyen : —';
+    const accepted = rows.filter(r => r.statut === 'Accepté').length;
+    document.getElementById('stat-accepted').textContent = accepted;
+    document.getElementById('stat-monday').textContent = MONDAY_TOKEN ? '–' : '–';
+    document.getElementById('stat-period').textContent = `Total cumulé`;
+  },
+
+  // ── STATUT ────────────────────────────────────────
+  openStatutModal(idx){
+    const r = state.rows.find(x => x.idx === idx);
+    if(!r) return;
+    state.editingRowIdx = idx;
+    document.getElementById('modal-statut-name').value = `${r.prenom} ${r.nom}`;
+    document.getElementById('modal-statut-val').value = r.statut;
+    document.getElementById('modal-statut-note').value = '';
+    this.openModal('statut');
+  },
+
+  async saveStatut(){
+    const r = state.rows.find(x => x.idx === state.editingRowIdx);
+    if(!r) return;
+    const newStatut = document.getElementById('modal-statut-val').value;
+    r.statut = newStatut;
+    // Mettre à jour le Sheet si connecté
+    if(SHEETS_ID && state.signedIn){
+      try {
+        await gapi.client.sheets.spreadsheets.values.update({
+          spreadsheetId: SHEETS_ID,
+          range: `Sheet1!I${r.sheetRow}`,
+          valueInputOption: 'USER_ENTERED',
+          resource: { values: [[newStatut]] }
+        });
+        this.toast('Statut mis à jour', 'success');
+      } catch(e){
+        this.toast('Erreur mise à jour Sheet : ' + e.message, 'error');
+      }
+    } else {
+      this.toast('Statut mis à jour (local)', 'info');
+    }
+    // Sync Monday si configuré
+    if(MONDAY_TOKEN && MONDAY_BOARD_ID) this.updateMondayStatut(r, newStatut).catch(()=>{});
+    this.closeModal('statut');
+    if(state.useSupabase) this.updateStatutSupabase(r, newStatut).catch(()=>{});
+    this.applyFilters();
+    this.updateStats();
+  },
+
+  async updateMondayStatut(r, statut){
+    if(!r.mondayItemId && !MONDAY_BOARD_ID) return;
+    // Chercher l'item Monday par nom si pas d'ID
+    const labelMap = {'Soumis':'CV Soumis','En cours':'En cours','Accepté':'Accepté','Refusé':'Refusé'};
+    const label = labelMap[statut] || statut;
+    try {
+      const mutation = `mutation {
+        change_simple_column_value(
+          board_id: ${MONDAY_BOARD_ID},
+          item_id: ${r.mondayItemId||0},
+          column_id: "status",
+          value: "${label}"
+        ) { id }
+      }`;
+      await fetch('https://api.monday.com/v2', {
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':MONDAY_TOKEN},
+        body:JSON.stringify({query:mutation})
+      });
+    } catch(e){ /* silencieux */ }
+  },
+
+  // ── SCORING IA ────────────────────────────────────
+  async scoreOne(idx){
+    if(!ANTHROPIC_KEY){ this.toast('Configurez ANTHROPIC_KEY dans les constantes', 'error'); return; }
+    const r = state.rows.find(x => x.idx === idx);
+    if(!r || r.score !== null) return;
+    r.score = -1; // marqueur "en cours"
+    this.renderTable();
+
+    try {
+      const result = await this.callScoreAPI(r);
+      r.score = result.total;
+      r.scoreDetails = result.details;
+      this.updateStats();
+      this.renderTable();
+      this.renderPagination();
+      if(state.useSupabase) this.saveScoreSupabase(r, result.total, result.details).catch(()=>{});
+      this.toast(`Score IA : ${r.prenom} ${r.nom} → ${result.total}/100`, 'success');
+    } catch(e){
+      r.score = null;
+      this.renderTable();
+      this.toast('Erreur scoring : ' + e.message, 'error');
+    }
+  },
+
+  async scoreAll(){
+    if(!ANTHROPIC_KEY){ this.toast('Configurez ANTHROPIC_KEY dans les constantes', 'error'); return; }
+    const unscored = state.rows.filter(r => r.score === null);
+    if(unscored.length === 0){ this.toast('Tous les candidats sont déjà scorés', 'info'); return; }
+    const btn = document.getElementById('btn-score-all');
+    btn.disabled = true;
+    btn.textContent = `⏳ Scoring 0/${unscored.length}…`;
+    let done = 0;
+    for(const r of unscored){
+      try {
+        const result = await this.callScoreAPI(r);
+        r.score = result.total;
+        r.scoreDetails = result.details;
+        done++;
+        btn.textContent = `⏳ Scoring ${done}/${unscored.length}…`;
+        this.renderTable();
+      } catch(e){
+        r.score = null;
+      }
+    }
+    btn.disabled = false;
+    btn.textContent = '⚡ Tout scorer';
+    this.updateStats();
+    this.renderTable();
+    this.renderPagination();
+    this.toast(`Scoring terminé — ${done}/${unscored.length} candidats scorés`, 'success');
+  },
+
+  async callScoreAPI(r){
+    const prompt = `Tu es un expert RH. Évalue ce profil candidat pour la formation "${r.formation}" et le poste "${r.poste}".
+
+Profil :
+- Nom : ${r.prenom} ${r.nom}
+- Email : ${r.email}
+- Ville : ${r.ville}
+- Formation visée : ${r.formation}
+- Poste visé : ${r.poste}
+
+Note ce profil sur 100 points selon 5 critères :
+1. Accroche et objectif professionnel (0-20)
+2. Pertinence des expériences (0-25)
+3. Adéquation des compétences (0-20)
+4. Cohérence du projet professionnel (0-20)
+5. Présentation et complétude (0-15)
+
+Réponds UNIQUEMENT en JSON strict, sans commentaire :
+{"total":75,"details":{"accroche":15,"experiences":20,"competences":16,"coherence":14,"presentation":10}}`;
+
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': ANTHROPIC_KEY,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 256,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    if(!res.ok){
+      const err = await res.json().catch(()=>({error:{message:res.statusText}}));
+      throw new Error(err?.error?.message || `HTTP ${res.status}`);
+    }
+
+    const data = await res.json();
+    const text = data.content?.[0]?.text || '';
+    // Extraire le JSON de la réponse
+    const match = text.match(/\{[\s\S]*\}/);
+    if(!match) throw new Error('Réponse IA invalide');
+    const parsed = JSON.parse(match[0]);
+    if(typeof parsed.total !== 'number') throw new Error('Score manquant dans la réponse');
+    return { total: Math.min(100, Math.max(0, Math.round(parsed.total))), details: parsed.details };
+  },
+
+  // ── EXPORT ────────────────────────────────────────
+  openExport(){
+    const q = document.getElementById('search-input').value;
+    const fF = document.getElementById('filter-formation').value;
+    const fS = document.getElementById('filter-statut').value;
+    const parts = [];
+    if(q) parts.push(`Recherche : "${q}"`);
+    if(fF) parts.push(`Formation : ${fF}`);
+    if(fS) parts.push(`Statut : ${fS}`);
+    document.getElementById('export-desc').value = parts.join(' | ') || 'Toutes les données';
+    this.openModal('export');
+  },
+
+  doExport(){
+    const fmt = document.getElementById('export-format').value;
+    const rows = state.filtered;
+    if(fmt === 'csv'){
+      const headers = ['Date','Prénom','Nom','Email','Téléphone','Formation','Poste','Ville','Statut','Score IA'];
+      const lines = [headers.join(';')];
+      rows.forEach(r => {
+        lines.push([r.date,r.prenom,r.nom,r.email,r.telephone,r.formation,r.poste,r.ville,r.statut,r.score??''].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(';'));
+      });
+      this.downloadFile('candidats-talia.csv', lines.join('\n'), 'text/csv;charset=utf-8;');
+    } else {
+      const data = rows.map(r => ({date:r.date,prenom:r.prenom,nom:r.nom,email:r.email,telephone:r.telephone,formation:r.formation,poste:r.poste,ville:r.ville,statut:r.statut,score:r.score,scoreDetails:r.scoreDetails}));
+      this.downloadFile('candidats-talia.json', JSON.stringify(data, null, 2), 'application/json');
+    }
+    this.closeModal('export');
+    this.toast('Export téléchargé', 'success');
+  },
+
+  downloadFile(name, content, type){
+    const blob = new Blob([content], {type});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  },
+
+  // ── MODALS ────────────────────────────────────────
+  openModal(id){ document.getElementById('modal-'+id).classList.add('on'); },
+  closeModal(id){ document.getElementById('modal-'+id).classList.remove('on'); },
+
+  // ── TOAST ─────────────────────────────────────────
+  toast(msg, type='info', duration=4000){
+    const c = document.getElementById('toast-container');
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    t.innerHTML = msg;
+    c.appendChild(t);
+    setTimeout(() => t.remove(), duration);
+  },
+
+  // ── KANBAN ────────────────────────────────────────
+  currentView: 'table',
+  draggedCard: null,
+
+  switchView(v){
+    this.currentView = v;
+    const tableEl = document.getElementById('table-wrapper');
+    const kanbanEl = document.getElementById('kanban-view');
+    const filterEl = document.getElementById('filters-bar');
+
+    document.getElementById('btn-view-table').classList.toggle('active', v==='table');
+    document.getElementById('btn-view-kanban').classList.toggle('active', v==='kanban');
+
+    if(v === 'kanban'){
+      if(tableEl) tableEl.style.display='none';
+      if(filterEl) filterEl.style.display='none';
+      kanbanEl.classList.add('active');
+      this.renderKanban();
+    } else {
+      if(tableEl) tableEl.style.display='';
+      if(filterEl) filterEl.style.display='';
+      kanbanEl.classList.remove('active');
+    }
+  },
+
+  renderKanban(){
+    const statuts = ['Soumis','En cours','Accepté','Transmis','Refusé'];
+    statuts.forEach(s => {
+      const col = document.getElementById('kanban-'+s);
+      if(!col) return;
+      // Supprimer les cartes existantes (garder le header)
+      col.querySelectorAll('.kanban-card').forEach(c=>c.remove());
+      const rows = (state.rows||[]).filter(r=>r.statut===s);
+      const countEl = document.getElementById('kcount-'+s);
+      if(countEl) countEl.textContent = rows.length;
+      rows.forEach(r => {
+        const card = document.createElement('div');
+        card.className = 'kanban-card';
+        card.draggable = true;
+        card.dataset.idx = r.idx;
+        card.innerHTML = `
+          <div class="kanban-card-name">${this.esc(r.prenom)} ${this.esc(r.nom)}</div>
+          <div class="kanban-card-meta">${this.esc(r.formation||'')} · ${this.esc(r.poste||'')}</div>
+          ${r.score!==null?`<span class="kanban-card-score" style="background:${r.score>=75?'#f0fdf4;color:#059669':r.score>=50?'#fffbeb;color:#92400e':'#fef2f2;color:#dc2626'}">${r.score}/100</span>`:''}
+        `;
+        card.addEventListener('dragstart',()=>{ this.draggedCard=r; card.classList.add('dragging'); });
+        card.addEventListener('dragend',()=>card.classList.remove('dragging'));
+        col.appendChild(card);
+      });
+      // Drop events
+      col.addEventListener('dragover',e=>{e.preventDefault();col.classList.add('dragover');});
+      col.addEventListener('dragleave',()=>col.classList.remove('dragover'));
+      col.addEventListener('drop',async()=>{
+        col.classList.remove('dragover');
+        if(!this.draggedCard) return;
+        const newStatut = col.dataset.statut;
+        if(this.draggedCard.statut === newStatut) return;
+        this.draggedCard.statut = newStatut;
+        this.renderKanban();
+        // Sync (silencieux si pas configuré)
+        try { await this.updateMondayStatut(this.draggedCard, newStatut); } catch(e){}
+      });
+    });
+  },
+
+  // ── COMMENTAIRES / INTERVIEWS PERSISTENCE ─────────
+  async saveComments(){
+    localStorage.setItem('talia_comments', JSON.stringify(state.comments));
+    localStorage.setItem('talia_interviews', JSON.stringify(state.interviews));
+    // Si Supabase configuré — la synchro des commentaires se fait dans addComment()
+  },
+  loadComments(){
+    try { state.comments = JSON.parse(localStorage.getItem('talia_comments')||'{}'); } catch(e){ state.comments = {}; }
+    try { state.interviews = JSON.parse(localStorage.getItem('talia_interviews')||'{}'); } catch(e){ state.interviews = {}; }
+  },
+
+  // ══ FICHE CANDIDAT ══════════════════════════════════
+  currentCandIdx: null,
+
+  openFiche(idx){
+    const r = state.rows.find(x => x.idx === idx);
+    if(!r) return;
+    this.currentCandIdx = idx;
+    // Header
+    const initials = ((r.prenom||'?')[0]+(r.nom||'?')[0]).toUpperCase();
+    document.getElementById('cand-avatar').textContent = initials;
+    document.getElementById('cand-name').textContent = `${r.prenom} ${r.nom}`;
+    document.getElementById('cand-formation').textContent = r.formation;
+    // Tags
+    const tags = [r.ville, r.poste, r.date?.split(' ')[0]].filter(Boolean);
+    document.getElementById('cand-tags').innerHTML = tags.map(t=>`<span class="cand-tag">${this.esc(t)}</span>`).join('');
+    // Infos
+    document.getElementById('cand-infos-list').innerHTML = `
+      <div class="cand-info-row"><span class="cand-info-ico">📧</span><span class="cand-info-val"><a href="mailto:${this.esc(r.email)}">${this.esc(r.email)}</a></span></div>
+      <div class="cand-info-row"><span class="cand-info-ico">📞</span><span class="cand-info-val">${this.esc(r.telephone)}</span></div>
+      <div class="cand-info-row"><span class="cand-info-ico">📍</span><span class="cand-info-val">${this.esc(r.ville)}</span></div>
+      <div class="cand-info-row"><span class="cand-info-ico">🎓</span><span class="cand-info-val">${this.esc(r.formation)}</span></div>
+      <div class="cand-info-row"><span class="cand-info-ico">🎯</span><span class="cand-info-val">${this.esc(r.poste)}</span></div>
+      ${r.driveLien ? `<div class="cand-info-row"><span class="cand-info-ico">☁</span><span class="cand-info-val"><a href="${this.esc(r.driveLien)}" target="_blank">Voir le CV sur Drive ↗</a></span></div>` : ''}
+    `;
+    // Statut
+    document.getElementById('cand-statut-badge').outerHTML = `<span id="cand-statut-badge">${this.renderStatutBadge(r.statut)}</span>`;
+    // Expériences
+    this.renderFicheExp(r);
+    // Commentaires
+    this.renderComments(idx);
+    // Entretiens
+    this.renderEntretiens(idx);
+    // Email
+    this.initEmailTab(r);
+    // Reset tab
+    this.switchCandTab('infos', document.querySelector('.cand-tab'));
+    // Open
+    document.getElementById('cand-overlay').classList.add('on');
+  },
+
+  closeFiche(){
+    document.getElementById('cand-overlay').classList.remove('on');
+    this.currentCandIdx = null;
+  },
+
+  switchCandTab(tab, btn){
+    document.querySelectorAll('.cand-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.cand-tab-content').forEach(c => c.classList.remove('active'));
+    if(btn) btn.classList.add('active');
+    else {
+      const allTabs = document.querySelectorAll('.cand-tab');
+      const tabNames = ['infos','exp','comments','entretien','email'];
+      const i = tabNames.indexOf(tab);
+      if(i>=0 && allTabs[i]) allTabs[i].classList.add('active');
+    }
+    const content = document.getElementById('ctab-'+tab);
+    if(content) content.classList.add('active');
+  },
+
+  // ── EXPÉRIENCES ──────────────────────────────────────
+  renderFicheExp(r){
+    const el = document.getElementById('cand-exp-list');
+    if(!el) return;
+    const exps = r.experiences || [];
+    if(exps.length === 0){
+      el.innerHTML = `
+        <div class="exp-mini-item">
+          <div class="exp-mini-dot"></div>
+          <div class="exp-mini-content">
+            <div class="exp-mini-poste">${this.esc(r.poste||'—')}</div>
+            <div class="exp-mini-meta">Poste visé · ${this.esc(r.formation)}</div>
+          </div>
+        </div>
+        <div class="exp-mini-empty" style="margin-top:10px;">
+          💡 Les expériences détaillées apparaissent ici lorsque le CV est généré depuis le formulaire scratch ou que le parsing PDF extrait les données.
+        </div>`;
+      return;
+    }
+    el.innerHTML = exps.map(e => `
+      <div class="exp-mini-item">
+        <div class="exp-mini-dot"></div>
+        <div class="exp-mini-content">
+          <div class="exp-mini-poste">${this.esc(e.poste||'—')}</div>
+          <div class="exp-mini-meta">${this.esc(e.entreprise||'')}${e.periode?' · '+this.esc(e.periode):''}</div>
+        </div>
+      </div>`).join('');
+  },
+
+  // ── COMMENTAIRES ─────────────────────────────────────
+  renderComments(idx){
+    const comments = (state.comments[idx] || []).sort((a,b) => b.pinned - a.pinned || b.id - a.id);
+    const thread = document.getElementById('comment-thread');
+    if(!thread) return;
+    if(comments.length === 0){
+      thread.innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px;">Aucun commentaire pour l'instant.</div>`;
+      return;
+    }
+    thread.innerHTML = comments.map(c => `
+      <div class="comment-item${c.pinned?' pinned':''}" id="comment-${c.id}">
+        ${c.pinned ? '<div class="comment-pin-badge">📌 Épinglé</div>' : ''}
+        <div class="comment-author">${this.esc(c.author)}<span class="comment-date">${c.date}</span></div>
+        <div class="comment-text">${this.esc(c.text).replace(/\n/g,'<br>')}</div>
+        <div class="comment-actions">
+          <button class="comment-action-btn pin" onclick="Dashboard.togglePin(${idx},${c.id})">${c.pinned?'Désépingler':'📌 Épingler'}</button>
+          <button class="comment-action-btn del" onclick="Dashboard.deleteComment(${idx},${c.id})">🗑 Supprimer</button>
+        </div>
+      </div>`).join('');
+  },
+
+  addComment(){
+    const idx = this.currentCandIdx;
+    if(idx === null) return;
+    const text = document.getElementById('comment-input')?.value?.trim();
+    if(!text){ this.toast('Le commentaire est vide','error'); return; }
+    const pinned = document.getElementById('comment-pin')?.checked || false;
+    if(!state.comments[idx]) state.comments[idx] = [];
+    state.comments[idx].push({
+      id: Date.now(),
+      text,
+      author: 'Ilane · RRE',
+      date: new Date().toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}),
+      pinned
+    });
+    this.saveComments();
+    // Sync Supabase si connecté
+    if(state.useSupabase) this.addCommentToSupabase(idx, state.comments[idx][state.comments[idx].length-1]).catch(()=>{});
+    document.getElementById('comment-input').value = '';
+    if(document.getElementById('comment-pin')) document.getElementById('comment-pin').checked = false;
+    this.renderComments(idx);
+    this.toast('Commentaire ajouté ✓','success',2000);
+    this.renderTable();
+  },
+
+  togglePin(idx, commentId){
+    const comments = state.comments[idx] || [];
+    const c = comments.find(x => x.id === commentId);
+    if(c) c.pinned = !c.pinned;
+    this.saveComments();
+    this.renderComments(idx);
+  },
+
+  deleteComment(idx, commentId){
+    if(!confirm('Supprimer ce commentaire ?')) return;
+    state.comments[idx] = (state.comments[idx]||[]).filter(c => c.id !== commentId);
+    this.saveComments();
+    this.renderComments(idx);
+    this.toast('Commentaire supprimé','info',2000);
+  },
+
+  // ── ENTRETIENS ────────────────────────────────────────
+  renderEntretiens(idx){
+    const entretiens = state.interviews[idx] || [];
+    const el = document.getElementById('entretien-list');
+    if(!el) return;
+    if(entretiens.length === 0){
+      el.innerHTML = `<div style="text-align:center;padding:16px;color:var(--muted);font-size:12px;">Aucun entretien planifié.</div>`;
+      return;
+    }
+    el.innerHTML = entretiens.map(e => {
+      const isPast = new Date(e.datetime) < new Date();
+      return `
+        <div style="background:var(--surface);border:1.5px solid ${isPast?'var(--border)':'var(--navy)'};border-radius:10px;padding:12px;margin-bottom:8px;opacity:${isPast?'0.65':'1'};">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+            <span style="font-size:13px;font-weight:700;color:var(--navy);">🏢 ${this.esc(e.entreprise)}</span>
+            ${isPast ? '<span style="font-size:10px;background:#f1f5f9;padding:2px 8px;border-radius:6px;color:var(--muted);">Passé</span>' : '<span style="font-size:10px;background:var(--green-l);padding:2px 8px;border-radius:6px;color:#166534;font-weight:700;">À venir</span>'}
+          </div>
+          <div style="font-size:12px;color:var(--text-s);display:flex;flex-direction:column;gap:3px;">
+            <div>👤 ${this.esc(e.contact)}</div>
+            <div>📅 ${new Date(e.datetime).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'})} à ${new Date(e.datetime).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</div>
+            <div>📍 ${this.esc(e.lieu)}</div>
+            ${e.tel ? `<div>📞 ${this.esc(e.tel)}</div>` : ''}
+          </div>
+          <div style="display:flex;gap:6px;margin-top:8px;">
+            <button style="padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:none;font-size:11px;font-weight:600;cursor:pointer;color:var(--text-s);" onclick="Dashboard.resendNotifEntretien(${idx},'${e.id}')">📧 Renvoyer notif</button>
+            <button style="padding:4px 10px;border-radius:6px;border:1px solid var(--red);background:none;font-size:11px;font-weight:600;cursor:pointer;color:var(--red);" onclick="Dashboard.cancelEntretien(${idx},'${e.id}')">Annuler</button>
+          </div>
+        </div>`;
+    }).join('');
+  },
+
+  openEntretienForm(){
+    document.getElementById('entretien-form-section').style.display='block';
+    const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate()+1);
+    document.getElementById('ent-date').value = tomorrow.toISOString().split('T')[0];
+    document.getElementById('ent-heure').value = '10:00';
+  },
+
+  closeEntretienForm(){
+    document.getElementById('entretien-form-section').style.display='none';
+  },
+
+  saveEntretien(){
+    const idx = this.currentCandIdx;
+    const r = state.rows.find(x => x.idx === idx);
+    if(!r) return;
+    const entreprise = document.getElementById('ent-entreprise').value.trim();
+    const contact = document.getElementById('ent-contact').value.trim();
+    const date = document.getElementById('ent-date').value;
+    const heure = document.getElementById('ent-heure').value;
+    const lieu = document.getElementById('ent-lieu').value.trim();
+    const tel = document.getElementById('ent-tel').value.trim();
+    const notes = document.getElementById('ent-notes').value.trim();
+    if(!entreprise||!contact||!date||!heure||!lieu){
+      this.toast('Remplissez tous les champs obligatoires *','error'); return;
+    }
+    const datetime = `${date}T${heure}`;
+    const id = Date.now().toString();
+    const entretien = {id, entreprise, contact, datetime, lieu, tel, notes, candidatEmail: r.email, candidatPrenom: r.prenom, candidatNom: r.nom};
+    if(!state.interviews[idx]) state.interviews[idx] = [];
+    state.interviews[idx].push(entretien);
+    this.saveComments();
+    this.sendEntretienNotif(r, entretien);
+    if(!state.comments[idx]) state.comments[idx] = [];
+    state.comments[idx].push({
+      id: Date.now()+1, text: `📅 Entretien planifié chez ${entreprise} le ${new Date(datetime).toLocaleDateString('fr-FR')} à ${heure} — ${lieu}`,
+      author: 'Système', date: new Date().toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}), pinned: true
+    });
+    this.saveComments();
+    if(state.useSupabase) this.saveEntretienSupabase(idx, entretien).catch(()=>{});
+    this.closeEntretienForm();
+    this.renderEntretiens(idx);
+    this.renderComments(idx);
+    this.renderTable();
+    this.toast(`Entretien planifié ✓ — notification envoyée à ${r.email}`,'success');
+  },
+
+  sendEntretienNotif(r, e){
+    const dateStr = new Date(e.datetime).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+    const heureStr = new Date(e.datetime).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+    const subject = encodeURIComponent(`🎉 Convocation entretien — ${e.entreprise} — ${dateStr}`);
+    const body = encodeURIComponent(
+`Bonjour ${r.prenom},
+
+Nous avons le plaisir de vous informer qu'un entretien a été organisé pour vous.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 DÉTAILS DE VOTRE ENTRETIEN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🏢 Entreprise : ${e.entreprise}
+👤 Vous rencontrerez : ${e.contact}
+📅 Date : ${dateStr}
+🕐 Heure : ${heureStr}
+📍 Lieu : ${e.lieu}
+📞 Contact Talia : ${e.tel || 'Non renseigné'}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⚠️ En cas d'empêchement, merci de nous prévenir au moins 12h avant l'entretien en répondant à ce mail.
+
+Nous vous souhaitons beaucoup de succès !
+
+L'équipe Talia`);
+    window.open(`mailto:${r.email}?subject=${subject}&body=${body}`, '_blank');
+  },
+
+  resendNotifEntretien(idx, entretienId){
+    const r = state.rows.find(x => x.idx === idx);
+    const e = (state.interviews[idx]||[]).find(x => x.id === entretienId);
+    if(!r||!e) return;
+    this.sendEntretienNotif(r, e);
+    this.toast('Notification renvoyée','success',2000);
+  },
+
+  cancelEntretien(idx, entretienId){
+    if(!confirm('Annuler cet entretien ? Le candidat sera notifié par email.')) return;
+    const r = state.rows.find(x => x.idx === idx);
+    const e = (state.interviews[idx]||[]).find(x => x.id === entretienId);
+    if(r && e){
+      const subject = encodeURIComponent(`Annulation entretien — ${e.entreprise}`);
+      const body = encodeURIComponent(`Bonjour ${r.prenom},\n\nNous sommes dans l'obligation d'annuler votre entretien prévu chez ${e.entreprise}.\n\nNous revenons vers vous très prochainement pour reprogrammer.\n\nL'équipe Talia`);
+      window.open(`mailto:${r.email}?subject=${subject}&body=${body}`, '_blank');
+    }
+    state.interviews[idx] = (state.interviews[idx]||[]).filter(x => x.id !== entretienId);
+    this.saveComments();
+    this.renderEntretiens(idx);
+    this.toast('Entretien annulé','info');
+  },
+
+  // ── EMAIL ─────────────────────────────────────────────
+  emailTemplates: [
+    {
+      label: '✅ CV Validé',
+      subject: 'Votre CV a été validé par Talia',
+      body: `Bonjour [PRENOM],\n\nVotre CV a été examiné par notre équipe et nous avons le plaisir de vous informer qu'il a été validé.\n\nVotre profil est désormais actif et va être transmis à nos entreprises partenaires.\n\nN'hésitez pas à nous contacter pour toute question.\n\nCordialement,\nL'équipe Talia`
+    },
+    {
+      label: '✏️ À corriger',
+      subject: 'Votre CV nécessite des modifications',
+      body: `Bonjour [PRENOM],\n\nAprès examen de votre CV, nous avons identifié quelques points à améliorer avant de pouvoir le transmettre aux entreprises.\n\nModifications demandées :\n- [À compléter]\n\nMerci de nous renvoyer votre CV corrigé dès que possible.\n\nCordialement,\nL'équipe Talia`
+    },
+    {
+      label: '📅 Convocation entretien',
+      subject: 'Convocation entretien',
+      body: `Bonjour [PRENOM],\n\nNous avons le plaisir de vous convoquer à un entretien.\n\nLes détails vous seront communiqués séparément.\n\nCordialement,\nL'équipe Talia`
+    },
+    {
+      label: '📢 Relance',
+      subject: 'Relance — Votre dossier Talia',
+      body: `Bonjour [PRENOM],\n\nNous n'avons pas encore reçu votre CV finalisé.\n\nPouvez-vous nous le transmettre dès que possible afin que nous puissions traiter votre dossier ?\n\nCordialement,\nL'équipe Talia`
+    },
+    {
+      label: '🎉 Alternance trouvée',
+      subject: '🎉 Félicitations — Alternance trouvée !',
+      body: `Bonjour [PRENOM],\n\nNous avons le grand plaisir de vous annoncer qu'une entreprise partenaire a retenu votre candidature pour un contrat d'alternance !\n\nNous vous recontactons très prochainement avec tous les détails.\n\nToute l'équipe Talia vous félicite !\n\nCordialement,\nL'équipe Talia`
+    },
+  ],
+
+  initEmailTab(r){
+    document.getElementById('email-to').value = r.email || '';
+    document.getElementById('email-subject').value = '';
+    document.getElementById('email-body').value = '';
+    const tplContainer = document.getElementById('email-templates');
+    tplContainer.innerHTML = this.emailTemplates.map((t,i) => `
+      <button style="padding:5px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);font-size:11px;font-weight:600;cursor:pointer;color:var(--text-s);transition:all 0.15s;font-family:inherit;"
+        onclick="Dashboard.applyEmailTemplate(${i})">${t.label}</button>`).join('');
+    this.currentEmailR = r;
+  },
+
+  currentEmailR: null,
+
+  applyEmailTemplate(idx){
+    const t = this.emailTemplates[idx];
+    const r = this.currentEmailR;
+    if(!t || !r) return;
+    document.getElementById('email-subject').value = t.subject.replace('[PRENOM]', r.prenom);
+    document.getElementById('email-body').value = t.body.replace(/\[PRENOM\]/g, r.prenom).replace(/\[NOM\]/g, r.nom).replace(/\[FORMATION\]/g, r.formation);
+  },
+
+  sendEmailMailto(){
+    const to = document.getElementById('email-to').value;
+    const subject = encodeURIComponent(document.getElementById('email-subject').value);
+    const body = encodeURIComponent(document.getElementById('email-body').value);
+    if(!to){ this.toast('Email destinataire manquant','error'); return; }
+    window.open(`mailto:${to}?subject=${subject}&body=${body}`, '_blank');
+  },
+
+  sendEmailGmail(){
+    const to = document.getElementById('email-to').value;
+    const subject = encodeURIComponent(document.getElementById('email-subject').value);
+    const body = encodeURIComponent(document.getElementById('email-body').value);
+    window.open(`https://mail.google.com/mail/?view=cm&to=${to}&su=${subject}&body=${body}`, '_blank');
+  },
+
+  sendEmailOutlook(){
+    const to = document.getElementById('email-to').value;
+    const subject = encodeURIComponent(document.getElementById('email-subject').value);
+    const body = encodeURIComponent(document.getElementById('email-body').value);
+    window.open(`https://outlook.office.com/mail/deeplink/compose?to=${to}&subject=${subject}&body=${body}`, '_blank');
+  },
+
+  // ══ SUPABASE ══════════════════════════════════════════
+  async loadFromSupabase(){
+    if(!sb) return false;
+    try {
+      this.renderLoading();
+      // Charger candidats
+      const { data: candidates, error } = await sb
+        .from('candidates')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if(error) throw error;
+
+      // Charger commentaires et entretiens
+      const { data: comments } = await sb.from('comments').select('*');
+      const { data: interviews } = await sb.from('interviews').select('*');
+
+      // Reconstruire state.comments et state.interviews (indexés par idx local)
+      // On mappe candidate.id (UUID) → idx local
+      state.rows = candidates.map((c, i) => ({
+        idx: i,
+        supabaseId: c.id,
+        date: c.created_at ? new Date(c.created_at).toLocaleString('fr-FR') : '',
+        prenom: c.prenom || '',
+        nom: c.nom || '',
+        email: c.email || '',
+        telephone: c.telephone || '',
+        formation: c.formation || '',
+        poste: c.poste || '',
+        ville: c.ville || '',
+        statut: c.statut || 'Soumis',
+        sessionId: c.session_id || '',
+        driveLien: c.drive_lien || '',
+        experiences: (() => { try { return JSON.parse(c.experiences||'[]'); } catch(e){ return []; } })(),
+        score: c.score ?? null,
+        scoreDetails: c.score_details ?? null,
+        mondayItemId: c.monday_item_id || '',
+        sheetRow: i + 2,
+      }));
+
+      // Reconstruire les commentaires (UUID → idx)
+      state.supabaseComments = {};
+      (comments || []).forEach(c => {
+        const row = state.rows.find(r => r.supabaseId === c.candidate_id);
+        if(!row) return;
+        if(!state.supabaseComments[row.idx]) state.supabaseComments[row.idx] = [];
+        state.supabaseComments[row.idx].push({
+          id: c.id,
+          text: c.text,
+          author: c.author || 'Équipe Talia',
+          date: new Date(c.created_at).toLocaleString('fr-FR'),
+          pinned: c.pinned || false,
+          supabaseId: c.id
+        });
+      });
+      // Merger avec les commentaires localStorage
+      Object.keys(state.supabaseComments).forEach(idx => {
+        state.comments[idx] = state.supabaseComments[idx];
+      });
+
+      // Entretiens
+      state.supabaseInterviews = {};
+      (interviews || []).forEach(e => {
+        const row = state.rows.find(r => r.supabaseId === e.candidate_id);
+        if(!row) return;
+        if(!state.supabaseInterviews[row.idx]) state.supabaseInterviews[row.idx] = [];
+        state.supabaseInterviews[row.idx].push({
+          id: e.id, entreprise: e.entreprise, contact: e.contact,
+          datetime: e.datetime, lieu: e.lieu, tel: e.tel, notes: e.notes,
+          candidatEmail: row.email, candidatPrenom: row.prenom, candidatNom: row.nom
+        });
+      });
+      Object.keys(state.supabaseInterviews).forEach(idx => {
+        state.interviews[idx] = state.supabaseInterviews[idx];
+      });
+
+      state.useSupabase = true;
+      this.applyFilters();
+      this.updateStats();
+      this.buildFormationFilter();
+      this.toast(`${state.rows.length} candidat(s) chargé(s) depuis Supabase ✓`, 'success');
+      document.getElementById('supabase-dot').style.background = '#22c55e';
+      document.getElementById('supabase-dot').style.boxShadow = '0 0 6px #22c55e';
+      document.getElementById('supabase-label').textContent = 'Supabase ✓';
+      return true;
+    } catch(e){
+      console.warn('Supabase load failed:', e.message);
+      return false;
+    }
+  },
+
+  subscribeRealtime(){
+    if(!sb) return;
+    sb.channel('candidates-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'candidates' }, async () => {
+        await this.loadFromSupabase();
+        this.toast('🔴 Nouveau candidat reçu !', 'info', 4000);
+      })
+      .subscribe();
+  },
+
+  async addCommentToSupabase(idx, commentData){
+    if(!sb) return null;
+    const r = state.rows.find(x => x.idx === idx);
+    if(!r?.supabaseId) return null;
+    const { data, error } = await sb.from('comments').insert([{
+      candidate_id: r.supabaseId,
+      text: commentData.text,
+      author: commentData.author,
+      pinned: commentData.pinned || false
+    }]).select();
+    if(error){ console.warn('Comment Supabase error:', error); return null; }
+    return data?.[0]?.id || null;
+  },
+
+  async updateStatutSupabase(r, newStatut){
+    if(!sb || !r.supabaseId) return;
+    await sb.from('candidates').update({ statut: newStatut }).eq('id', r.supabaseId);
+  },
+
+  async saveEntretienSupabase(idx, entretien){
+    if(!sb) return;
+    const r = state.rows.find(x => x.idx === idx);
+    if(!r?.supabaseId) return;
+    await sb.from('interviews').insert([{
+      candidate_id: r.supabaseId,
+      entreprise: entretien.entreprise,
+      contact: entretien.contact,
+      datetime: entretien.datetime,
+      lieu: entretien.lieu,
+      tel: entretien.tel,
+      notes: entretien.notes
+    }]);
+  },
+
+  async saveScoreSupabase(r, score, scoreDetails){
+    if(!sb || !r.supabaseId) return;
+    await sb.from('candidates').update({
+      score: score,
+      score_details: scoreDetails
+    }).eq('id', r.supabaseId);
+  },
+
+  // ── NAVIGATION VUES PRINCIPALES ──────────────────
+  currentAppView: 'dashboard',
+
+  switchAppView(view){
+    this.currentAppView = view;
+    // Tabs nav
+    document.querySelectorAll('.app-nav-tab').forEach(t => t.classList.remove('active'));
+    const tab = document.getElementById('nav-tab-' + (view === 'kanban-full' ? 'kanban' : view === 'planning' ? 'planning' : view));
+    if(tab) tab.classList.add('active');
+    // Vues
+    document.getElementById('view-dashboard').style.display  = view === 'dashboard'   ? 'block' : 'none';
+    document.getElementById('view-generator').style.display  = view === 'generator'   ? 'block' : 'none';
+    document.getElementById('view-kanban-full').style.display= view === 'kanban-full' ? 'block' : 'none';
+    document.getElementById('view-planning').style.display   = view === 'planning'    ? 'block' : 'none';
+    // Actions spécifiques
+    if(view === 'generator'){
+      const frame = document.getElementById('generator-frame');
+      if(frame && !frame.src) frame.src = 'talia-cv-v12.html';
+    }
+    if(view === 'kanban-full') this.renderKanbanFull();
+    if(view === 'planning')    this.renderPlanning();
+  },
+
+  renderKanbanFull(){
+    const statuts = ['Soumis','En cours','Accepté','Transmis','Refusé'];
+    const colors  = {'Soumis':'#64748b','En cours':'#f59e0b','Accepté':'#22c55e','Transmis':'#0033a0','Refusé':'#ef4444'};
+    const icons   = {'Soumis':'📥','En cours':'🔄','Accepté':'✅','Transmis':'📤','Refusé':'❌'};
+    const board   = document.getElementById('kanban-full-board');
+    if(!board) return;
+    board.innerHTML = statuts.map(s => {
+      const rows = state.rows.filter(r => r.statut === s);
+      return `
+        <div style="min-width:260px;flex:1;background:var(--bg);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:8px;" data-statut="${s}"
+          ondragover="event.preventDefault();this.style.background='var(--navy-l)'"
+          ondragleave="this.style.background='var(--bg)'"
+          ondrop="Dashboard.dropKanbanFull(event,'${s}')">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+            <div style="font-size:13px;font-weight:700;color:var(--text);">${icons[s]} ${s}</div>
+            <div style="background:${colors[s]};color:#fff;padding:2px 9px;border-radius:10px;font-size:11px;font-weight:700;">${rows.length}</div>
+          </div>
+          ${rows.map(r => `
+            <div draggable="true" data-idx="${r.idx}"
+              ondragstart="Dashboard.dragKanbanFull(event,${r.idx})"
+              style="background:#fff;border:1.5px solid var(--border);border-radius:10px;padding:12px;cursor:grab;box-shadow:0 1px 4px rgba(0,0,0,0.05);transition:box-shadow 0.2s;"
+              onmouseover="this.style.boxShadow='0 4px 14px rgba(0,51,160,0.1)'"
+              onmouseout="this.style.boxShadow='0 1px 4px rgba(0,0,0,0.05)'"
+              onclick="Dashboard.openFiche(${r.idx})">
+              <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px;">${this.esc(r.prenom)} ${this.esc(r.nom)}</div>
+              <div style="font-size:11px;color:var(--text-s);margin-bottom:6px;">${this.esc(r.formation||'')}</div>
+              ${r.score !== null ? `<div style="font-size:11px;font-weight:700;color:${r.score>=75?'#059669':r.score>=50?'#d97706':'#dc2626'}">Score IA : ${r.score}/100</div>` : ''}
+              ${(state.comments[r.idx]||[]).length > 0 ? `<div style="font-size:10px;color:var(--muted);margin-top:4px;">💬 ${(state.comments[r.idx]||[]).length} note(s)</div>` : ''}
+            </div>`).join('')}
+        </div>`;
+    }).join('');
+  },
+
+  _dragKanbanIdx: null,
+  dragKanbanFull(event, idx){ this._dragKanbanIdx = idx; },
+  async dropKanbanFull(event, newStatut){
+    event.currentTarget.style.background = 'var(--bg)';
+    const idx = this._dragKanbanIdx;
+    if(idx === null) return;
+    const r = state.rows.find(x => x.idx === idx);
+    if(!r || r.statut === newStatut) return;
+    r.statut = newStatut;
+    if(state.useSupabase) this.updateStatutSupabase(r, newStatut).catch(()=>{});
+    this.renderKanbanFull();
+    this.toast(`${r.prenom} ${r.nom} → ${newStatut}`, 'success', 2000);
+    this._dragKanbanIdx = null;
+  },
+
+  renderPlanning(){
+    const el = document.getElementById('planning-list');
+    if(!el) return;
+    // Collecter tous les entretiens
+    const allEntretiens = [];
+    Object.keys(state.interviews).forEach(idx => {
+      const r = state.rows.find(x => x.idx == idx);
+      (state.interviews[idx]||[]).forEach(e => {
+        allEntretiens.push({ ...e, candidat: r });
+      });
+    });
+    // Trier par date
+    allEntretiens.sort((a,b) => new Date(a.datetime) - new Date(b.datetime));
+    const upcoming = allEntretiens.filter(e => new Date(e.datetime) >= new Date());
+    const past     = allEntretiens.filter(e => new Date(e.datetime) <  new Date());
+
+    if(allEntretiens.length === 0){
+      el.innerHTML = `<div style="text-align:center;padding:60px 20px;color:var(--muted);">
+        <div style="font-size:48px;margin-bottom:12px;">📅</div>
+        <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px;">Aucun entretien planifié</div>
+        <div style="font-size:13px;">Ouvrez la fiche d'un candidat pour planifier un entretien.</div>
+      </div>`;
+      return;
+    }
+
+    const renderCard = (e, isPast) => {
+      const d = new Date(e.datetime);
+      const dateStr = d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+      const heureStr = d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+      const r = e.candidat;
+      return `
+        <div style="background:#fff;border:1.5px solid ${isPast?'var(--border)':'var(--navy)'};border-radius:14px;padding:18px;margin-bottom:12px;opacity:${isPast?'0.6':'1'};display:flex;gap:18px;align-items:flex-start;">
+          <div style="background:${isPast?'var(--bg)':'var(--navy-l)'};border-radius:12px;padding:12px 16px;text-align:center;min-width:70px;flex-shrink:0;">
+            <div style="font-size:22px;font-weight:800;color:${isPast?'var(--muted)':'var(--navy)'};">${d.getDate()}</div>
+            <div style="font-size:11px;font-weight:600;color:${isPast?'var(--muted)':'var(--navy)'};text-transform:uppercase;">${d.toLocaleDateString('fr-FR',{month:'short'})}</div>
+            <div style="font-size:12px;font-weight:700;color:${isPast?'var(--muted)':'var(--navy)'};">${heureStr}</div>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+              <div style="font-size:15px;font-weight:800;color:var(--text);">🏢 ${this.esc(e.entreprise)}</div>
+              ${isPast ? '<span style="font-size:10px;background:#f1f5f9;padding:2px 8px;border-radius:6px;color:var(--muted);font-weight:700;">Passé</span>' : '<span style="font-size:10px;background:var(--green-l);padding:2px 8px;border-radius:6px;color:#166534;font-weight:700;">À venir</span>'}
+            </div>
+            ${r ? `<div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:4px;">👤 Candidat : ${this.esc(r.prenom)} ${this.esc(r.nom)}</div>` : ''}
+            <div style="font-size:12px;color:var(--text-s);display:flex;flex-direction:column;gap:3px;">
+              <div>🤝 Interlocuteur : ${this.esc(e.contact)}</div>
+              <div>📍 ${this.esc(e.lieu)}</div>
+              ${e.tel ? `<div>📞 ${this.esc(e.tel)}</div>` : ''}
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
+            ${r ? `<button class="btn btn-secondary" style="padding:6px 12px;font-size:11px;" onclick="Dashboard.openFiche(${r.idx})">📋 Fiche</button>` : ''}
+            <button class="btn btn-secondary" style="padding:6px 12px;font-size:11px;" onclick="Dashboard.resendNotifEntretien(${r?.idx||0},'${e.id}')">📧 Renvoyer</button>
+          </div>
+        </div>`;
+    };
+
+    el.innerHTML = (upcoming.length ? `
+      <div style="font-size:12px;font-weight:700;color:var(--text-s);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;">📅 À venir — ${upcoming.length} entretien(s)</div>
+      ${upcoming.map(e => renderCard(e, false)).join('')}
+    ` : '') +
+    (past.length ? `
+      <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin:20px 0 10px;">✔ Passés — ${past.length} entretien(s)</div>
+      ${past.map(e => renderCard(e, true)).join('')}
+    ` : '');
+  },
+
+  // ── UTILS ─────────────────────────────────────────
+  esc(str){ return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); },
+};
+
+// ════ INIT ════
+window.addEventListener('load', async () => {
+  // Afficher la vue dashboard par défaut
+  Dashboard.switchAppView('dashboard');
+  Dashboard.loadComments();
+  const hasSupa = initSupabase();
+  if(hasSupa){
+    // Préférer Supabase à Google Sheets si configuré
+    await Dashboard.loadFromSupabase();
+    Dashboard.subscribeRealtime();
+  }
+  if(GOOGLE_CLIENT_ID && typeof gapi !== 'undefined'){
+    Dashboard.initGapi();
+  } else if(!GOOGLE_CLIENT_ID){
+    // Mode démo sans auth
+    Dashboard.renderDemo();
+    document.getElementById('btn-login').textContent = 'Mode démo (sans auth)';
+    document.getElementById('btn-score-all').disabled = !ANTHROPIC_KEY;
+  }
+});
+
+// Fermer modals au clic overlay
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if(e.target === m) m.classList.remove('on'); });
+});
+</script>
+</div><!-- /view-dashboard -->
+<!-- Fiche candidat (panel latéral) -->
+<div class="candidate-modal-overlay" id="cand-overlay" onclick="if(event.target===this)Dashboard.closeFiche()">
+  <div class="candidate-modal" id="cand-modal">
+    <div class="cand-header">
+      <div class="cand-header-top">
+        <div style="display:flex;align-items:center;gap:14px;">
+          <div class="cand-avatar" id="cand-avatar">?</div>
+          <div>
+            <div class="cand-name" id="cand-name">—</div>
+            <div class="cand-formation" id="cand-formation">—</div>
+          </div>
+        </div>
+        <button class="cand-close" onclick="Dashboard.closeFiche()">✕</button>
+      </div>
+      <div class="cand-tags" id="cand-tags"></div>
+    </div>
+    <div class="cand-body">
+      <!-- Onglets -->
+      <div class="cand-tabs">
+        <button class="cand-tab active" onclick="Dashboard.switchCandTab('infos',this)">📋 Infos</button>
+        <button class="cand-tab" onclick="Dashboard.switchCandTab('exp',this)">💼 Expériences</button>
+        <button class="cand-tab" onclick="Dashboard.switchCandTab('comments',this)">💬 Commentaires</button>
+        <button class="cand-tab" onclick="Dashboard.switchCandTab('entretien',this)">📅 Entretien</button>
+        <button class="cand-tab" onclick="Dashboard.switchCandTab('email',this)">✉️ Email</button>
+      </div>
+
+      <!-- Tab Infos -->
+      <div class="cand-tab-content active" id="ctab-infos">
+        <div class="cand-section">
+          <div class="cand-section-title"><span class="ico">👤</span> Coordonnées</div>
+          <div id="cand-infos-list"></div>
+        </div>
+        <div class="cand-section" style="margin-top:12px;">
+          <div class="cand-section-title"><span class="ico">📊</span> Statut dossier</div>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <span id="cand-statut-badge"></span>
+            <button class="btn btn-secondary" style="padding:5px 12px;font-size:11px;" onclick="Dashboard.openStatutModal(Dashboard.currentCandIdx)">✏ Modifier</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab Expériences -->
+      <div class="cand-tab-content" id="ctab-exp">
+        <div class="cand-section">
+          <div class="cand-section-title"><span class="ico">💼</span> Expériences professionnelles</div>
+          <div id="cand-exp-list"></div>
+        </div>
+      </div>
+
+      <!-- Tab Commentaires -->
+      <div class="cand-tab-content" id="ctab-comments">
+        <div class="cand-section">
+          <div class="cand-section-title"><span class="ico">💬</span> Fil de suivi</div>
+          <div class="comment-thread" id="comment-thread"></div>
+          <div class="comment-form">
+            <textarea class="comment-input" id="comment-input" placeholder="Ajouter une note de suivi… (ex: CV transmis à Accenture, en attente de retour)"></textarea>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-s);cursor:pointer;">
+                <input type="checkbox" id="comment-pin" style="accent-color:var(--amber);"/> 📌 Épingler
+              </label>
+              <button class="comment-submit" onclick="Dashboard.addComment()">Ajouter →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab Entretien -->
+      <div class="cand-tab-content" id="ctab-entretien">
+        <div class="cand-section" id="entretien-list-section">
+          <div class="cand-section-title"><span class="ico">📅</span> Entretiens planifiés</div>
+          <div id="entretien-list"></div>
+          <button class="btn btn-primary" style="margin-top:12px;width:100%;" onclick="Dashboard.openEntretienForm()">+ Planifier un entretien</button>
+        </div>
+        <div class="cand-section" id="entretien-form-section" style="display:none;">
+          <div class="cand-section-title"><span class="ico">➕</span> Nouvel entretien</div>
+          <div id="entretien-form-fields">
+            <div style="margin-bottom:10px;">
+              <label style="font-size:11px;font-weight:700;color:var(--text-s);display:block;margin-bottom:4px;">Entreprise partenaire *</label>
+              <input type="text" id="ent-entreprise" placeholder="ex: Accenture, Capgemini…" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;"/>
+            </div>
+            <div style="margin-bottom:10px;">
+              <label style="font-size:11px;font-weight:700;color:var(--text-s);display:block;margin-bottom:4px;">Interlocuteur chez l'entreprise *</label>
+              <input type="text" id="ent-contact" placeholder="ex: Mme Sophie Martin, RRH" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;"/>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+              <div>
+                <label style="font-size:11px;font-weight:700;color:var(--text-s);display:block;margin-bottom:4px;">Date *</label>
+                <input type="date" id="ent-date" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;"/>
+              </div>
+              <div>
+                <label style="font-size:11px;font-weight:700;color:var(--text-s);display:block;margin-bottom:4px;">Heure *</label>
+                <input type="time" id="ent-heure" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;"/>
+              </div>
+            </div>
+            <div style="margin-bottom:10px;">
+              <label style="font-size:11px;font-weight:700;color:var(--text-s);display:block;margin-bottom:4px;">Lieu / Adresse *</label>
+              <input type="text" id="ent-lieu" placeholder="ex: 12 rue de la Paix, 75001 Paris — ou visioconférence" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;"/>
+            </div>
+            <div style="margin-bottom:10px;">
+              <label style="font-size:11px;font-weight:700;color:var(--text-s);display:block;margin-bottom:4px;">Votre téléphone (pour le candidat)</label>
+              <input type="tel" id="ent-tel" placeholder="ex: 06 12 34 56 78" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;"/>
+            </div>
+            <div style="margin-bottom:10px;">
+              <label style="font-size:11px;font-weight:700;color:var(--text-s);display:block;margin-bottom:4px;">Notes internes</label>
+              <textarea id="ent-notes" placeholder="Notes visibles uniquement par vous…" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:12.5px;font-family:inherit;min-height:60px;resize:vertical;"></textarea>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-secondary" style="flex:1;" onclick="Dashboard.closeEntretienForm()">Annuler</button>
+              <button class="btn btn-primary" style="flex:2;" onclick="Dashboard.saveEntretien()">📧 Enregistrer &amp; Notifier</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab Email -->
+      <div class="cand-tab-content" id="ctab-email">
+        <div class="cand-section">
+          <div class="cand-section-title"><span class="ico">✉️</span> Envoyer un email</div>
+          <div style="margin-bottom:14px;">
+            <label style="font-size:11px;font-weight:700;color:var(--text-s);display:block;margin-bottom:6px;">Modèles de message</label>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;" id="email-templates"></div>
+          </div>
+          <div style="margin-bottom:10px;">
+            <label style="font-size:11px;font-weight:700;color:var(--text-s);display:block;margin-bottom:4px;">À</label>
+            <input type="email" id="email-to" readonly style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;background:var(--bg);font-family:inherit;"/>
+          </div>
+          <div style="margin-bottom:10px;">
+            <label style="font-size:11px;font-weight:700;color:var(--text-s);display:block;margin-bottom:4px;">Objet</label>
+            <input type="text" id="email-subject" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;"/>
+          </div>
+          <div style="margin-bottom:12px;">
+            <label style="font-size:11px;font-weight:700;color:var(--text-s);display:block;margin-bottom:4px;">Message</label>
+            <textarea id="email-body" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:12.5px;font-family:inherit;min-height:160px;resize:vertical;line-height:1.6;"></textarea>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-secondary" style="flex:1;" onclick="Dashboard.sendEmailGmail()">
+              <img src="https://www.gstatic.com/images/branding/product/1x/gmail_16dp.png" style="vertical-align:middle;margin-right:4px;" onerror="this.remove()"/> Gmail
+            </button>
+            <button class="btn btn-secondary" style="flex:1;" onclick="Dashboard.sendEmailOutlook()">
+              📧 Outlook
+            </button>
+            <button class="btn btn-primary" style="flex:1;" onclick="Dashboard.sendEmailMailto()">
+              Envoyer ↗
+            </button>
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-top:8px;text-align:center;">
+            Ouvre votre client email par défaut avec le message pré-rempli
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</body>
+</html>

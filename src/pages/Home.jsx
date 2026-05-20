@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getHist, setHist, saveEditorState, PALETTES } from '@/lib/cvData';
+import { getHist, setHist, saveEditorState, PALETTES, colorForFormation } from '@/lib/cvData';
 
 /* ─── Design tokens ─────────────────────────────────────────────────────── */
 const C = {
@@ -77,6 +77,21 @@ const IconDownload = ({ s = 13 }) => (
 const IconX = ({ s = 16 }) => (
   <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+  </svg>
+);
+const IconSearch = ({ s = 14 }) => (
+  <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+  </svg>
+);
+const IconLayers = ({ s = 13 }) => (
+  <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>
+  </svg>
+);
+const IconSort = ({ s = 13 }) => (
+  <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 6h18M6 12h12M10 18h4"/>
   </svg>
 );
 
@@ -218,6 +233,7 @@ function PreviewModal({ item, onModify, onClose }) {
 /* ─── CV Card ────────────────────────────────────────────────────────────── */
 function CVCard({ item, onModify, onView, onDelete, animDelay }) {
   const poste = item.data?.poste || item.formation || '—';
+  const formColor = colorForFormation(item.formation);
   return (
     <div style={{
       background: C.navy,
@@ -230,7 +246,7 @@ function CVCard({ item, onModify, onView, onDelete, animDelay }) {
       {/* Card body */}
       <div style={{ padding: '22px 22px 18px', flex: 1, position: 'relative', overflow: 'hidden' }}>
         {/* Radial gradient accent */}
-        <div style={{ position: 'absolute', top: -30, right: -30, width: 160, height: 160, background: 'radial-gradient(circle, rgba(21,57,183,0.35) 0%, transparent 70%)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', top: -30, right: -30, width: 160, height: 160, background: `radial-gradient(circle, ${formColor.fg}55 0%, transparent 70%)`, pointerEvents: 'none' }} />
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16, position: 'relative' }}>
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -245,6 +261,16 @@ function CVCard({ item, onModify, onView, onDelete, animDelay }) {
             Prêt
           </span>
         </div>
+
+        {/* Formation tag */}
+        {item.formation && (
+          <div style={{ marginBottom: 12, position: 'relative' }}>
+            <span style={{ display:'inline-flex', alignItems:'center', gap:5, fontSize:10.5, fontWeight:700, padding:'4px 10px', borderRadius:99, background:`${formColor.fg}22`, color:'#fff', border:`1px solid ${formColor.fg}55`, maxWidth:'100%', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+              <span style={{ width:6, height:6, borderRadius:'50%', background:formColor.fg, flexShrink:0 }} />
+              {item.formation}
+            </span>
+          </div>
+        )}
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'rgba(255,255,255,0.38)', fontSize: 12 }}>
           <IconClock s={12} />
@@ -301,13 +327,54 @@ export default function Home() {
   const [cvList, setCvList] = useState([]);
   const [viewCV, setViewCV] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
-  const [filter, setFilter] = useState('recent');
+  const [sortBy, setSortBy] = useState('recent'); // recent | old | az | za | formation
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedForms, setSelectedForms] = useState([]); // formations sélectionnées
+  const [groupByBulk, setGroupByBulk] = useState(false);
 
   useEffect(() => { setCvList(getHist()); }, []);
 
-  const sorted = filter === 'az'
-    ? [...cvList].sort((a, b) => a.name.localeCompare(b.name))
-    : cvList;
+  // ── Liste unique des formations présentes ──
+  const formations = React.useMemo(() => {
+    const set = new Set();
+    cvList.forEach(c => { if (c.formation) set.add(c.formation); });
+    return [...set].sort();
+  }, [cvList]);
+
+  // ── Filtrer + trier ──
+  const filtered = React.useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    let list = cvList.filter(c => {
+      if (selectedForms.length && !selectedForms.includes(c.formation)) return false;
+      if (!q) return true;
+      const poste = (c.data?.poste || '').toLowerCase();
+      return c.name.toLowerCase().includes(q) || poste.includes(q) || (c.formation||'').toLowerCase().includes(q);
+    });
+    switch (sortBy) {
+      case 'az':        list = [...list].sort((a,b) => a.name.localeCompare(b.name)); break;
+      case 'za':        list = [...list].sort((a,b) => b.name.localeCompare(a.name)); break;
+      case 'old':       list = [...list].sort((a,b) => a.id - b.id); break;
+      case 'formation': list = [...list].sort((a,b) => (a.formation||'').localeCompare(b.formation||'')); break;
+      default: break; // recent = ordre par défaut (déjà décroissant)
+    }
+    return list;
+  }, [cvList, searchQuery, selectedForms, sortBy]);
+
+  // ── Grouper par session bulk (si demandé) ──
+  const groupedView = React.useMemo(() => {
+    if (!groupByBulk) return null;
+    const groups = new Map();
+    filtered.forEach(c => {
+      const key = c.bulkId || '_none_';
+      if (!groups.has(key)) groups.set(key, { id: key, label: c.bulkLabel || (key === '_none_' ? 'CV individuels' : 'Lot'), items: [], formation: c.formation });
+      groups.get(key).items.push(c);
+    });
+    return [...groups.values()];
+  }, [filtered, groupByBulk]);
+
+  const toggleForm = (f) => setSelectedForms(prev => prev.includes(f) ? prev.filter(x => x !== f) : [...prev, f]);
+  const clearFilters = () => { setSearchQuery(''); setSelectedForms([]); };
+  const hasActiveFilters = searchQuery || selectedForms.length > 0;
 
   const handleModify = useCallback((item) => {
     saveEditorState({ generatedHTML: item.html, cvData: item.data || null, palette: PALETTES[0], croppedPhoto: '', logoDataURL: '', name: item.name });
@@ -383,22 +450,81 @@ export default function Home() {
 
         {/* Section header — hidden when no CVs */}
         {cvList.length > 0 && (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-            <div style={{ fontSize: 15, fontWeight: 700, color: C.ink, letterSpacing: '-0.2px' }}>
-              Vos documents <span style={{ color: C.mute, fontWeight: 500 }}>{cvList.length}</span>
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, gap: 16, flexWrap:'wrap' }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: C.ink, letterSpacing: '-0.2px' }}>
+                Vos documents{' '}
+                <span style={{ color: C.mute, fontWeight: 500 }}>
+                  {hasActiveFilters ? `${filtered.length} sur ${cvList.length}` : cvList.length}
+                </span>
+              </div>
+
+              {/* Toolbar : recherche + tri + group */}
+              <div style={{ display:'flex', gap:10, alignItems:'center', flexWrap:'wrap' }}>
+                {/* Search */}
+                <div style={{ display:'flex', alignItems:'center', gap:8, padding:'8px 14px', background:C.surface, border:`1px solid ${C.rule}`, borderRadius:99, minWidth:240, transition:'border-color .15s' }}>
+                  <IconSearch s={14} />
+                  <input
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    placeholder="Rechercher un nom, poste, formation…"
+                    style={{ flex:1, border:'none', background:'transparent', fontSize:13, color:C.ink, outline:'none', fontFamily:FONT, minWidth:160 }}
+                  />
+                  {searchQuery && (
+                    <button onClick={() => setSearchQuery('')} style={{ background:'none', border:'none', cursor:'pointer', color:C.mute, padding:0, display:'flex' }}>
+                      <IconX s={13} />
+                    </button>
+                  )}
+                </div>
+
+                {/* Sort dropdown */}
+                <div style={{ position:'relative', display:'flex', alignItems:'center', gap:6, padding:'8px 12px', background:'#fff', border:`1px solid ${C.rule}`, borderRadius:99, fontSize:12.5, fontWeight:600, color:C.ink }}>
+                  <IconSort s={13} />
+                  <select value={sortBy} onChange={e => setSortBy(e.target.value)}
+                    style={{ border:'none', background:'transparent', fontSize:12.5, fontWeight:600, color:C.ink, fontFamily:FONT, cursor:'pointer', outline:'none', paddingRight:18, appearance:'none', backgroundImage:'url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'10\' height=\'10\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%239AA0AE\' stroke-width=\'2.5\'><polyline points=\'6 9 12 15 18 9\'/></svg>")', backgroundRepeat:'no-repeat', backgroundPosition:'right 0 center' }}>
+                    <option value="recent">Plus récents</option>
+                    <option value="old">Plus anciens</option>
+                    <option value="az">Nom A → Z</option>
+                    <option value="za">Nom Z → A</option>
+                    <option value="formation">Par formation</option>
+                  </select>
+                </div>
+
+                {/* Group by bulk */}
+                <button onClick={() => setGroupByBulk(v => !v)}
+                  title="Regrouper par session de génération en masse"
+                  style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 12px', border:`1px solid ${groupByBulk ? C.bluePrimary : C.rule}`, borderRadius:99, background:groupByBulk ? C.blueSoft : '#fff', color:groupByBulk ? C.bluePrimary : C.ink, fontSize:12.5, fontWeight:600, cursor:'pointer', transition:'all .15s', fontFamily:FONT }}>
+                  <IconLayers s={13} />
+                  Grouper par lot
+                </button>
+              </div>
             </div>
-            <div style={{ display: 'flex', gap: 6 }}>
-              {[['recent', 'Récents'], ['az', 'A → Z']].map(([key, label]) => (
-                <button key={key} onClick={() => setFilter(key)} style={{
-                  padding: '6px 14px', border: 'none', borderRadius: 99,
-                  background: filter === key ? C.ink : 'transparent',
-                  color: filter === key ? '#fff' : C.mute,
-                  fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
-                  transition: 'all .15s',
-                }}>{label}</button>
-              ))}
-            </div>
-          </div>
+
+            {/* Formation filter chips */}
+            {formations.length > 0 && (
+              <div style={{ display:'flex', gap:8, marginBottom:24, flexWrap:'wrap', alignItems:'center' }}>
+                <span style={{ fontSize:11, fontWeight:600, color:C.mute, textTransform:'uppercase', letterSpacing:'1.4px', marginRight:4 }}>Filtrer :</span>
+                {formations.map(f => {
+                  const col = colorForFormation(f);
+                  const active = selectedForms.includes(f);
+                  return (
+                    <button key={f} onClick={() => toggleForm(f)}
+                      style={{ display:'inline-flex', alignItems:'center', gap:6, padding:'5px 11px', borderRadius:99, border:`1px solid ${active ? col.fg : C.rule}`, background:active ? col.bg : '#fff', color:active ? col.fg : C.ink2, fontSize:12, fontWeight:600, cursor:'pointer', transition:'all .15s', fontFamily:FONT }}>
+                      <span style={{ width:7, height:7, borderRadius:'50%', background:col.fg }} />
+                      {f}
+                      {active && <IconX s={11} />}
+                    </button>
+                  );
+                })}
+                {hasActiveFilters && (
+                  <button onClick={clearFilters}
+                    style={{ padding:'5px 11px', border:'none', background:'transparent', color:C.mute, fontSize:12, fontWeight:600, cursor:'pointer', textDecoration:'underline', fontFamily:FONT }}>
+                    Réinitialiser
+                  </button>
+                )}
+              </div>
+            )}
+          </>
         )}
 
         {/* Empty state — full immersive when no CVs */}
@@ -489,12 +615,46 @@ export default function Home() {
               </div>
             </div>
 
-            {sorted.map((item, i) => (
-              <CVCard key={item.id} item={item} animDelay={(i + 1) * 0.08}
+            {!groupByBulk && filtered.map((item, i) => (
+              <CVCard key={item.id} item={item} animDelay={Math.min((i + 1) * 0.05, 0.4)}
                 onModify={handleModify} onView={setViewCV} onDelete={setDeleteTarget} />
             ))}
           </div>
         )}
+
+        {/* Empty filtered state */}
+        {cvList.length > 0 && filtered.length === 0 && !groupByBulk && (
+          <div style={{ textAlign:'center', padding:'48px 24px', animation:'fadeIn .3s ease' }}>
+            <div style={{ width:64, height:64, borderRadius:16, background:C.surface, display:'flex', alignItems:'center', justifyContent:'center', color:C.mute, margin:'0 auto 16px' }}>
+              <IconSearch s={26} />
+            </div>
+            <div style={{ fontSize:16, fontWeight:700, color:C.ink, marginBottom:6 }}>Aucun CV ne correspond</div>
+            <div style={{ fontSize:13, color:C.mute, marginBottom:18 }}>Essaie une autre recherche ou retire des filtres.</div>
+            <button onClick={clearFilters} style={{ padding:'9px 20px', border:`1px solid ${C.rule}`, background:'#fff', borderRadius:99, fontSize:13, fontWeight:600, color:C.ink, cursor:'pointer', fontFamily:FONT }}>
+              Réinitialiser les filtres
+            </button>
+          </div>
+        )}
+
+        {/* Grouped view by bulk session */}
+        {groupByBulk && cvList.length > 0 && groupedView && groupedView.map(group => {
+          const col = colorForFormation(group.formation);
+          return (
+            <div key={group.id} style={{ marginBottom:36, animation:'fadeIn .3s ease' }}>
+              <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:14, paddingBottom:10, borderBottom:`2px solid ${col.fg}33` }}>
+                <div style={{ width:10, height:10, borderRadius:'50%', background:col.fg, flexShrink:0 }} />
+                <span style={{ fontSize:15, fontWeight:800, color:C.ink, letterSpacing:'-0.2px' }}>{group.label}</span>
+                <span style={{ fontSize:11, color:C.mute, marginLeft:'auto' }}>{group.items.length} CV</span>
+              </div>
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(260px, 1fr))', gap:20 }}>
+                {group.items.map((item, i) => (
+                  <CVCard key={item.id} item={item} animDelay={Math.min(i * 0.04, 0.3)}
+                    onModify={handleModify} onView={setViewCV} onDelete={setDeleteTarget} />
+                ))}
+              </div>
+            </div>
+          );
+        })}
       </main>
 
       <PreviewModal item={viewCV} onModify={handleModify} onClose={() => setViewCV(null)} />

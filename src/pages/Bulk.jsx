@@ -391,6 +391,7 @@ export default function Bulk() {
 
   const { apiKey } = useSettings();
   const [sessionMode, setSessionMode] = useState('build'); // 'build' | 'review'
+  const [bulkId]                  = useState(() => 'bulk-' + Date.now());
   const [groups, setGroups]       = useState([{
     uid: uid(), label:'Groupe 1', formationVal:'', dateVal:'', genre:'',
     jobs:[], collapsed:false,
@@ -479,7 +480,7 @@ export default function Bulk() {
     // Première ouverture : enregistrer dans l'historique
     if (!histId) {
       const formation = FORMATIONS.find(f => f.v===group.formationVal);
-      histId = saveToHist(job.candidateName||job.name, job.generatedHTML, job.cvData, formation?.l||'');
+      histId = saveToHist(job.candidateName||job.name, job.generatedHTML, job.cvData, formation?.l||'', { bulkId, bulkLabel: group.label });
       saveEditorState({ generatedHTML:job.generatedHTML, cvData:job.cvData, palette:PALETTES[0], croppedPhoto:'', logoDataURL:'', name:job.candidateName||job.name });
       updatedGroups = groups.map(g => g.uid===gUid ? {
         ...g, jobs:g.jobs.map(j => j.uid===jUid ? { ...j, histId } : j)
@@ -490,7 +491,7 @@ export default function Bulk() {
     saveBulkSession(updatedGroups);
     sessionStorage.setItem('talia_bulk_returning', '1');
     navigate('/editor/'+histId);
-  }, [groups, navigate]);
+  }, [groups, navigate, bulkId]);
 
   // ── Generate one job (core) ──
   const generateOne = useCallback(async (group, job) => {

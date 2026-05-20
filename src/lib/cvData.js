@@ -1145,7 +1145,7 @@ export function updateHist(id, patch) {
   return true;
 }
 
-export function saveToHist(name, html, data, formation) {
+export function saveToHist(name, html, data, formation, opts = {}) {
   let hist = getHist();
   const now = Date.now();
   const sameRecent = hist.findIndex(h => h.name===name && (now-h.id)<60000);
@@ -1158,10 +1158,31 @@ export function saveToHist(name, html, data, formation) {
     data: data || null,
     thumb: '',
     formation: formation || '',
+    bulkId: opts.bulkId || null,
+    bulkLabel: opts.bulkLabel || null,
+    favorite: false,
   });
   if (hist.length > 50) hist.pop();
   setHist(hist);
   return now;
+}
+
+// ─── Color helper for formation tags (deterministic) ─────────────────────────
+const FORMATION_PALETTE = [
+  { bg:'#EEF2FF', fg:'#1539B7' },
+  { bg:'#f5f3ff', fg:'#7c3aed' },
+  { bg:'#ecfdf5', fg:'#059669' },
+  { bg:'#fffbeb', fg:'#d97706' },
+  { bg:'#fdf2f8', fg:'#db2777' },
+  { bg:'#ecfeff', fg:'#0891b2' },
+  { bg:'#fef2f2', fg:'#dc2626' },
+  { bg:'#f0fdfa', fg:'#0d9488' },
+];
+export function colorForFormation(label) {
+  if (!label) return FORMATION_PALETTE[0];
+  let hash = 0;
+  for (let i = 0; i < label.length; i++) hash = (hash * 31 + label.charCodeAt(i)) | 0;
+  return FORMATION_PALETTE[Math.abs(hash) % FORMATION_PALETTE.length];
 }
 
 // ─── BULK SESSION ────────────────────────────────────────────────────────────

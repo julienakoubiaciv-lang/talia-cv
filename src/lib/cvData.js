@@ -854,9 +854,10 @@ body{font-family:'Manrope',sans-serif;background:#fff;color:#1a1a1a;}
   display:flex;
   align-items:center;
   justify-content:center;
-  gap:16px;
+  gap:18px;
   position:relative;
   z-index:1;
+  width:100%;
 }
 .cv-prenom{
   font-family:'Playfair Display',serif;
@@ -866,6 +867,7 @@ body{font-family:'Manrope',sans-serif;background:#fff;color:#1a1a1a;}
   letter-spacing:-0.3px;
   line-height:1.1;
   text-align:right;
+  flex:1;
 }
 .cv-nom{
   font-family:'Playfair Display',serif;
@@ -875,6 +877,7 @@ body{font-family:'Manrope',sans-serif;background:#fff;color:#1a1a1a;}
   letter-spacing:-0.3px;
   line-height:1.1;
   text-align:left;
+  flex:1;
 }
 /* Circular photo — overflows the band via negative margin */
 .block-photo{
@@ -907,8 +910,9 @@ body{font-family:'Manrope',sans-serif;background:#fff;color:#1a1a1a;}
   color:rgba(255,255,255,0.85);
   letter-spacing:0.14em;
   text-transform:uppercase;
-  margin-top:14px;
+  margin-top:26px;
   text-align:center;
+  width:100%;
 }
 /* Contacts line — below the band */
 .cv-contacts-line{

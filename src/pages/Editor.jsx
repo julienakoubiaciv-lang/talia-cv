@@ -2128,7 +2128,7 @@ Retourne UNIQUEMENT un tableau JSON de 3 strings : ["variante 1", "variante 2", 
             onMouseLeave={e => { e.currentTarget.style.transform='translateY(0)'; e.currentTarget.style.boxShadow='0 2px 8px rgba(34,197,94,0.25)'; }}
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            {hasBulkSession ? 'Valider & retour au lot' : 'Valider & terminer'}
+            Valider
           </button>
 
           <button

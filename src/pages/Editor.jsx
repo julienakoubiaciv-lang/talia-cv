@@ -1228,6 +1228,29 @@ export default function Editor() {
     }
   }, [getCurrentHTML, candidateName, cvData, currentHistId, hasBulkSession, navigate, showToast, crmEmbedded, crmNotifySaved]);
 
+  /* ── valider et terminer : sauve puis retour intelligent ───────────────── */
+  const validateAndExit = useCallback(() => {
+    // 1. Sauvegarder le CV
+    const html = getCurrentHTML();
+    if (currentHistId) {
+      updateHist(currentHistId, { html, data: cvData, name: candidateName || 'CV' });
+    } else {
+      saveToHist(candidateName || 'CV', html, cvData, cvData?.formation || '');
+    }
+    setIsDirty(false);
+    setLastSavedAt(Date.now());
+
+    // 2. Redirection contextuelle
+    if (hasBulkSession) {
+      sessionStorage.setItem('talia_bulk_returning', '1');
+      showToast('CV validé ✓ — retour à la session', 'success', 1800);
+      setTimeout(() => navigate('/bulk'), 250);
+    } else {
+      showToast('CV validé ✓ — enregistré dans tes CV', 'success', 1800);
+      setTimeout(() => navigate('/'), 250);
+    }
+  }, [getCurrentHTML, candidateName, cvData, currentHistId, hasBulkSession, navigate, showToast]);
+
   /* ── Ctrl+Z / Ctrl+Y / Ctrl+S global ───────────────────────────────────── */
   useEffect(() => {
     const handler = (e) => {
@@ -2087,6 +2110,25 @@ Retourne UNIQUEMENT un tableau JSON de 3 strings : ["variante 1", "variante 2", 
           <button className="topbar-btn" onClick={saveCurrentToHist} title="Sauvegarder (Ctrl+S)">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
             Sauvegarder
+          </button>
+
+          <button
+            onClick={validateAndExit}
+            title={hasBulkSession ? 'Valider et revenir au lot' : 'Valider et terminer'}
+            style={{
+              display:'flex', alignItems:'center', gap:6,
+              padding:'7px 14px', border:'none', borderRadius:10,
+              background:'linear-gradient(135deg, #22c55e, #15803d)', color:'#fff',
+              fontSize:12.5, fontWeight:700, cursor:'pointer',
+              fontFamily:"'Manrope',sans-serif",
+              boxShadow:'0 2px 8px rgba(34,197,94,0.25)',
+              transition:'all .15s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.transform='translateY(-1px)'; e.currentTarget.style.boxShadow='0 4px 14px rgba(34,197,94,0.35)'; }}
+            onMouseLeave={e => { e.currentTarget.style.transform='translateY(0)'; e.currentTarget.style.boxShadow='0 2px 8px rgba(34,197,94,0.25)'; }}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            {hasBulkSession ? 'Valider & retour au lot' : 'Valider & terminer'}
           </button>
 
           <button

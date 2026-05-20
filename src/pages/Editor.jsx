@@ -2113,25 +2113,6 @@ Retourne UNIQUEMENT un tableau JSON de 3 strings : ["variante 1", "variante 2", 
           </button>
 
           <button
-            onClick={validateAndExit}
-            title={hasBulkSession ? 'Valider et revenir au lot' : 'Valider et terminer'}
-            style={{
-              display:'flex', alignItems:'center', gap:6,
-              padding:'7px 14px', border:'none', borderRadius:10,
-              background:'linear-gradient(135deg, #22c55e, #15803d)', color:'#fff',
-              fontSize:12.5, fontWeight:700, cursor:'pointer',
-              fontFamily:"'Manrope',sans-serif",
-              boxShadow:'0 2px 8px rgba(34,197,94,0.25)',
-              transition:'all .15s',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.transform='translateY(-1px)'; e.currentTarget.style.boxShadow='0 4px 14px rgba(34,197,94,0.35)'; }}
-            onMouseLeave={e => { e.currentTarget.style.transform='translateY(0)'; e.currentTarget.style.boxShadow='0 2px 8px rgba(34,197,94,0.25)'; }}
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            Valider
-          </button>
-
-          <button
             className="topbar-icon-btn"
             title="Historique des versions"
             onClick={() => {

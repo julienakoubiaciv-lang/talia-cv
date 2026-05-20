@@ -158,21 +158,33 @@ function Badge({ children, variant = 'gray' }) {
   );
 }
 
-function SectionCard({ children, active, style }) {
+const SectionCard = React.forwardRef(function SectionCard({ children, active, complete, style }, ref) {
   return (
-    <div style={{
+    <div ref={ref} style={{
       background: C.bg,
-      border: '1px solid ' + (active ? C.bluePrimary + '55' : C.rule),
+      border: '1.5px solid ' + (complete ? '#22c55e55' : active ? C.bluePrimary + '66' : C.rule),
       borderRadius: 16,
       padding: 22,
       marginBottom: 16,
-      transition: 'border-color 0.2s',
+      transition: 'border-color 0.3s, box-shadow 0.3s, transform 0.3s',
+      boxShadow: active ? '0 6px 24px '+C.bluePrimary+'18' : complete ? '0 2px 12px #22c55e15' : 'none',
+      position: 'relative',
       ...style,
     }}>
+      {complete && (
+        <div style={{
+          position:'absolute', top:14, right:14,
+          width:24, height:24, borderRadius:'50%', background:'#22c55e',
+          display:'flex', alignItems:'center', justifyContent:'center',
+          animation:'checkPop .4s cubic-bezier(.16,.84,.24,1)',
+        }}>
+          <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M2.5 7L5.5 10L11.5 4" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        </div>
+      )}
       {children}
     </div>
   );
-}
+});
 
 function CardHeader({ label, status }) {
   const statusConfig = {
@@ -222,43 +234,193 @@ const textareaStyle = {
   lineHeight: 1.6, transition: 'border-color 0.18s',
 };
 
-// ─── Stepper ───────────────────────────────────────────────────────────────────
-function Stepper({ steps, activeIndex }) {
+// ─── Generation Overlay (animated stages) ──────────────────────────────────
+function GenerationOverlay({ visible, progress, progressText, stage, error, onClose }) {
+  if (!visible) return null;
+  const stages = [
+    { key:'extract',  label:'Lecture du CV',         icon: '📄', desc:'Extraction des informations…' },
+    { key:'enrich',   label:'Enrichissement IA',     icon: '✨', desc:'Adaptation au programme Talia…' },
+    { key:'design',   label:'Mise en page',          icon: '🎨', desc:'Création du design premium…' },
+    { key:'done',     label:'CV prêt',               icon: '✓',  desc:'Préparation de l\'éditeur…' },
+  ];
+
   return (
-    <div style={{ display: 'flex', alignItems: 'center', marginBottom: 28 }}>
-      {steps.map((label, i) => {
-        const done   = i < activeIndex;
-        const active = i === activeIndex;
-        return (
-          <React.Fragment key={i}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+    <div style={{
+      position:'fixed', inset:0, zIndex:9000,
+      background:'rgba(11,16,32,0.55)', backdropFilter:'blur(8px)',
+      display:'flex', alignItems:'center', justifyContent:'center',
+      animation:'fadeIn .25s ease',
+    }}>
+      <div style={{
+        width:'min(560px, 92vw)', background:'#fff', borderRadius:24,
+        padding:'36px 36px 30px', boxShadow:'0 40px 100px rgba(11,16,32,.35)',
+        animation:'fadeInUp .35s cubic-bezier(.16,.84,.24,1)',
+      }}>
+        {/* Top illustration */}
+        <div style={{ display:'flex', justifyContent:'center', marginBottom:18 }}>
+          <div style={{
+            width:64, height:64, borderRadius:20,
+            background:'linear-gradient(135deg, '+C.bluePrimary+', '+C.blueHover+')',
+            display:'flex', alignItems:'center', justifyContent:'center',
+            boxShadow:'0 12px 30px '+C.bluePrimary+'55',
+            position:'relative', overflow:'hidden',
+          }}>
+            <div style={{ position:'absolute', inset:0, background:'linear-gradient(120deg, transparent 30%, rgba(255,255,255,.3) 50%, transparent 70%)', backgroundSize:'200% 100%', animation:'shimmer 2s linear infinite' }} />
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+            </svg>
+          </div>
+        </div>
+
+        {/* Title */}
+        <h2 style={{ fontSize:22, fontWeight:800, color:C.ink, textAlign:'center', letterSpacing:'-0.5px', marginBottom:6 }}>
+          {error ? 'Une erreur est survenue' : stage === 3 ? 'CV généré !' : 'Génération en cours'}
+        </h2>
+        <p style={{ fontSize:13.5, color:C.mute, textAlign:'center', marginBottom:24, lineHeight:1.55 }}>
+          {error ? error : progressText || 'L\'IA Talia prépare ton CV…'}
+        </p>
+
+        {/* Progress bar */}
+        {!error && (
+          <div style={{ marginBottom:24 }}>
+            <div style={{ position:'relative', height:6, background:C.rule, borderRadius:99, overflow:'hidden' }}>
               <div style={{
-                width: 32, height: 32, borderRadius: '50%',
-                background: active ? C.bluePrimary : done ? C.bluePrimary : C.rule,
-                border: '2px solid ' + (active ? C.bluePrimary : done ? C.bluePrimary : C.rule),
+                height:'100%', borderRadius:99,
+                background:'linear-gradient(90deg, '+C.bluePrimary+', '+C.blueHover+')',
+                width: progress + '%', transition:'width 0.5s cubic-bezier(.16,.84,.24,1)',
+                boxShadow:'0 0 16px '+C.bluePrimary+'66',
+              }} />
+            </div>
+            <div style={{ display:'flex', justifyContent:'space-between', marginTop:8, fontSize:11, color:C.mute, fontWeight:600 }}>
+              <span>{progress}%</span>
+              {stage < 3 && (
+                <span style={{ display:'flex', gap:3 }}>
+                  <span className="gen-stage-dot" style={{ display:'inline-block', width:4, height:4, borderRadius:'50%', background:C.bluePrimary }} />
+                  <span className="gen-stage-dot" style={{ display:'inline-block', width:4, height:4, borderRadius:'50%', background:C.bluePrimary }} />
+                  <span className="gen-stage-dot" style={{ display:'inline-block', width:4, height:4, borderRadius:'50%', background:C.bluePrimary }} />
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Stages list */}
+        {!error && (
+          <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+            {stages.map((s, i) => {
+              const done = i < stage;
+              const active = i === stage;
+              return (
+                <div key={s.key} style={{
+                  display:'flex', alignItems:'center', gap:12,
+                  padding:'10px 14px', borderRadius:12,
+                  background: active ? C.blueSoft : done ? '#f0fdf4' : C.surface,
+                  border:'1px solid '+(active ? C.bluePrimary+'44' : done ? '#22c55e44' : C.rule),
+                  transition:'all .3s',
+                  opacity: i > stage ? .5 : 1,
+                }}>
+                  <div style={{
+                    width:30, height:30, borderRadius:'50%', flexShrink:0,
+                    background: done ? '#22c55e' : active ? C.bluePrimary : '#fff',
+                    border:'1.5px solid '+(done ? '#22c55e' : active ? C.bluePrimary : C.rule),
+                    display:'flex', alignItems:'center', justifyContent:'center',
+                    color: done || active ? '#fff' : C.mute, fontSize:14,
+                  }}>
+                    {done
+                      ? <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ animation:'checkPop .35s cubic-bezier(.16,.84,.24,1)' }}><path d="M2.5 7L5.5 10L11.5 4" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      : active
+                        ? <div style={{ width:12, height:12, border:'2px solid #fff', borderTopColor:'transparent', borderRadius:'50%', animation:'spin .7s linear infinite' }} />
+                        : <span>{s.icon}</span>}
+                  </div>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ fontSize:13, fontWeight:700, color: active ? C.bluePrimary : done ? '#15803d' : C.ink2 }}>{s.label}</div>
+                    <div style={{ fontSize:11, color:C.mute, marginTop:1 }}>{s.desc}</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Error retry */}
+        {error && (
+          <button onClick={onClose} style={{
+            width:'100%', marginTop:8, padding:'12px',
+            background:C.ink, color:'#fff', border:'none', borderRadius:12,
+            fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'Manrope, sans-serif',
+          }}>Fermer</button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Stepper (animated, with descriptions + sub-progress) ───────────────────
+function Stepper({ steps, activeIndex, onStepClick }) {
+  const totalPct = Math.min(100, Math.round((activeIndex / (steps.length - 1)) * 100));
+  return (
+    <div style={{ marginBottom: 36 }}>
+      {/* Progress bar globale */}
+      <div style={{ position:'relative', height: 4, background: C.rule, borderRadius: 99, marginBottom: 22, overflow:'hidden' }}>
+        <div style={{
+          position:'absolute', inset:0, width: totalPct+'%',
+          background: 'linear-gradient(90deg, '+C.bluePrimary+', '+C.blueHover+')',
+          borderRadius: 99, transition: 'width 0.6s cubic-bezier(.16,.84,.24,1)',
+          boxShadow: '0 0 12px '+C.bluePrimary+'55',
+        }} />
+      </div>
+
+      {/* Steps */}
+      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${steps.length}, 1fr)`, gap: 14 }}>
+        {steps.map((step, i) => {
+          const done   = i < activeIndex;
+          const active = i === activeIndex;
+          const clickable = !!onStepClick && i <= activeIndex;
+          return (
+            <button
+              key={i}
+              type="button"
+              onClick={clickable ? () => onStepClick(i) : undefined}
+              style={{
+                display:'flex', alignItems:'center', gap: 12,
+                padding: '12px 14px', borderRadius: 12,
+                background: active ? C.blueSoft : 'transparent',
+                border: '1px solid ' + (active ? C.bluePrimary+'55' : done ? '#22c55e33' : C.rule),
+                cursor: clickable ? 'pointer' : 'default',
+                textAlign: 'left', fontFamily: 'inherit',
+                transition: 'all 0.25s cubic-bezier(.4,0,.2,1)',
+                animation: active ? 'stepPulse 1.8s ease-in-out infinite' : 'none',
+              }}
+            >
+              <div style={{
+                width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
+                background: done ? '#22c55e' : active ? C.bluePrimary : '#fff',
+                border: '2px solid ' + (done ? '#22c55e' : active ? C.bluePrimary : C.rule),
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                transition: 'all 0.2s',
+                transition: 'all 0.3s', color: done || active ? '#fff' : C.mute,
+                fontSize: 14, fontWeight: 700,
+                boxShadow: active ? '0 0 0 6px '+C.bluePrimary+'15' : 'none',
               }}>
                 {done
-                  ? <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2.5 7L5.5 10L11.5 4" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                  : <div style={{ width: 10, height: 10, borderRadius: '50%', background: active ? '#fff' : C.mute }} />
+                  ? <svg width="16" height="16" viewBox="0 0 14 14" fill="none" style={{ animation:'checkPop .35s cubic-bezier(.16,.84,.24,1)' }}><path d="M2.5 7L5.5 10L11.5 4" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  : i + 1
                 }
               </div>
-              <span style={{
-                fontSize: 11, fontWeight: active ? 700 : 500,
-                color: active ? C.bluePrimary : done ? C.ink2 : C.mute,
-                fontFamily: 'Manrope, sans-serif', whiteSpace: 'nowrap',
-              }}>{label}</span>
-            </div>
-            {i < steps.length - 1 && (
-              <div style={{
-                flex: 1, height: 1, background: i < activeIndex ? C.bluePrimary : C.rule,
-                margin: '0 8px', marginBottom: 20, transition: 'background 0.3s',
-              }} />
-            )}
-          </React.Fragment>
-        );
-      })}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{
+                  fontSize: 13, fontWeight: active || done ? 700 : 600,
+                  color: active ? C.bluePrimary : done ? '#15803d' : C.ink2,
+                  marginBottom: 2, letterSpacing: '-0.1px',
+                  transition: 'color 0.2s',
+                }}>{step.label}</div>
+                <div style={{ fontSize: 11, color: C.mute, lineHeight: 1.4, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                  {done ? '✓ Complété' : step.hint}
+                </div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -293,9 +455,14 @@ export default function Home() {
   const [generating,       setGenerating]       = useState(false);
   const [genProgress,      setGenProgress]      = useState(0);
   const [genProgressText,  setGenProgressText]  = useState('');
+  const [genStage,         setGenStage]         = useState(0); // 0:extract, 1:enrich, 2:design, 3:done
   const [genError,         setGenError]         = useState('');
 
   const fileInputRef = useRef(null);
+  const card1Ref = useRef(null);
+  const card2Ref = useRef(null);
+  const card3Ref = useRef(null);
+  const prevStepRef = useRef(0);
 
   const formation = FORMATIONS.find(f => f.v === formationVal);
   const dates     = formation ? (DATES[formation.n] || []) : [];
@@ -309,6 +476,19 @@ export default function Home() {
 
   // Determine stepper active step
   const stepperActive = !hasFormation ? 0 : !hasCV ? 1 : 2;
+
+  // Auto-scroll vers la prochaine carte quand l'étape avance
+  useEffect(() => {
+    if (stepperActive > prevStepRef.current) {
+      const targets = [card1Ref, card2Ref, card3Ref];
+      const next = targets[stepperActive]?.current;
+      if (next) {
+        // petit délai pour laisser l'animation du stepper se faire
+        setTimeout(() => next.scrollIntoView({ behavior:'smooth', block:'start' }), 280);
+      }
+    }
+    prevStepRef.current = stepperActive;
+  }, [stepperActive]);
 
   // ── Keyboard shortcut Ctrl+Enter ──
   useEffect(() => {
@@ -372,7 +552,7 @@ export default function Home() {
   // ── Generate ──
   const generate = async () => {
     if (!canGenerate || generating) return;
-    setGenError(''); setGenerating(true);
+    setGenError(''); setGenerating(true); setGenStage(0);
     setGenProgress(10); setGenProgressText('Préparation…');
 
     const hasAnnonce = annonceText.trim().length > 30;
@@ -437,23 +617,25 @@ RÈGLES :
 
     // ── Mode démo : pas de clé API → génération locale ──────────────────
     if (!apiKey.trim()) {
-      setGenProgress(40); setGenProgressText('Génération en mode démo…');
+      setGenStage(0); setGenProgress(25); setGenProgressText('Extraction (mode démo)…');
+      await new Promise(r => setTimeout(r, 500));
+      setGenStage(1); setGenProgress(55); setGenProgressText('Enrichissement…');
       await new Promise(r => setTimeout(r, 400));
       const cvData = buildMockCvData({ formation, formationVal, poste, genre, comp, dateVal });
-      setGenProgress(85); setGenProgressText('Mise en page…');
-      await new Promise(r => setTimeout(r, 200));
+      setGenStage(2); setGenProgress(85); setGenProgressText('Mise en page…');
+      await new Promise(r => setTimeout(r, 300));
       const generatedHTML = renderCVFromData(cvData, PALETTES[0]);
       const name = 'Prénom NOM (démo)';
       saveToHist(name, generatedHTML, cvData, formation.l);
       saveEditorState({ generatedHTML, cvData, palette: PALETTES[0], croppedPhoto: '', logoDataURL: '', name });
-      setGenProgress(100); setGenProgressText('CV démo prêt !');
+      setGenStage(3); setGenProgress(100); setGenProgressText('CV démo prêt !');
       showToast("CV de démonstration généré — remplace les données fictives dans l'éditeur", 'info', 5000);
-      setTimeout(() => { setGenerating(false); setGenProgress(0); navigate('/editor'); }, 700);
+      setTimeout(() => { setGenerating(false); setGenProgress(0); setGenStage(0); navigate('/editor'); }, 900);
       return;
     }
 
     try {
-      setGenProgress(25); setGenProgressText('Extraction des données du CV…');
+      setGenStage(0); setGenProgress(25); setGenProgressText('Extraction des données du CV…');
       const data1 = await callAnthropicAPI({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 4000,
@@ -472,7 +654,7 @@ RÈGLES :
         else throw new Error('Réponse JSON invalide. Réessayez.');
       }
 
-      setGenProgress(65); setGenProgressText('Enrichissement des données…');
+      setGenStage(1); setGenProgress(65); setGenProgressText('Enrichissement des données…');
 
       if (poste && !cvData.poste) cvData.poste = poste.toUpperCase();
       if (cvData.poste) cvData.poste = cvData.poste.toUpperCase();
@@ -498,7 +680,7 @@ RÈGLES :
         comp.soft.forEach(c => { if (!ex.has(c.toLowerCase())) cvData.competences.comportementales.push(c); });
       }
 
-      setGenProgress(85); setGenProgressText('Mise en page du CV…');
+      setGenStage(2); setGenProgress(85); setGenProgressText('Mise en page du CV…');
       const generatedHTML = renderCVFromData(cvData, PALETTES[0]);
       const name = [(cvData.prenom || ''), (cvData.nom || '')].filter(Boolean).join(' ') || 'Candidat';
 
@@ -512,14 +694,15 @@ RÈGLES :
       };
       saveEditorState(editorState);
 
-      setGenProgress(100); setGenProgressText('CV généré !');
+      setGenStage(3); setGenProgress(100); setGenProgressText('CV généré !');
       showToast(name + ' — CV généré', 'success');
 
       setTimeout(() => {
         setGenerating(false);
         setGenProgress(0);
+        setGenStage(0);
         navigate('/editor');
-      }, 700);
+      }, 900);
 
     } catch (e) {
       setGenError('Erreur : ' + e.message);
@@ -550,7 +733,15 @@ RÈGLES :
         select:focus, textarea:focus, input:focus { border-color: ${C.bluePrimary} !important; outline: none; }
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes progressPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
+        @keyframes stepPulse { 0%,100% { box-shadow: 0 0 0 0 ${C.bluePrimary}00; } 50% { box-shadow: 0 0 0 4px ${C.bluePrimary}18; } }
+        @keyframes checkPop { 0% { transform: scale(0); } 60% { transform: scale(1.2); } 100% { transform: scale(1); } }
+        @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+        @keyframes dotBounce { 0%, 80%, 100% { transform: translateY(0); opacity: .4; } 40% { transform: translateY(-6px); opacity: 1; } }
+        .gen-stage-dot { animation: dotBounce 1.4s infinite ease-in-out; }
+        .gen-stage-dot:nth-child(2) { animation-delay: .15s; }
+        .gen-stage-dot:nth-child(3) { animation-delay: .3s; }
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: ${C.rule}; border-radius: 3px; }
@@ -654,12 +845,20 @@ RÈGLES :
 
           {/* Stepper */}
           <Stepper
-            steps={['Formation', 'Contenu', 'Génération']}
+            steps={[
+              { label:'Formation', hint:'Programme & poste visé' },
+              { label:'Contenu',   hint:'CV du candidat' },
+              { label:'Génération', hint:'L\'IA prend le relais' },
+            ]}
             activeIndex={stepperActive}
+            onStepClick={(i) => {
+              const targets = [card1Ref, card2Ref, card3Ref];
+              targets[i]?.current?.scrollIntoView({ behavior:'smooth', block:'start' });
+            }}
           />
 
           {/* ── CARD 1 : Formation Talia ───────────────────────────────── */}
-          <SectionCard active={stepperActive === 0}>
+          <SectionCard ref={card1Ref} active={stepperActive === 0} complete={hasFormation && stepperActive > 0}>
             <CardHeader label="Formation Talia" status={hasFormation ? 'pending' : 'active'} />
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 16 }}>
@@ -782,7 +981,7 @@ RÈGLES :
           </SectionCard>
 
           {/* ── CARD 2 : Contenu du CV candidat ───────────────────────── */}
-          <SectionCard active={hasFormation && !hasCV}>
+          <SectionCard ref={card2Ref} active={hasFormation && !hasCV} complete={hasFormation && hasCV}>
             <CardHeader label="Contenu du CV candidat" status={!hasFormation ? 'locked' : hasCV ? 'pending' : 'active'} />
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, alignItems: 'start', marginBottom: 16 }}>
@@ -926,7 +1125,7 @@ RÈGLES :
           </SectionCard>
 
           {/* ── CARD 3 : Génération ────────────────────────────────────── */}
-          <SectionCard active={canGenerate} style={{ background: canGenerate ? '#FDFAF2' : C.bg, border: '1px solid ' + (canGenerate ? C.star + '55' : C.rule) }}>
+          <SectionCard ref={card3Ref} active={canGenerate} style={{ background: canGenerate ? '#FDFAF2' : C.bg, border: '1.5px solid ' + (canGenerate ? C.star + '88' : C.rule), boxShadow: canGenerate ? '0 8px 28px '+C.star+'22' : 'none' }}>
             <CardHeader label="Génération du CV" status={!canGenerate ? 'locked' : 'active'} />
 
             {/* Generate button */}
@@ -1088,6 +1287,16 @@ RÈGLES :
       </div>
 
       <Toast toasts={toasts} remove={removeToast} />
+
+      {/* Overlay de génération animé */}
+      <GenerationOverlay
+        visible={generating || !!genError}
+        progress={genProgress}
+        progressText={genProgressText}
+        stage={genStage}
+        error={genError}
+        onClose={() => { setGenError(''); setGenerating(false); setGenProgress(0); setGenStage(0); }}
+      />
     </div>
   );
 }

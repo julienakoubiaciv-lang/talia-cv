@@ -1228,29 +1228,6 @@ export default function Editor() {
     }
   }, [getCurrentHTML, candidateName, cvData, currentHistId, hasBulkSession, navigate, showToast, crmEmbedded, crmNotifySaved]);
 
-  /* ── valider et terminer : sauve puis retour intelligent ───────────────── */
-  const validateAndExit = useCallback(() => {
-    // 1. Sauvegarder le CV
-    const html = getCurrentHTML();
-    if (currentHistId) {
-      updateHist(currentHistId, { html, data: cvData, name: candidateName || 'CV' });
-    } else {
-      saveToHist(candidateName || 'CV', html, cvData, cvData?.formation || '');
-    }
-    setIsDirty(false);
-    setLastSavedAt(Date.now());
-
-    // 2. Redirection contextuelle
-    if (hasBulkSession) {
-      sessionStorage.setItem('talia_bulk_returning', '1');
-      showToast('CV validé ✓ — retour à la session', 'success', 1800);
-      setTimeout(() => navigate('/bulk'), 250);
-    } else {
-      showToast('CV validé ✓ — enregistré dans tes CV', 'success', 1800);
-      setTimeout(() => navigate('/'), 250);
-    }
-  }, [getCurrentHTML, candidateName, cvData, currentHistId, hasBulkSession, navigate, showToast]);
-
   /* ── Ctrl+Z / Ctrl+Y / Ctrl+S global ───────────────────────────────────── */
   useEffect(() => {
     const handler = (e) => {

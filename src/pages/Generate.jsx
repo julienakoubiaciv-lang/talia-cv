@@ -646,6 +646,7 @@ export default function Home() {
     }
   }, [selectedProfileId]);
 
+
   // Form state
   const [genre,        setGenre]        = useState('');
   const [formationVal, setFormationVal] = useState('');

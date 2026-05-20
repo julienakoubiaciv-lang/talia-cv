@@ -7,3 +7,25 @@ dist/
 *.log
 .DS_Store
 Thumbs.db
+
+# ── Secrets — ne JAMAIS committer ───────────────────────────
+*sk-ant-*
+*sk-proj-*
+*gho_*
+*ghp_*
+*.pem
+*.key
+*API*.txt
+*credentials*
+*secret*.txt
+
+# ── Captures d'écran & fichiers temporaires ─────────────────
+Capture*.png
+*Temp*.txt
+*~
+
+# ── Anciens snapshots HTML (sauvegardés sur backup-html-version) ──
+talia-cv-v*.html
+talia-dashboard*.html
+talia-app.html
+talia-generateur.html

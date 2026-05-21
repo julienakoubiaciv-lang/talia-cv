@@ -587,6 +587,13 @@ export default function Home() {
     setLeadSentIds(prev => new Set([...prev, item.id]));
   }, [embedded, notifyCreateLead]);
 
+  // ── Envoi lead vers le CRM ─────────────────────────────────────────────
+  const handleCreateLead = useCallback((item) => {
+    if (!embedded) return;
+    notifyCreateLead({ cv_data: item.data, html: item.html, name: item.name });
+    setLeadSentIds(prev => new Set([...prev, item.id]));
+  }, [embedded, notifyCreateLead]);
+
   return (
     <div style={{ minHeight: '100vh', background: C.bg, fontFamily: FONT }}>
       <style>{`

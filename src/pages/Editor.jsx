@@ -3139,21 +3139,29 @@ Retourne UNIQUEMENT un tableau JSON de 3 strings : ["variante 1", "variante 2", 
                           }}
                         >
                           <div style={{
-                            height: 36,
+                            height: 52,
                             borderRadius: 5,
-                            background: tx.preview || selectedPalRef.current?.c || '#1a3a5c',
-                            display: 'flex',
-                            alignItems: 'flex-end',
-                            justifyContent: 'center',
-                            paddingBottom: 3,
+                            overflow: 'hidden',
+                            position: 'relative',
+                            // photo Unsplash si dispo, sinon gradient CSS
+                            background: tx.photo
+                              ? `url("${tx.preview}") center/cover no-repeat`
+                              : (tx.preview || selectedPalRef.current?.c || '#1a3a5c'),
                           }}>
+                            {/* overlay léger pour lisibilité du label */}
+                            <div style={{
+                              position: 'absolute', inset: 0,
+                              background: tx.dark === false
+                                ? 'linear-gradient(to top,rgba(255,255,255,0.55) 0%,transparent 60%)'
+                                : 'linear-gradient(to top,rgba(0,0,0,0.55) 0%,transparent 60%)',
+                            }} />
                             <span style={{
-                              fontSize: 9,
-                              fontWeight: 700,
-                              color: tx.dark === false ? '#333' : '#fff',
-                              letterSpacing: '.04em',
-                              textShadow: 'none',
-                              lineHeight: 1,
+                              position: 'absolute', bottom: 4, left: 0, right: 0,
+                              textAlign: 'center',
+                              fontSize: 9, fontWeight: 700,
+                              color: tx.dark === false ? '#222' : '#fff',
+                              letterSpacing: '.04em', lineHeight: 1,
+                              textShadow: tx.dark === false ? '0 1px 2px rgba(255,255,255,0.6)' : '0 1px 3px rgba(0,0,0,0.7)',
                             }}>{tx.label}</span>
                           </div>
                         </button>

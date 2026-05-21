@@ -3075,7 +3075,7 @@ Retourne UNIQUEMENT un tableau JSON de 3 strings : ["variante 1", "variante 2", 
                           key={tpl.id}
                           onClick={() => {
                             setTemplateId(tpl.id);
-                            const html = renderCVFromData(cvData || edFields, selectedPalRef.current, sectionOrder, tpl.id, sidebarOrder);
+                            const html = renderCVFromData(cvData || edFields, selectedPalRef.current, sectionOrder, tpl.id, sidebarOrder, sidebarTextureRef.current, sidebarOverlayRef.current);
                             const final = injectMedia(html, croppedPhotoRef.current, logoDataURLRef.current);
                             reloadIframe(final);
                           }}
@@ -3100,6 +3100,103 @@ Retourne UNIQUEMENT un tableau JSON de 3 strings : ["variante 1", "variante 2", 
                 </div>
               )}
             </div>
+
+            {/* ── Texture sidebar ─────────────────────────────────────────── */}
+            <div className="acc-block">
+              <button className="acc-btn" onClick={() => toggleAcc('texture')}>
+                <span style={{ display:'flex', alignItems:'center', gap:7 }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8z"/><circle cx="6.5" cy="11.5" r="1.5" fill="currentColor" stroke="none"/><circle cx="9.5" cy="7.5" r="1.5" fill="currentColor" stroke="none"/><circle cx="14.5" cy="7.5" r="1.5" fill="currentColor" stroke="none"/><circle cx="17.5" cy="11.5" r="1.5" fill="currentColor" stroke="none"/></svg>
+                  Texture sidebar
+                </span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ transform: designAcc.texture?'rotate(180deg)':'none', transition:'transform .2s' }}><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              {designAcc.texture && (
+                <div style={{ padding:'14px 12px 16px' }}>
+                  {/* Grille de swatches */}
+                  <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:7, marginBottom:14 }}>
+                    {SIDEBAR_TEXTURES.map(tx => {
+                      const isActive = sidebarTextureId === tx.id;
+                      return (
+                        <button
+                          key={tx.id}
+                          title={tx.label}
+                          onClick={() => {
+                            setSidebarTextureId(tx.id);
+                            localStorage.setItem('talia_sidebar_texture_id', tx.id);
+                            const resolved = SIDEBAR_TEXTURES.find(t => t.id === tx.id) || SIDEBAR_TEXTURES[0];
+                            sidebarTextureRef.current = resolved;
+                            if (!cvData) return;
+                            const html = renderCVFromData(cvData, selectedPalRef.current, sectionOrder, templateIdRef.current, sidebarOrder, resolved, sidebarOverlayRef.current);
+                            reloadIframe(injectMedia(html, croppedPhotoRef.current, logoDataURLRef.current));
+                          }}
+                          style={{
+                            border: isActive ? `2px solid ${C.bluePrimary}` : `1.5px solid ${C.rule}`,
+                            borderRadius: 8,
+                            padding: 3,
+                            background: 'none',
+                            cursor: 'pointer',
+                            transition: 'all .15s',
+                          }}
+                        >
+                          <div style={{
+                            height: 36,
+                            borderRadius: 5,
+                            background: tx.preview || selectedPalRef.current?.c || '#1a3a5c',
+                            display: 'flex',
+                            alignItems: 'flex-end',
+                            justifyContent: 'center',
+                            paddingBottom: 3,
+                          }}>
+                            <span style={{
+                              fontSize: 9,
+                              fontWeight: 700,
+                              color: tx.dark === false ? '#333' : '#fff',
+                              letterSpacing: '.04em',
+                              textShadow: 'none',
+                              lineHeight: 1,
+                            }}>{tx.label}</span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Slider overlay — visible seulement si une texture est active */}
+                  {sidebarTextureId !== 'none' && (
+                    <div>
+                      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6 }}>
+                        <span style={{ fontSize:11, fontWeight:600, color:C.ink }}>Opacité couleur</span>
+                        <span style={{ fontSize:11, color:C.mute }}>{Math.round(sidebarOverlay * 100)}%</span>
+                      </div>
+                      <input
+                        type="range" min="0" max="1" step="0.01"
+                        value={sidebarOverlay}
+                        onChange={e => {
+                          const v = parseFloat(e.target.value);
+                          setSidebarOverlay(v);
+                          sidebarOverlayRef.current = v;
+                          localStorage.setItem('talia_sidebar_overlay', String(v));
+                          if (!cvData) return;
+                          const html = renderCVFromData(cvData, selectedPalRef.current, sectionOrder, templateIdRef.current, sidebarOrder, sidebarTextureRef.current, v);
+                          reloadIframe(injectMedia(html, croppedPhotoRef.current, logoDataURLRef.current));
+                        }}
+                        style={{ width:'100%', accentColor: C.bluePrimary }}
+                      />
+                      <div style={{ display:'flex', justifyContent:'space-between', fontSize:9, color:C.mute, marginTop:3 }}>
+                        <span>Texture visible</span>
+                        <span>Couleur pleine</span>
+                      </div>
+                    </div>
+                  )}
+                  {sidebarTextureId === 'none' && (
+                    <p style={{ fontSize:10.5, color:C.mute, textAlign:'center', lineHeight:1.5, margin:0 }}>
+                      Sélectionne une texture pour personnaliser le fond de la sidebar.
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+
           </div>
         </aside>
       </div>

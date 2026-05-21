@@ -3118,7 +3118,7 @@ Retourne UNIQUEMENT un tableau JSON de 3 strings : ["variante 1", "variante 2", 
               {designAcc.texture && (
                 <div style={{ padding:'14px 12px 16px' }}>
                   {/* Grille de swatches */}
-                  <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:7, marginBottom:14 }}>
+                  <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:6, marginBottom:14 }}>
                     {SIDEBAR_TEXTURES.map(tx => {
                       const isActive = sidebarTextureId === tx.id;
                       return (

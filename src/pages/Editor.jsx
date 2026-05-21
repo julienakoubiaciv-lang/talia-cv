@@ -481,6 +481,11 @@ export default function Editor() {
   /* dirty / unsaved state */
   const [isDirty, setIsDirty] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState(null);
+
+  // Sync historyVersions when a save occurs or the panel opens
+  useEffect(() => {
+    if (historyOpen) setHistoryVersions(getVersions(currentHistId));
+  }, [historyOpen, lastSavedAt, currentHistId]); // eslint-disable-line react-hooks/exhaustive-deps
   const [cvPickerOpen, setCvPickerOpen] = useState(false);
   const cvPickerRef = useRef(null);
   const [currentHistId, setCurrentHistId] = useState(null);

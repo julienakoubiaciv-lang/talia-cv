@@ -3056,7 +3056,50 @@ Retourne UNIQUEMENT un tableau JSON de 3 strings : ["variante 1", "variante 2", 
               )}
             </div>
 
-
+            {/* Templates accordion */}
+            <div style={{ borderTop:`1px solid ${C.rule}` }}>
+              <button className="acc-btn" onClick={() => toggleAcc('templates')}>
+                <span style={{ display:'flex', alignItems:'center', gap:7 }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                  Templates
+                </span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ transform: designAcc.templates?'rotate(180deg)':'none', transition:'transform .2s' }}><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              {designAcc.templates && (
+                <div style={{ padding:'14px 12px 16px' }}>
+                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+                    {TEMPLATES.map(tpl => {
+                      const isActive = templateId === tpl.id;
+                      return (
+                        <button
+                          key={tpl.id}
+                          onClick={() => {
+                            setTemplateId(tpl.id);
+                            const html = renderCVFromData(cvData || edFields, selectedPalRef.current, sectionOrder, tpl.id, sidebarOrder);
+                            const final = injectMedia(html, croppedPhotoRef.current, logoDataURLRef.current);
+                            reloadIframe(final);
+                          }}
+                          style={{
+                            display:'flex', flexDirection:'column', alignItems:'center', gap:7,
+                            padding:'10px 8px', border: isActive ? `2px solid ${C.bluePrimary}` : `1px solid ${C.rule}`,
+                            borderRadius:10, background: isActive ? C.blueSoft : '#fff',
+                            cursor:'pointer', transition:'all .15s', fontFamily:"'Manrope',sans-serif",
+                          }}
+                        >
+                          <div style={{ borderRadius:4, overflow:'hidden', boxShadow:'0 2px 8px rgba(0,0,0,.08)', border:`1px solid ${C.rule}` }}>
+                            <TemplateThumbnail id={tpl.id} />
+                          </div>
+                          <div>
+                            <div style={{ fontSize:11.5, fontWeight: isActive ? 700 : 600, color: isActive ? C.bluePrimary : C.ink, textAlign:'center' }}>{tpl.label}</div>
+                            <div style={{ fontSize:10, color:C.mute, textAlign:'center', lineHeight:1.3 }}>{tpl.desc}</div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </aside>
       </div>

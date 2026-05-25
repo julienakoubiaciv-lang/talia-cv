@@ -385,7 +385,7 @@ export const PHOTO_PLACEHOLDER = `<div class="photo-placeholder-wrap"><div class
 // â”€â”€â”€ TEMPLATES REGISTRY â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const TEMPLATES = [
   { id: 'classic', label: 'Classique',   desc: 'Sidebar gauche sombre' },
-  { id: 'minimal', label: 'Minimaliste', desc: 'Épuré, typographie seule' },
+  { id: 'minimal', label: 'Minimaliste', desc: 'Ã‰purÃ©, typographie seule' },
   { id: 'compact', label: 'Colonne',     desc: 'Photo + une colonne' },
   { id: 'impact',  label: 'Impact',      desc: 'Sidebar droite, badges pills' },
 ];

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getProfiles, deleteProfile } from '@/lib/profileData';
+import { usePlan } from '@/hooks/usePlan';
+import { PlanBanner } from '@/components/PlanGate';
 
 /* ─── Design tokens ─────────────────────────────────────────────────────── */
 const C = {
@@ -158,6 +160,7 @@ function NewProfileCard({ onClick }) {
 export default function Profiles() {
   const navigate = useNavigate();
   const [profiles, setProfiles] = useState([]);
+  const { canProfile, plan, nextPlan } = usePlan();
 
   useEffect(() => {
     setProfiles(getProfiles());
@@ -185,16 +188,31 @@ export default function Profiles() {
         <span style={{ fontSize: 15, fontWeight: 700, color: C.ink, flex: 1 }}>
           Mes profils personnalité
         </span>
-        <button onClick={() => navigate('/profils/nouveau')} style={{
-          padding: '8px 18px', borderRadius: 8, fontSize: 13, fontWeight: 700,
-          background: C.blue, color: '#fff', border: 'none', cursor: 'pointer', fontFamily: FONT,
-          display: 'flex', alignItems: 'center', gap: 6,
-        }}>
+        <button
+          onClick={() => canProfile(profiles.length) ? navigate('/profils/nouveau') : null}
+          title={!canProfile(profiles.length) ? `Limite de ${plan.maxProfiles} profil(s) atteinte` : ''}
+          style={{
+            padding: '8px 18px', borderRadius: 8, fontSize: 13, fontWeight: 700,
+            background: canProfile(profiles.length) ? C.blue : '#9AA0AE',
+            color: '#fff', border: 'none',
+            cursor: canProfile(profiles.length) ? 'pointer' : 'not-allowed',
+            fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 6,
+          }}>
           ＋ Nouveau profil
         </button>
       </div>
 
       <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 24px' }}>
+        {/* Bannière limite profils */}
+        {!canProfile(profiles.length) && (
+          <div style={{ marginBottom: 16 }}>
+            <PlanBanner
+              variant="limit"
+              message={`Limite atteinte — le plan ${plan.label} permet ${plan.maxProfiles} profil${plan.maxProfiles > 1 ? 's' : ''}. Passez au plan ${nextPlan || 'supérieur'} pour en créer davantage.`}
+              next={nextPlan || 'Personnel'}
+            />
+          </div>
+        )}
         {/* Bannière explicative */}
         <div style={{
           background: C.blueSoft, borderRadius: 14, padding: '18px 22px',

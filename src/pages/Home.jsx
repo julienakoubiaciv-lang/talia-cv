@@ -6,6 +6,8 @@ import { useCRMBridge } from '@/hooks/useCRMBridge.jsx';
 import { useAuth } from '@/hooks/useAuth.jsx';
 import { useIsMobile } from '@/hooks/useWindowWidth';
 import { useCRMToken } from '@/hooks/useCRMToken';
+import { usePlan } from '@/hooks/usePlan';
+import { PlanBanner } from '@/components/PlanGate';
 
 /* ─── Design tokens ─────────────────────────────────────────────────────── */
 const C = {
@@ -497,6 +499,7 @@ export default function Home() {
   const { user, signOut } = useAuth();
   const isMobile = useIsMobile();
   const { crmLink, isLinked: isCRMLinked, linkFromURL, unlink: unlinkCRM } = useCRMToken();
+  const { isFree, canCV, remainingCVs, canBulk, nextPlan } = usePlan();
   const [cvList, setCvList] = useState([]);
   const [viewCV, setViewCV] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -629,20 +632,32 @@ export default function Home() {
 
         <div style={{ flex: isMobile ? 1 : 'none' }} />
 
-        {/* Nouveau CV */}
-        <button onClick={() => navigate('/generate')} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: isMobile ? '9px 14px' : '10px 22px', background: C.ink, color: '#fff', border: 'none', borderRadius: 99, fontSize: isMobile ? 13 : 13.5, fontWeight: 700, cursor: 'pointer', transition: 'opacity .15s', letterSpacing: '-0.1px', whiteSpace: 'nowrap' }}
+        {/* Nouveau CV — bloqué si limite plan atteinte */}
+        <button
+          onClick={() => canCV(cvList.length) ? navigate('/generate') : navigate('/generate')}
+          title={!canCV(cvList.length) ? `Limite ${cvList.length} CV atteinte (plan Gratuit)` : ''}
+          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: isMobile ? '9px 14px' : '10px 22px', background: !canCV(cvList.length) ? C.mute : C.ink, color: '#fff', border: 'none', borderRadius: 99, fontSize: isMobile ? 13 : 13.5, fontWeight: 700, cursor: 'pointer', transition: 'opacity .15s', letterSpacing: '-0.1px', whiteSpace: 'nowrap' }}
           onMouseEnter={e => e.currentTarget.style.opacity = '.85'}
           onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
           <IconPlus s={12} /> {isMobile ? 'Nouveau' : 'Nouveau CV'}
+          {isFree && cvList.length > 0 && remainingCVs(cvList.length) !== Infinity && (
+            <span style={{ fontSize: 10, background: 'rgba(255,255,255,0.25)', padding: '1px 5px', borderRadius: 99 }}>
+              {remainingCVs(cvList.length)}/{5}
+            </span>
+          )}
         </button>
 
         {/* En masse — masqué sur mobile */}
         {!isMobile && (
-          <button onClick={() => navigate('/bulk')} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '10px 18px', background: C.bg, color: C.ink, border: '1.5px solid ' + C.rule, borderRadius: 99, fontSize: 13.5, fontWeight: 700, cursor: 'pointer', transition: 'border-color .15s', letterSpacing: '-0.1px' }}
-            onMouseEnter={e => e.currentTarget.style.borderColor = C.ink}
-            onMouseLeave={e => e.currentTarget.style.borderColor = C.rule}>
+          <button
+            onClick={() => canBulk ? navigate('/bulk') : null}
+            title={!canBulk ? 'Disponible à partir du plan Personnel' : ''}
+            style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '10px 18px', background: C.bg, color: canBulk ? C.ink : C.mute, border: `1.5px solid ${canBulk ? C.rule : C.rule}`, borderRadius: 99, fontSize: 13.5, fontWeight: 700, cursor: canBulk ? 'pointer' : 'not-allowed', transition: 'border-color .15s', letterSpacing: '-0.1px', opacity: canBulk ? 1 : 0.6 }}
+            onMouseEnter={e => { if (canBulk) e.currentTarget.style.borderColor = C.ink; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = C.rule; }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
             En masse
+            {!canBulk && <span style={{ fontSize: 10 }}>🔒</span>}
           </button>
         )}
 
@@ -749,6 +764,26 @@ export default function Home() {
             <div style={{ flex: 1, fontSize: 12.5, color: C.ink2 }}>
               <strong style={{ color: C.ink }}>Lier votre CRM Talia</strong> — demandez un lien de connexion à votre administrateur pour synchroniser les CV automatiquement.
             </div>
+          </div>
+        )}
+
+        {/* Bannière limite CVs (plan Free) */}
+        {isFree && cvList.length >= 4 && !canCV(cvList.length) && (
+          <div style={{ marginBottom: 24 }}>
+            <PlanBanner
+              variant="limit"
+              message={`Limite atteinte — le plan Gratuit permet ${5} CV. Passez au plan Personnel pour créer des CV sans limite.`}
+              next={nextPlan || 'Personnel'}
+            />
+          </div>
+        )}
+        {isFree && cvList.length >= 3 && cvList.length < 5 && (
+          <div style={{ marginBottom: 24 }}>
+            <PlanBanner
+              variant="warning"
+              message={`Il vous reste ${remainingCVs(cvList.length)} CV${remainingCVs(cvList.length) > 1 ? 's' : ''} sur votre plan Gratuit (${cvList.length}/5).`}
+              next={nextPlan || 'Personnel'}
+            />
           </div>
         )}
 

@@ -8,6 +8,8 @@ import {
 import { saveHistory } from '@/lib/historySync';
 import { getProfiles, buildProfileContext } from '@/lib/profileData';
 import { useSettings } from '@/hooks/useSettings.jsx';
+import { usePlan } from '@/hooks/usePlan';
+import { PlanGate } from '@/components/PlanGate';
 
 // ─── Colors ──────────────────────────────────────────────────────────────────
 const C = {
@@ -427,6 +429,7 @@ function GroupCard({ group, colorSet, isRunning, onUpdate, onRemove, onAddFiles,
 export default function Bulk() {
   const navigate = useNavigate();
   const { toasts, show: showToast, remove: removeToast } = useToast();
+  const { canBulk, nextPlan } = usePlan();
 
   const { apiKey } = useSettings();
   const [sessionMode, setSessionMode] = useState('build'); // 'build' | 'review'
@@ -659,6 +662,12 @@ export default function Bulk() {
   const reviewGroups = groups.filter(g => g.jobs.some(j => j.status==='done' || j.status==='error'));
 
   return (
+    <PlanGate
+      locked={!canBulk}
+      feature="Génération en masse"
+      next={nextPlan || 'Personnel'}
+      description="La génération en masse (plusieurs CV en parallèle) est disponible à partir du plan Personnel."
+    >
     <div style={{ minHeight:'100vh', background:C.surface, fontFamily:'Manrope,sans-serif' }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap');
@@ -896,5 +905,6 @@ export default function Bulk() {
 
       <Toast toasts={toasts} remove={removeToast} />
     </div>
+    </PlanGate>
   );
 }

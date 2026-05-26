@@ -6,6 +6,7 @@ import {
   saveBulkSession, loadBulkSession,
 } from '@/lib/cvData';
 import { saveHistory } from '@/lib/historySync';
+import { getProfiles, buildProfileContext } from '@/lib/profileData';
 import { useSettings } from '@/hooks/useSettings.jsx';
 
 // ─── Colors ──────────────────────────────────────────────────────────────────
@@ -211,7 +212,7 @@ function ReviewCard({ job, colorSet, onOpen, onRegenre, onRetry }) {
 }
 
 // ─── GroupCard (build mode) ───────────────────────────────────────────────────
-function GroupCard({ group, colorSet, isRunning, onUpdate, onRemove, onAddFiles, onRemoveJob, onUpdateJob }) {
+function GroupCard({ group, colorSet, isRunning, onUpdate, onRemove, onAddFiles, onRemoveJob, onUpdateJob, profiles }) {
   const fileInputRef = useRef(null);
   const formation    = FORMATIONS.find(f => f.v === group.formationVal);
   const dates        = formation ? (DATES[formation.n]||[]) : [];
@@ -306,6 +307,43 @@ function GroupCard({ group, colorSet, isRunning, onUpdate, onRemove, onAddFiles,
             </div>
           </div>
 
+          {/* Sélecteur de profil personnalité */}
+          {profiles.length > 0 && (
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize:10, fontWeight:700, color:C.mute, textTransform:'uppercase', letterSpacing:'.08em', marginBottom:6 }}>Profil personnalité IA</div>
+              <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
+                <button
+                  onClick={() => onUpdate(group.uid, { profileId: '' })}
+                  style={{
+                    padding:'5px 12px', borderRadius:99, fontSize:12, fontWeight:600, cursor:'pointer',
+                    border:'1px solid '+(group.profileId===''?colorSet.accent:C.rule),
+                    background:group.profileId===''?colorSet.soft:C.bg,
+                    color:group.profileId===''?colorSet.accent:C.mute,
+                    fontFamily:'Manrope,sans-serif', transition:'all .15s',
+                  }}>
+                  Aucun
+                </button>
+                {profiles.map(p => {
+                  const active = String(group.profileId) === String(p.id);
+                  return (
+                    <button key={p.id}
+                      onClick={() => onUpdate(group.uid, { profileId: String(p.id) })}
+                      style={{
+                        padding:'5px 12px', borderRadius:99, fontSize:12, fontWeight:600, cursor:'pointer',
+                        border:'1px solid '+(active?colorSet.accent:C.rule),
+                        background:active?colorSet.soft:C.bg,
+                        color:active?colorSet.accent:C.ink2,
+                        fontFamily:'Manrope,sans-serif', transition:'all .15s',
+                        display:'flex', alignItems:'center', gap:4,
+                      }}>
+                      <span>{p.emoji || '🧠'}</span>{p.nom}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           <div style={{ display:'flex', gap:14, alignItems:'flex-start' }}>
             {/* Drop zone */}
             <div
@@ -393,9 +431,10 @@ export default function Bulk() {
   const { apiKey } = useSettings();
   const [sessionMode, setSessionMode] = useState('build'); // 'build' | 'review'
   const [bulkId]                  = useState(() => 'bulk-' + Date.now());
+  const [profiles] = useState(() => getProfiles());
   const [groups, setGroups]       = useState([{
     uid: uid(), label:'Groupe 1', formationVal:'', dateVal:'', genre:'',
-    jobs:[], collapsed:false,
+    jobs:[], collapsed:false, profileId:'',
   }]);
   const [isRunning, setIsRunning] = useState(false);
   const isRunningRef              = useRef(false);
@@ -421,7 +460,7 @@ export default function Bulk() {
 
   // ── Group operations ──
   const addGroup = () => {
-    setGroups(prev => [...prev, { uid:uid(), label:`Groupe ${prev.length+1}`, formationVal:'', dateVal:'', genre:'', jobs:[], collapsed:false }]);
+    setGroups(prev => [...prev, { uid:uid(), label:`Groupe ${prev.length+1}`, formationVal:'', dateVal:'', genre:'', jobs:[], collapsed:false, profileId:'' }]);
   };
   const updateGroup = useCallback((gUid, patch) => {
     setGroups(prev => prev.map(g => g.uid===gUid ? { ...g, ...patch } : g));
@@ -481,7 +520,11 @@ export default function Bulk() {
     // Première ouverture : enregistrer dans l'historique
     if (!histId) {
       const formation = FORMATIONS.find(f => f.v===group.formationVal);
-      histId = await saveHistory(job.candidateName||job.name, job.generatedHTML, job.cvData, formation?.l||'', { bulkId, bulkLabel: group.label });
+      const grpProfile = profiles.find(p => String(p.id) === String(group.profileId)) || null;
+      histId = await saveHistory(job.candidateName||job.name, job.generatedHTML, job.cvData, formation?.l||'', {
+        bulkId, bulkLabel: group.label,
+        ...(grpProfile ? { profileId: String(grpProfile.id), profileName: grpProfile.nom } : {}),
+      });
       saveEditorState({ generatedHTML:job.generatedHTML, cvData:job.cvData, palette:PALETTES[0], croppedPhoto:'', logoDataURL:'', name:job.candidateName||job.name });
       updatedGroups = groups.map(g => g.uid===gUid ? {
         ...g, jobs:g.jobs.map(j => j.uid===jUid ? { ...j, histId } : j)
@@ -496,10 +539,12 @@ export default function Bulk() {
 
   // ── Generate one job (core) ──
   const generateOne = useCallback(async (group, job) => {
-    const formation = FORMATIONS.find(f => f.v===group.formationVal);
-    const jobGenre  = job.genre !== undefined ? job.genre : group.genre;
-    const poste     = adaptPoste('', jobGenre);
-    const contextInfo = `\n---\nFormation Talia : ${formation?.l||'Non précisée'} (${formation?.d||''})\nDate de rentrée : ${group.dateVal||'Non précisée'}\nPoste visé : ${poste||'Non précisé'}\nGenre : ${jobGenre==='F'?'Féminin':jobGenre==='M'?'Masculin':'Non précisé'}`;
+    const formation    = FORMATIONS.find(f => f.v===group.formationVal);
+    const jobGenre     = job.genre !== undefined ? job.genre : group.genre;
+    const poste        = adaptPoste('', jobGenre);
+    const groupProfile = profiles.find(p => String(p.id) === String(group.profileId)) || null;
+    const profileCtx   = buildProfileContext(groupProfile);
+    const contextInfo  = `\n---\nFormation Talia : ${formation?.l||'Non précisée'} (${formation?.d||''})\nDate de rentrée : ${group.dateVal||'Non précisée'}\nPoste visé : ${poste||'Non précisé'}\nGenre : ${jobGenre==='F'?'Féminin':jobGenre==='M'?'Masculin':'Non précisé'}${profileCtx}`;
 
     const extractPrompt = `Tu es un extracteur de données CV expert. Extrais TOUTES les informations et retourne UNIQUEMENT un objet JSON valide, sans markdown, sans backticks.\n\nSTRUCTURE JSON EXACTE :\n{\n  "prenom":"string","nom":"string","telephone":"string ou vide","email":"string ou vide","adresse":"string ou vide","dateNaissance":"JJ/MM/AAAA ou vide","poste":"INTITULÉ EN MAJUSCULES","accroche":"4-6 lignes, 1ère personne, parcours réel, formation Talia, poste visé","experiences":[{"poste":"","entreprise":"","lieu":"","periode":"","missions":[]}],"formations":[{"titre":"","etablissement":"","periode":"","isTalia":false}],"competences":{"techniques":[],"comportementales":[],"outils":[]},"langues":[{"langue":"","niveau":""}],"centresInteret":[],"lettreMotivation":"Si AUCUNE expérience, 3 paragraphes séparés \\n\\n. Sinon vide."\n}\n\nRÈGLES : CONSERVER coordonnées EXACTES, TOUTES expériences/formations, 3-5 missions/expérience, Formation Talia EN PREMIER avec isTalia:true, poste adapté au genre. Répondre UNIQUEMENT avec le JSON.`;
 
@@ -688,6 +733,7 @@ export default function Bulk() {
               onAddFiles={addFiles}
               onRemoveJob={removeJob}
               onUpdateJob={updateJob}
+              profiles={profiles}
             />
           ))}
 

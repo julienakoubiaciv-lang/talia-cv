@@ -1,17 +1,15 @@
 /**
  * mediaUpload.js — Upload de photos et logos vers Supabase Storage
  *
- * Si Supabase n'est pas configuré, retourne null silencieusement
- * et l'app continue à utiliser les data URLs base64 en localStorage.
+ * Si supabase est null (non configuré) → retourne null silencieusement,
+ * l'app continue d'utiliser les data URLs base64 en localStorage.
  */
 import { supabase, supabaseReady } from './supabase';
 import { getDeviceId } from './deviceId';
 
 const BUCKET = 'cv-media';
 
-/**
- * Convertit une data URL base64 en Blob.
- */
+/** Convertit une data URL base64 en Blob. */
 function dataURLtoBlob(dataURL) {
   const [header, base64] = dataURL.split(',');
   const mime  = header.match(/:(.*?);/)[1];
@@ -22,20 +20,19 @@ function dataURLtoBlob(dataURL) {
 }
 
 /**
- * Upload une photo/logo (data URL ou File) vers Supabase Storage.
+ * Upload une photo ou un logo vers Supabase Storage.
  *
  * @param {string|File} source  — data URL base64 ou objet File
- * @param {'photo'|'logo'} type — sous-dossier
- * @param {string|number} cvId  — id du CV (pour nommer le fichier)
- * @returns {Promise<string|null>} URL publique signée (1 an) ou null si échec
+ * @param {'photo'|'logo'} type — sous-dossier dans le bucket
+ * @param {string|number} cvId  — id du CV (nom du fichier)
+ * @returns {Promise<string|null>} URL signée (1 an) ou null si échec/non configuré
  */
 export async function uploadMedia(source, type, cvId) {
-  if (!supabaseReady || !source) return null;
+  if (!supabaseReady || !supabase || !source) return null;
 
   try {
     const deviceId = getDeviceId();
-    const ext      = 'jpg';
-    const path     = `${deviceId}/${type}s/${cvId}.${ext}`;
+    const path     = `${deviceId}/${type}s/${cvId}.jpg`;
 
     let blob;
     if (typeof source === 'string' && source.startsWith('data:')) {
@@ -55,7 +52,7 @@ export async function uploadMedia(source, type, cvId) {
       return null;
     }
 
-    // URL signée valable 1 an (365 * 24 * 3600 s)
+    // URL signée valable 1 an
     const { data: signedData, error: signErr } = await supabase.storage
       .from(BUCKET)
       .createSignedUrl(path, 365 * 24 * 3600);
@@ -73,12 +70,10 @@ export async function uploadMedia(source, type, cvId) {
 }
 
 /**
- * Supprime un média Supabase Storage.
- * @param {'photo'|'logo'} type
- * @param {string|number} cvId
+ * Supprime un média du bucket Supabase Storage.
  */
 export async function deleteMedia(type, cvId) {
-  if (!supabaseReady) return;
+  if (!supabaseReady || !supabase) return;
   const path = `${getDeviceId()}/${type}s/${cvId}.jpg`;
   await supabase.storage.from(BUCKET).remove([path]);
 }

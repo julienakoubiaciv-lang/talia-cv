@@ -15,8 +15,10 @@ create table if not exists cv_history (
   bulk_id     text,
   bulk_label  text,
   favorite    boolean default false,
-  photo_url   text,                      -- URL Supabase Storage (nullable)
-  logo_url    text,                      -- URL Supabase Storage (nullable)
+  photo_url    text,                      -- URL Supabase Storage (nullable)
+  logo_url     text,                      -- URL Supabase Storage (nullable)
+  profile_id   text,                      -- ID du profil personnalité utilisé (nullable)
+  profile_name text,                      -- Nom du profil (dénormalisé pour affichage rapide)
   created_at  timestamptz default now(),
   updated_at  timestamptz default now()
 );

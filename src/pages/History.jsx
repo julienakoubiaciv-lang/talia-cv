@@ -276,9 +276,18 @@ export default function History() {
                     </div>
                   </div>
 
-                  {/* Formation */}
-                  <div style={{ fontSize: 12, color: C.ink2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: 12 }}>
-                    {cv.formation || cv.bulkLabel || '—'}
+                  {/* Formation + profil */}
+                  <div style={{ fontSize: 12, color: C.ink2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {cv.formation || cv.bulkLabel || '—'}
+                    </span>
+                    {cv.profileName && (
+                      <span style={{
+                        flexShrink: 0, fontSize: 10, fontWeight: 600,
+                        background: '#EEF2FF', color: '#1539B7',
+                        borderRadius: 99, padding: '1px 7px',
+                      }}>🧠 {cv.profileName}</span>
+                    )}
                   </div>
 
                   {/* Date */}

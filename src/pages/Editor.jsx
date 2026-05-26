@@ -11,6 +11,7 @@ import {
 import {
   saveHistory, updateHistory, getHistorySync,
 } from '@/lib/historySync';
+import { uploadMedia } from '@/lib/mediaUpload';
 import { getProfiles, buildProfileContext } from '@/lib/profileData';
 import { useTheme } from '@/hooks/useTheme';
 import { useSettings } from '@/hooks/useSettings.jsx';
@@ -1141,39 +1142,63 @@ export default function Editor() {
 
   /* ── save to history ───────────────────────────────────────────────────── */
   const saveCurrentToHist = useCallback(async () => {
-    const html = getCurrentHTML();
-    let savedId = currentHistId;
+    const html    = getCurrentHTML();
+    const name    = candidateName || 'CV';
+    const histId  = currentHistId || Date.now();
+    let   savedId = currentHistId;
+
+    // Upload photo + logo vers Supabase Storage (fire-and-forget si pas configuré)
+    const [photoUrl, logoUrl] = await Promise.all([
+      croppedPhoto ? uploadMedia(croppedPhoto, 'photo', histId) : Promise.resolve(null),
+      logoDataURL  ? uploadMedia(logoDataURL,  'logo',  histId) : Promise.resolve(null),
+    ]);
+
+    const profileOpts = activeProfile
+      ? { profileId: String(activeProfile.id), profileName: activeProfile.nom }
+      : {};
+
     if (currentHistId) {
-      // Mise à jour de l'entrée existante
-      await updateHistory(currentHistId, { html, data: cvData, name: candidateName || 'CV' });
+      await updateHistory(currentHistId, {
+        html, data: cvData, name,
+        ...(photoUrl && { photoUrl }),
+        ...(logoUrl  && { logoUrl  }),
+        ...profileOpts,
+      });
     } else {
-      // Première sauvegarde — crée une nouvelle entrée et stocke son ID
-      const newId = await saveHistory(candidateName || 'CV', html, cvData, cvData?.formation || '');
+      const newId = await saveHistory(name, html, cvData, cvData?.formation || '', {
+        photoUrl:  photoUrl  || null,
+        logoUrl:   logoUrl   || null,
+        ...profileOpts,
+      });
       setCurrentHistId(newId);
       savedId = newId;
-      // Met à jour l'URL pour refléter l'ID permanent
       window.history.replaceState(null, '', '/editor/' + newId);
     }
-    // Snapshot versionné
-    saveVersion(savedId, cvData, candidateName || 'CV');
+
+    saveVersion(savedId, cvData, name);
     setIsDirty(false);
     setLastSavedAt(Date.now());
     showToast('CV sauvegardé ✓', 'success');
 
-    // Notifier le CRM si on est embedded
     if (crmEmbedded) {
-      crmNotifySaved({ html, cv_data: cvData, name: candidateName || 'CV' });
+      crmNotifySaved({ html, cv_data: cvData, name });
     }
-  }, [getCurrentHTML, candidateName, cvData, currentHistId, showToast, crmEmbedded, crmNotifySaved]);
+  }, [getCurrentHTML, candidateName, cvData, currentHistId, croppedPhoto, logoDataURL,
+      activeProfile, showToast, crmEmbedded, crmNotifySaved]);
 
   /* ── valider et terminer : sauve puis retour intelligent ───────────────── */
   const validateAndExit = useCallback(async () => {
     // 1. Sauvegarder le CV
     const html = getCurrentHTML();
+    const name = candidateName || 'CV';
+    const profileOpts = activeProfile
+      ? { profileId: String(activeProfile.id), profileName: activeProfile.nom }
+      : {};
+
     if (currentHistId) {
-      await updateHistory(currentHistId, { html, data: cvData, name: candidateName || 'CV' });
+      await updateHistory(currentHistId, { html, data: cvData, name, ...profileOpts });
     } else {
-      await saveHistory(candidateName || 'CV', html, cvData, cvData?.formation || '');
+      await saveHistory(name, html, cvData, cvData?.formation || '', profileOpts);
     }
     setIsDirty(false);
     setLastSavedAt(Date.now());

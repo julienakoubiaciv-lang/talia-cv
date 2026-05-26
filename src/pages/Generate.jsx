@@ -878,7 +878,9 @@ RÈGLES :
       await new Promise(r => setTimeout(r, 300));
       const generatedHTML = renderCVFromData(cvData, PALETTES[0]);
       const name = 'Prénom NOM (démo)';
-      saveHistory(name, generatedHTML, cvData, formation.l);
+      saveHistory(name, generatedHTML, cvData, formation.l, selectedProfile
+        ? { profileId: String(selectedProfile.id), profileName: selectedProfile.nom }
+        : {});
       saveEditorState({ generatedHTML, cvData, palette: PALETTES[0], croppedPhoto: '', logoDataURL: '', name });
       setGenStage(3); setGenProgress(100); setGenProgressText('CV démo prêt !');
       showToast("CV de démonstration généré — remplace les données fictives dans l'éditeur", 'info', 5000);
@@ -936,7 +938,9 @@ RÈGLES :
       const generatedHTML = renderCVFromData(cvData, PALETTES[0]);
       const name = [(cvData.prenom || ''), (cvData.nom || '')].filter(Boolean).join(' ') || 'Candidat';
 
-      saveHistory(name, generatedHTML, cvData, formation.l);
+      saveHistory(name, generatedHTML, cvData, formation.l, selectedProfile
+        ? { profileId: String(selectedProfile.id), profileName: selectedProfile.nom }
+        : {});
       const editorState = {
         generatedHTML, cvData,
         palette: PALETTES[0],

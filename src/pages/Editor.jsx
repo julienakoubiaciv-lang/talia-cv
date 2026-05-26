@@ -3289,7 +3289,11 @@ Retourne UNIQUEMENT un tableau JSON de 3 strings : ["variante 1", "variante 2", 
         <ProfileModal
           profiles={profiles}
           activeProfileId={activeProfileId}
-          onApply={(id) => setActiveProfileId(id)}
+          onApply={(id) => {
+            setActiveProfileId(id);
+            const p = profiles.find(pr => String(pr.id) === String(id));
+            if (p) showToast(`Profil "${p.nom}" appliqué ✓`, 'success');
+          }}
           onRegenerate={regenAll}
           onManage={() => navigate('/profils')}
           onClose={() => setProfileModalOpen(false)}

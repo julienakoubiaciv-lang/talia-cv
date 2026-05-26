@@ -456,7 +456,7 @@ export default function ProfileWizard() {
   };
 
   const canNext = () => {
-    if (step === 1) return data.personnalite.mots.length > 0;
+    if (step === 1) return Boolean(data.nom.trim()) && data.personnalite.mots.length > 0;
     if (step === 2) return Boolean(data.trajectoire.contexte);
     if (step === 3) return Boolean(data.cible.secteur);
     if (step === 4) return Boolean(data.ton.style);
@@ -507,8 +507,8 @@ export default function ProfileWizard() {
       {/* Contenu */}
       <div style={{ maxWidth: 640, margin: '0 auto', padding: '32px 24px 80px' }}>
 
-        {/* Étape 4 finale : champ nom + emoji en tête */}
-        {step === 4 && (
+        {/* Étape 1 : champ nom + emoji en tête (visible dès le départ) */}
+        {step === 1 && (
           <div style={{
             background: C.bg, borderRadius: 14, border: `1px solid ${C.rule}`,
             padding: 20, marginBottom: 24, display: 'flex', gap: 14, alignItems: 'flex-start',

@@ -635,6 +635,15 @@ export default function Home() {
   );
   const selectedProfile = profiles.find(p => String(p.id) === String(selectedProfileId)) || null;
 
+  // Persiste le profil actif dès qu'il change
+  useEffect(() => {
+    if (selectedProfileId) {
+      localStorage.setItem('talia_cv_active_profile', selectedProfileId);
+    } else {
+      localStorage.removeItem('talia_cv_active_profile');
+    }
+  }, [selectedProfileId]);
+
   // Form state
   const [genre,        setGenre]        = useState('');
   const [formationVal, setFormationVal] = useState('');

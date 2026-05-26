@@ -772,8 +772,9 @@ export default function Home() {
           <div style={{ marginBottom: 24 }}>
             <PlanBanner
               variant="limit"
-              message={`Limite atteinte — le plan Gratuit permet ${5} CV. Passez au plan Personnel pour créer des CV sans limite.`}
+              message={`Limite atteinte — le plan Gratuit permet 5 CV. Passez au plan Personnel pour créer des CV sans limite.`}
               next={nextPlan || 'Personnel'}
+              onUpgrade={() => navigate('/pricing')}
             />
           </div>
         )}
@@ -783,6 +784,7 @@ export default function Home() {
               variant="warning"
               message={`Il vous reste ${remainingCVs(cvList.length)} CV${remainingCVs(cvList.length) > 1 ? 's' : ''} sur votre plan Gratuit (${cvList.length}/5).`}
               next={nextPlan || 'Personnel'}
+              onUpgrade={() => navigate('/pricing')}
             />
           </div>
         )}

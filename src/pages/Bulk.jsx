@@ -667,6 +667,7 @@ export default function Bulk() {
       feature="Génération en masse"
       next={nextPlan || 'Personnel'}
       description="La génération en masse (plusieurs CV en parallèle) est disponible à partir du plan Personnel."
+      onUpgrade={() => navigate('/pricing')}
     >
     <div style={{ minHeight:'100vh', background:C.surface, fontFamily:'Manrope,sans-serif' }}>
       <style>{`

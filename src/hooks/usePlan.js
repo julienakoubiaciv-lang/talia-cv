@@ -1,14 +1,17 @@
 /**
- * usePlan — Hook React wrappant planConfig.js
+ * usePlan — Hook React wrappant planConfig.js + lecture Supabase.
  *
- * Expose les feature flags en temps réel (réagit aux changements de plan
- * via storage events cross-onglet).
+ * Priorité :
+ *   1. Supabase subscriptions (si connecté + Supabase configuré)
+ *   2. localStorage talia_plan (override manuel, pour tests)
+ *   3. Défaut : free
+ *
+ * Réagit aux changements de plan (storage events cross-onglet).
  */
 import { useState, useEffect, useCallback } from 'react';
 import {
   getCurrentPlan,
   getCurrentTier,
-  canDo,
   canCreateCV,
   canCreateProfile,
   canUseTemplate,
@@ -17,11 +20,37 @@ import {
   setPlan,
   PLANS,
 } from '@/lib/planConfig';
+import { supabase, supabaseReady } from '@/lib/supabase';
+import { isAuthenticated, getCurrentUserId } from '@/lib/currentUser';
 
 export function usePlan() {
   const [tier, setTier] = useState(getCurrentTier);
 
-  // Sync si le plan change dans un autre onglet
+  // ── Lecture depuis Supabase si authentifié ──────────────────────────────
+  useEffect(() => {
+    if (!supabaseReady || !supabase || !isAuthenticated()) return;
+
+    const userId = getCurrentUserId();
+    supabase
+      .from('subscriptions')
+      .select('tier, status, current_period_end')
+      .eq('user_id', userId)
+      .single()
+      .then(({ data, error }) => {
+        if (error || !data) return;
+        // N'activer que les abonnements actifs ou trialing
+        if (['active', 'trialing'].includes(data.status) && PLANS[data.tier]) {
+          setTier(data.tier);
+          // Sync localStorage pour les modules non-React
+          setPlan(data.tier, 'supabase');
+        } else if (data.status === 'canceled' || data.status === 'past_due') {
+          setTier('free');
+          setPlan('free', 'supabase');
+        }
+      });
+  }, []);
+
+  // ── Sync si le plan change dans un autre onglet (localStorage) ──────────
   useEffect(() => {
     const handler = (e) => {
       if (e.key === 'talia_plan') setTier(getCurrentTier());
@@ -30,7 +59,7 @@ export function usePlan() {
     return () => window.removeEventListener('storage', handler);
   }, []);
 
-  const plan = PLANS[tier];
+  const plan = PLANS[tier] ?? PLANS.free;
 
   const upgrade = useCallback((newTier, source = 'manual') => {
     setPlan(newTier, source);
@@ -40,7 +69,6 @@ export function usePlan() {
   return {
     tier,
     plan,
-    // Raccourcis
     isFree:     tier === 'free',
     isPersonal: tier === 'personal',
     isBusiness: tier === 'business',
@@ -53,7 +81,6 @@ export function usePlan() {
     canTemplate:          (id) => canUseTemplate(id),
     remainingCVs:         (count) => remainingCVs(count),
     nextPlan:             nextPlanLabel(),
-    // Mutations
     upgrade,
   };
 }

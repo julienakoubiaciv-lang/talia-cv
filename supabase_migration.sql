@@ -94,3 +94,30 @@ create policy "device delete media" on storage.objects
     bucket_id = 'cv-media'
     and (storage.foldername(name))[1] = (current_setting('request.headers', true)::jsonb->>'x-device-id')
   );
+
+-- ── 4. Table abonnements (Stripe) ───────────────────────────────────────────
+-- Mise à jour automatique via le webhook Stripe → Edge Function stripe-webhook.
+create table if not exists subscriptions (
+  user_id            text primary key,          -- UUID Supabase Auth
+  stripe_customer_id text,                      -- cus_...
+  stripe_sub_id      text,                      -- sub_...
+  tier               text not null default 'free', -- 'free'|'personal'|'business'
+  status             text not null default 'active', -- 'active'|'canceled'|'past_due'
+  current_period_end timestamptz,               -- fin de la période en cours
+  created_at         timestamptz default now(),
+  updated_at         timestamptz default now()
+);
+
+create index if not exists subscriptions_stripe_sub_idx on subscriptions(stripe_sub_id);
+create index if not exists subscriptions_stripe_cus_idx on subscriptions(stripe_customer_id);
+
+drop trigger if exists subscriptions_updated_at on subscriptions;
+create trigger subscriptions_updated_at
+  before update on subscriptions
+  for each row execute function update_updated_at();
+
+alter table subscriptions enable row level security;
+
+drop policy if exists "owner reads subscription" on subscriptions;
+create policy "owner reads subscription" on subscriptions
+  for select using (auth.uid()::text = user_id);

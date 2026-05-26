@@ -15,6 +15,7 @@ const History       = lazy(() => import('./pages/History.jsx'));
 const Profiles      = lazy(() => import('./pages/Profiles.jsx'));
 const ProfileWizard = lazy(() => import('./pages/ProfileWizard.jsx'));
 const Auth          = lazy(() => import('./pages/Auth.jsx'));
+const Pricing       = lazy(() => import('./pages/Pricing.jsx'));
 
 // Spinner minimal affiché pendant le chargement d'un chunk
 function PageLoader() {
@@ -52,6 +53,7 @@ export default function App() {
                 <Route path="/profils"            element={<Profiles />} />
                 <Route path="/profils/nouveau"    element={<ProfileWizard />} />
                 <Route path="/profils/:id/editer" element={<ProfileWizard />} />
+                <Route path="/pricing"            element={<Pricing />} />
               </Routes>
             </Suspense>
             </ErrorBoundary>

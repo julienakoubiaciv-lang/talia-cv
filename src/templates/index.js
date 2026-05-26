@@ -10,3 +10,4 @@
 export { default as TemplateClassic, getClassicCSS } from './TemplateClassic.jsx';
 export { default as TemplateMinimal, getMinimalCSS  } from './TemplateMinimal.jsx';
 export { default as TemplateCompact, getCompactCSS  } from './TemplateCompact.jsx';
+export { default as TemplateImpact,  getImpactCSS   } from './TemplateImpact.jsx';

@@ -4,6 +4,7 @@ import {
   TemplateClassic, getClassicCSS,
   TemplateMinimal, getMinimalCSS,
   TemplateCompact, getCompactCSS,
+  TemplateImpact,  getImpactCSS,
 } from '../templates/index.js';
 
 // â”€â”€â”€ FORMATIONS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -384,8 +385,9 @@ export const PHOTO_PLACEHOLDER = `<div class="photo-placeholder-wrap"><div class
 // â”€â”€â”€ TEMPLATES REGISTRY â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const TEMPLATES = [
   { id: 'classic', label: 'Classique',   desc: 'Sidebar gauche sombre' },
-  { id: 'minimal', label: 'Minimaliste', desc: 'Ã‰purÃ©, typographie seule' },
+  { id: 'minimal', label: 'Minimaliste', desc: 'Épuré, typographie seule' },
   { id: 'compact', label: 'Colonne',     desc: 'Photo + une colonne' },
+  { id: 'impact',  label: 'Impact',      desc: 'Sidebar droite, badges pills' },
 ];
 
 // â”€â”€â”€ RENDER COMPLETE CV HTML â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -436,8 +438,24 @@ export function renderCVFromData(d, palette, sectionOrder, templateId, sidebarOr
       );
       return `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"/><style>${css}</style></head><body>${body}</body></html>`;
     }
+    case 'impact': {
+      const css = getImpactCSS({
+        c,
+        d:   p.d || '#0e2a44',
+        sbBg: p.c || c,
+      });
+      const body = renderToStaticMarkup(
+        React.createElement(TemplateImpact, {
+          data:         d,
+          palette:      p,
+          sectionOrder: sectionOrder || ['experiences', 'formations'],
+          sidebarOrder: sidebarOrder || ['competences', 'langues', 'interets'],
+        })
+      );
+      return `<!DOCTYPE html><html lang=”fr”><head><meta charset=”UTF-8”/><style>${css}</style></head><body>${body}</body></html>`;
+    }
     default: {
-      // classic â€” rendu via composant React (renderToStaticMarkup)
+      // classic — rendu via composant React (renderToStaticMarkup)
       // Le CSS est injectÃ© dans <head> via getClassicCSS() pour Ã©viter
       // l'Ã©chappement HTML du contenu <style> par renderToStaticMarkup
       // (les data-URI SVG/textures contiennent des < > qui seraient cassÃ©s sinon).

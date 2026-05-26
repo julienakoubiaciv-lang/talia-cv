@@ -8,6 +8,7 @@ import { saveHistory } from '@/lib/historySync';
 import { getProfiles, buildProfileContext } from '@/lib/profileData';
 import { useSettings } from '@/hooks/useSettings.jsx';
 import { useCRMBridge } from '@/hooks/useCRMBridge.jsx';
+import { useCRMToken } from '@/hooks/useCRMToken';
 
 // ─── Color tokens ───────────────────────────────────────────────────────────────
 const C = {
@@ -627,6 +628,7 @@ export default function Home() {
 
   // Bridge CRM (postMessage talia-saas ↔ talia-cv)
   const { embedded, candidate: crmCandidate } = useCRMBridge();
+  const { push: crmTokenPush } = useCRMToken();
 
   // Profils personnalité
   const [profiles] = useState(() => getProfiles());
@@ -941,6 +943,9 @@ RÈGLES :
       saveHistory(name, generatedHTML, cvData, formation.l, selectedProfile
         ? { profileId: String(selectedProfile.id), profileName: selectedProfile.nom }
         : {});
+      // Push CRM via token si lié (mode standalone, pas iframe)
+      if (!embedded) crmTokenPush({ name, cvData, html: generatedHTML });
+
       const editorState = {
         generatedHTML, cvData,
         palette: PALETTES[0],

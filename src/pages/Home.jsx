@@ -5,6 +5,7 @@ import { getHistorySync, deleteHistory } from '@/lib/historySync';
 import { useCRMBridge } from '@/hooks/useCRMBridge.jsx';
 import { useAuth } from '@/hooks/useAuth.jsx';
 import { useIsMobile } from '@/hooks/useWindowWidth';
+import { useCRMToken } from '@/hooks/useCRMToken';
 
 /* ─── Design tokens ─────────────────────────────────────────────────────── */
 const C = {
@@ -495,6 +496,7 @@ export default function Home() {
   const { embedded, notifyCreateLead } = useCRMBridge();
   const { user, signOut } = useAuth();
   const isMobile = useIsMobile();
+  const { crmLink, isLinked: isCRMLinked, linkFromURL, unlink: unlinkCRM } = useCRMToken();
   const [cvList, setCvList] = useState([]);
   const [viewCV, setViewCV] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -506,6 +508,9 @@ export default function Home() {
   const [leadSentIds, setLeadSentIds] = useState(new Set()); // IDs déjà envoyés au CRM
 
   useEffect(() => { setCvList(getHistorySync()); }, []);
+
+  // Détection du token CRM dans l'URL (?crm_token=…)
+  useEffect(() => { linkFromURL(); }, [linkFromURL]);
 
   // Première visite → ouvre le tour
   useEffect(() => {
@@ -641,6 +646,24 @@ export default function Home() {
           </button>
         )}
 
+        {/* Badge CRM lié — masqué sur mobile si pas de place */}
+        {isCRMLinked && !embedded && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 10px', background: '#F0FDF4', border: '1px solid #86EFAC', borderRadius: 99, flexShrink: 0 }}>
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#16A34A', flexShrink: 0 }} />
+            {!isMobile && (
+              <span style={{ fontSize: 11.5, fontWeight: 600, color: '#15803D', whiteSpace: 'nowrap' }}>
+                {crmLink.orgName}
+              </span>
+            )}
+            <button onClick={unlinkCRM} title="Délier le CRM"
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#16A34A', padding: '0 2px', display: 'flex', alignItems: 'center', lineHeight: 1 }}
+              onMouseEnter={e => e.currentTarget.style.opacity = '.6'}
+              onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
+              <IconX s={10} />
+            </button>
+          </div>
+        )}
+
         {/* Auth — email masqué sur mobile */}
         {user ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -695,6 +718,37 @@ export default function Home() {
             <StatCard icon={<IconDoc s={20} />} value={cvList.length} label="CV créés" />
             <StatCard icon={<IconCheck s={20} />} value={cvList.length} label="Prêts à l'envoi" badge="100 %" />
             <StatCard icon={<IconClock s={20} />} value={formatDate(cvList[0]?.id)} label="Dernière mise à jour" sub={timeAgo(cvList[0]?.id)} />
+          </div>
+        )}
+
+        {/* Bannière CRM lié */}
+        {!embedded && isCRMLinked && crmLink && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 18px', background: '#F0FDF4', border: '1px solid #86EFAC', borderRadius: 12, marginBottom: 28, animation: 'fadeIn .4s ease' }}>
+            <span style={{ fontSize: 20 }}>🔗</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#15803D' }}>
+                Connecté à {crmLink.orgName}
+              </div>
+              <div style={{ fontSize: 11.5, color: '#16A34A', marginTop: 1 }}>
+                Les CV générés sont automatiquement envoyés vers votre espace CRM.
+              </div>
+            </div>
+            <button onClick={unlinkCRM}
+              style={{ padding: '6px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600, background: 'transparent', color: '#16A34A', border: '1px solid #86EFAC', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: FONT }}
+              onMouseEnter={e => e.currentTarget.style.background = '#DCFCE7'}
+              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+              Délier
+            </button>
+          </div>
+        )}
+
+        {/* Invite lien CRM — si pas lié, pas embedded, et page non vide */}
+        {!embedded && !isCRMLinked && cvList.length > 0 && !isMobile && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px', background: C.surface, border: `1px solid ${C.rule}`, borderRadius: 10, marginBottom: 24, animation: 'fadeIn .4s ease' }}>
+            <span style={{ fontSize: 16 }}>🔗</span>
+            <div style={{ flex: 1, fontSize: 12.5, color: C.ink2 }}>
+              <strong style={{ color: C.ink }}>Lier votre CRM Talia</strong> — demandez un lien de connexion à votre administrateur pour synchroniser les CV automatiquement.
+            </div>
           </div>
         )}
 

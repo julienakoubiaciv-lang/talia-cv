@@ -18,6 +18,7 @@ import { useSettings } from '@/hooks/useSettings.jsx';
 import { useFocusMode } from '@/hooks/useFocusMode';
 import { useSectionOrder } from '@/hooks/useSectionOrder';
 import { useCRMBridge, clearCurrentCandidate } from '@/hooks/useCRMBridge.jsx';
+import { useCRMToken } from '@/hooks/useCRMToken';
 import { BananaScore } from '@/components/BananaScore';
 import { SmartMatcher } from '@/components/SmartMatcher';
 import { calcBananaScore, getBananaLevel } from '@/lib/bananaScore';
@@ -395,6 +396,7 @@ export default function Editor() {
   const [candidateName, setCandidateName] = useState('');
   const { apiKey } = useSettings();
   const { embedded: crmEmbedded, candidate: crmCandidate, notifySaved: crmNotifySaved } = useCRMBridge();
+  const { push: crmTokenPush } = useCRMToken();
 
   /* profil personnalité actif */
   const [profiles, setProfiles]               = useState(() => getProfiles());
@@ -1182,9 +1184,12 @@ export default function Editor() {
 
     if (crmEmbedded) {
       crmNotifySaved({ html, cv_data: cvData, name });
+    } else {
+      // Mode standalone avec token CRM → push via API
+      crmTokenPush({ name, cvData, html });
     }
   }, [getCurrentHTML, candidateName, cvData, currentHistId, croppedPhoto, logoDataURL,
-      activeProfile, showToast, crmEmbedded, crmNotifySaved]);
+      activeProfile, showToast, crmEmbedded, crmNotifySaved, crmTokenPush]);
 
   /* ── valider et terminer : sauve puis retour intelligent ───────────────── */
   const validateAndExit = useCallback(async () => {

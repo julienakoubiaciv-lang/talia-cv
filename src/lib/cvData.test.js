@@ -51,8 +51,8 @@ describe('PALETTES', () => {
 });
 
 describe('TEMPLATES', () => {
-  it('contient exactement 3 templates', () => {
-    expect(TEMPLATES).toHaveLength(3);
+  it('contient exactement 4 templates', () => {
+    expect(TEMPLATES).toHaveLength(4);
   });
 
   it('les ids attendus sont présents', () => {

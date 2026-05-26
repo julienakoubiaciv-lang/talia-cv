@@ -1,13 +1,15 @@
 import { useState, useCallback } from 'react';
 
-// Mapping onglet → sélecteur CSS dans le CV (iframe)
-const SECTION_SELECTORS = {
-  identite:    '.block-presentation',
-  experiences: '.block-main',
-  formations:  '.block-main',
-  competences: '.block-sidebar',
-  langues:     '.block-sidebar',
-  interets:    '.block-sidebar',
+// Mapping onglet → zone (data-zone) dans le CV. Indépendant du template :
+// chaque template marque ses blocs avec data-zone="identite|contenu|sidebar".
+// La photo garde son sélecteur de classe (.block-photo) car elle est gérée à part.
+const TAB_SELECTOR = {
+  identite:    '[data-zone="identite"]',
+  experiences: '[data-zone="contenu"]',
+  formations:  '[data-zone="contenu"]',
+  competences: '[data-zone="sidebar"]',
+  langues:     '[data-zone="sidebar"]',
+  interets:    '[data-zone="sidebar"]',
   media:       '.block-photo',
 };
 
@@ -22,7 +24,7 @@ export function useFocusMode(iframeRef) {
     const doc = iframeRef.current?.contentDocument;
     if (!doc) return;
 
-    const selector = SECTION_SELECTORS[tab];
+    const selector = TAB_SELECTOR[tab];
     if (!selector) return;
 
     // Injecter le style de focus
@@ -53,10 +55,8 @@ export function useFocusMode(iframeRef) {
       el.classList.remove('talia-focus-dim', 'talia-focus-highlight');
     });
 
-    // Tous les blocs principaux
-    const blocks = doc.querySelectorAll(
-      '.block-presentation, .block-main, .block-photo, .block-sidebar'
-    );
+    // Toutes les zones repérables — indépendant du template grâce à data-zone
+    const blocks = doc.querySelectorAll('[data-zone]');
     blocks.forEach(el => el.classList.add('talia-focus-dim'));
 
     // Mettre en lumière la zone cible

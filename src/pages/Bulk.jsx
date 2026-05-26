@@ -2,9 +2,10 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   FORMATIONS, DATES, POSTES, COMP_TECH, COMP_SOFT, PALETTES,
-  adaptPoste, renderCVFromData, saveEditorState, saveToHist,
+  adaptPoste, renderCVFromData, saveEditorState,
   saveBulkSession, loadBulkSession,
 } from '@/lib/cvData';
+import { saveHistory } from '@/lib/historySync';
 import { useSettings } from '@/hooks/useSettings.jsx';
 
 // ─── Colors ──────────────────────────────────────────────────────────────────
@@ -469,7 +470,7 @@ export default function Bulk() {
   }, [updateJob, showToast]);
 
   // ── Ouvrir un CV dans l'éditeur (sauvegarde auto en history + session) ──
-  const openInEditor = useCallback((gUid, jUid) => {
+  const openInEditor = useCallback(async (gUid, jUid) => {
     const group = groups.find(g => g.uid===gUid);
     const job   = group?.jobs.find(j => j.uid===jUid);
     if (!job || !job.generatedHTML) return;
@@ -480,7 +481,7 @@ export default function Bulk() {
     // Première ouverture : enregistrer dans l'historique
     if (!histId) {
       const formation = FORMATIONS.find(f => f.v===group.formationVal);
-      histId = saveToHist(job.candidateName||job.name, job.generatedHTML, job.cvData, formation?.l||'', { bulkId, bulkLabel: group.label });
+      histId = await saveHistory(job.candidateName||job.name, job.generatedHTML, job.cvData, formation?.l||'', { bulkId, bulkLabel: group.label });
       saveEditorState({ generatedHTML:job.generatedHTML, cvData:job.cvData, palette:PALETTES[0], croppedPhoto:'', logoDataURL:'', name:job.candidateName||job.name });
       updatedGroups = groups.map(g => g.uid===gUid ? {
         ...g, jobs:g.jobs.map(j => j.uid===jUid ? { ...j, histId } : j)

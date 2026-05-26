@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getHist, setHist, saveEditorState, PALETTES, colorForFormation } from '@/lib/cvData';
+import { saveEditorState, PALETTES, colorForFormation } from '@/lib/cvData';
+import { getHistorySync, deleteHistory } from '@/lib/historySync';
+import { useCRMBridge } from '@/hooks/useCRMBridge.jsx';
 
 /* ─── Design tokens ─────────────────────────────────────────────────────── */
 const C = {
@@ -92,6 +94,13 @@ const IconLayers = ({ s = 13 }) => (
 const IconSort = ({ s = 13 }) => (
   <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
     <path d="M3 6h18M6 12h12M10 18h4"/>
+  </svg>
+);
+const IconUserPlus = ({ s = 13 }) => (
+  <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/>
+    <circle cx="9" cy="7" r="4"/>
+    <line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/>
   </svg>
 );
 
@@ -231,7 +240,7 @@ function PreviewModal({ item, onModify, onClose }) {
 }
 
 /* ─── CV Card ────────────────────────────────────────────────────────────── */
-function CVCard({ item, onModify, onView, onDelete, animDelay }) {
+function CVCard({ item, onModify, onView, onDelete, onCreateLead, animDelay }) {
   const poste = item.data?.poste || item.formation || '—';
   const formColor = colorForFormation(item.formation);
   return (
@@ -278,8 +287,8 @@ function CVCard({ item, onModify, onView, onDelete, animDelay }) {
         </div>
       </div>
 
-      {/* Actions footer — 3 columns separated by 1px transparent lines */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1px 1fr 1px 44px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+      {/* Actions footer */}
+      <div style={{ display: 'grid', gridTemplateColumns: onCreateLead ? '1fr 1px 1fr 1px 1fr 1px 44px' : '1fr 1px 1fr 1px 44px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
         <button onClick={() => onModify(item)} style={{ padding: '12px 8px', border: 'none', background: 'none', cursor: 'pointer', fontSize: 12.5, fontWeight: 600, color: '#7BA7FF', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, transition: 'background .15s' }}
           onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
           onMouseLeave={e => e.currentTarget.style.background = 'none'}>
@@ -291,6 +300,16 @@ function CVCard({ item, onModify, onView, onDelete, animDelay }) {
           onMouseLeave={e => e.currentTarget.style.background = 'none'}>
           <IconEye s={13} /> Voir
         </button>
+        {onCreateLead && <>
+          <div style={{ background: 'rgba(255,255,255,0.08)' }} />
+          <button onClick={() => onCreateLead(item)}
+            title="Créer un lead dans le CRM"
+            style={{ padding: '12px 8px', border: 'none', background: 'none', cursor: 'pointer', fontSize: 12.5, fontWeight: 600, color: '#34d399', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, transition: 'background .15s' }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(52,211,153,0.12)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'none'}>
+            <IconUserPlus s={13} /> Lead
+          </button>
+        </>}
         <div style={{ background: 'rgba(255,255,255,0.08)' }} />
         <button onClick={() => onDelete(item)} style={{ padding: '12px', border: 'none', background: 'none', cursor: 'pointer', color: '#ff6b6b', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background .15s' }}
           onMouseEnter={e => e.currentTarget.style.background = 'rgba(239,68,68,0.12)'}
@@ -467,6 +486,7 @@ function OnboardingTour({ onClose, onAction }) {
 /* ─── Main ───────────────────────────────────────────────────────────────── */
 export default function Home() {
   const navigate = useNavigate();
+  const { embedded, notifyCreateLead } = useCRMBridge();
   const [cvList, setCvList] = useState([]);
   const [viewCV, setViewCV] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -475,8 +495,9 @@ export default function Home() {
   const [selectedForms, setSelectedForms] = useState([]); // formations sélectionnées
   const [groupByBulk, setGroupByBulk] = useState(false);
   const [tourOpen, setTourOpen] = useState(false);
+  const [leadSentIds, setLeadSentIds] = useState(new Set()); // IDs déjà envoyés au CRM
 
-  useEffect(() => { setCvList(getHist()); }, []);
+  useEffect(() => { setCvList(getHistorySync()); }, []);
 
   // Première visite → ouvre le tour
   useEffect(() => {
@@ -533,14 +554,22 @@ export default function Home() {
 
   const handleModify = useCallback((item) => {
     saveEditorState({ generatedHTML: item.html, cvData: item.data || null, palette: PALETTES[0], croppedPhoto: '', logoDataURL: '', name: item.name });
-    navigate('/editor');
+    navigate('/editor/' + item.id);
   }, [navigate]);
 
-  const handleDeleteConfirm = useCallback(() => {
+  const handleDeleteConfirm = useCallback(async () => {
     if (!deleteTarget) return;
-    const next = cvList.filter(c => c.id !== deleteTarget.id);
-    setHist(next); setCvList(next); setDeleteTarget(null);
-  }, [cvList, deleteTarget]);
+    await deleteHistory(deleteTarget.id);
+    setCvList(getHistorySync());
+    setDeleteTarget(null);
+  }, [deleteTarget]);
+
+  // ── Envoi lead vers le CRM ─────────────────────────────────────────────
+  const handleCreateLead = useCallback((item) => {
+    if (!embedded) return;
+    notifyCreateLead({ cv_data: item.data, html: item.html, name: item.name });
+    setLeadSentIds(prev => new Set([...prev, item.id]));
+  }, [embedded, notifyCreateLead]);
 
   return (
     <div style={{ minHeight: '100vh', background: C.bg, fontFamily: FONT }}>
@@ -785,7 +814,8 @@ export default function Home() {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 20 }}>
                 {filtered.map((item, i) => (
                   <CVCard key={item.id} item={item} animDelay={Math.min((i + 1) * 0.05, 0.4)}
-                    onModify={handleModify} onView={setViewCV} onDelete={setDeleteTarget} />
+                    onModify={handleModify} onView={setViewCV} onDelete={setDeleteTarget}
+                    onCreateLead={embedded ? (leadSentIds.has(item.id) ? null : handleCreateLead) : null} />
                 ))}
               </div>
             )}
@@ -819,7 +849,8 @@ export default function Home() {
               <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(260px, 1fr))', gap:20 }}>
                 {group.items.map((item, i) => (
                   <CVCard key={item.id} item={item} animDelay={Math.min(i * 0.04, 0.3)}
-                    onModify={handleModify} onView={setViewCV} onDelete={setDeleteTarget} />
+                    onModify={handleModify} onView={setViewCV} onDelete={setDeleteTarget}
+                    onCreateLead={embedded ? (leadSentIds.has(item.id) ? null : handleCreateLead) : null} />
                 ))}
               </div>
             </div>

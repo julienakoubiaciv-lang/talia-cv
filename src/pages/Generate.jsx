@@ -2,9 +2,12 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   FORMATIONS, DATES, POSTES, COMP_TECH, COMP_SOFT, PALETTES,
-  adaptPoste, renderCVFromData, saveEditorState, saveToHist, escH
+  adaptPoste, renderCVFromData, saveEditorState, escH
 } from '@/lib/cvData';
+import { saveHistory } from '@/lib/historySync';
+import { getProfiles, buildProfileContext } from '@/lib/profileData';
 import { useSettings } from '@/hooks/useSettings.jsx';
+import { useCRMBridge } from '@/hooks/useCRMBridge.jsx';
 
 // ─── Color tokens ───────────────────────────────────────────────────────────────
 const C = {
@@ -234,6 +237,109 @@ const textareaStyle = {
   lineHeight: 1.6, transition: 'border-color 0.18s',
 };
 
+// ─── Accordéon Annonce ─────────────────────────────────────────────────────
+function AnnonceAccordion({ active, text, keywords, onChange }) {
+  const [open, setOpen] = useState(false);
+
+  // S'ouvre automatiquement si du texte a été saisi
+  useEffect(() => { if (active && !open) setOpen(true); }, [active]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return (
+    <div style={{
+      background: C.bg, borderRadius: 16, overflow: 'hidden',
+      border: '1.5px solid ' + (active ? '#FDE68A' : C.rule),
+      marginBottom: 16,
+      transition: 'border-color 0.3s',
+      boxShadow: active ? '0 2px 12px #F5B40015' : 'none',
+    }}>
+      {/* Header cliquable */}
+      <button
+        onClick={() => setOpen(v => !v)}
+        style={{
+          width: '100%', padding: '14px 20px',
+          display: 'flex', alignItems: 'center', gap: 12,
+          background: 'none', border: 'none', cursor: 'pointer',
+          fontFamily: 'Manrope, sans-serif', textAlign: 'left',
+        }}
+      >
+        {/* Icône cible */}
+        <div style={{
+          width: 34, height: 34, borderRadius: 10, flexShrink: 0,
+          background: active ? '#FFFBEB' : C.surface,
+          border: '1px solid ' + (active ? '#FDE68A' : C.rule),
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          transition: 'all 0.2s',
+        }}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={active ? '#92400e' : C.mute} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>
+          </svg>
+        </div>
+
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: C.ink, marginBottom: 2 }}>
+            Adapter à une annonce
+          </div>
+          <div style={{ fontSize: 12, color: C.mute, lineHeight: 1.4 }}>
+            {active
+              ? `Annonce ajoutée · ${keywords.length} mots-clés détectés`
+              : 'Optionnel — reformule les missions selon une offre d\'emploi'}
+          </div>
+        </div>
+
+        {/* Badge + chevron */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          {active && (
+            <span style={{ padding: '3px 10px', borderRadius: 99, background: '#FFF9E6', border: '1px solid #FDE68A', fontSize: 11, fontWeight: 700, color: '#92400e' }}>
+              ✓ Ajoutée
+            </span>
+          )}
+          <svg
+            width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke={C.mute} strokeWidth="2" strokeLinecap="round"
+            style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}
+          >
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </div>
+      </button>
+
+      {/* Corps accordéon */}
+      {open && (
+        <div style={{ padding: '0 20px 20px', borderTop: '1px solid ' + C.rule, animation: 'fadeIn 0.18s ease' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, alignItems: 'start', paddingTop: 16 }}>
+            {/* Explication */}
+            <div style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 10, padding: '10px 14px', fontSize: 12, color: '#92400e', lineHeight: 1.65 }}>
+              <strong>Comment ça marche :</strong> Collez le texte d'une offre pour adapter les missions du CV au vocabulaire de l'annonce — sans jamais inventer d'expériences.
+            </div>
+
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: C.mute, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Texte de l'annonce</div>
+              <textarea
+                value={text}
+                onChange={e => onChange(e.target.value)}
+                placeholder="Collez ici le texte de l'offre d'emploi…"
+                rows={4}
+                style={{ ...textareaStyle }}
+                autoFocus
+              />
+              {keywords.length > 0 && (
+                <div style={{ marginTop: 8 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: C.mute, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 5 }}>Mots-clés détectés</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                    {keywords.map(k => (
+                      <span key={k} style={{ fontSize: 11, padding: '3px 10px', borderRadius: 99, background: '#FFF9E6', color: '#92400e', border: '1px solid #FDE68A', fontFamily: 'Manrope, sans-serif' }}>{k}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Generation Overlay (animated stages) ──────────────────────────────────
 function GenerationOverlay({ visible, progress, progressText, stage, error, onClose }) {
   if (!visible) return null;
@@ -425,6 +531,92 @@ function Stepper({ steps, activeIndex, onStepClick }) {
   );
 }
 
+// ─── ProfilePicker ─────────────────────────────────────────────────────────────
+// Sélecteur compact de profil dans la page Nouveau CV, avant le stepper
+function ProfilePicker({ profiles, selectedId, onChange, onCreateNew }) {
+  const selected = profiles.find(p => String(p.id) === String(selectedId));
+
+  return (
+    <div style={{
+      marginBottom: 24, padding: '14px 18px', borderRadius: 14,
+      border: '1.5px solid ' + (selected ? C.bluePrimary + '55' : C.rule),
+      background: selected ? C.blueSoft : C.bg,
+      transition: 'all .2s',
+    }}>
+      {/* En-tête */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: profiles.length > 0 ? 12 : 0 }}>
+        <span style={{ fontSize: 20 }}>🧠</span>
+        <div style={{ flex: 1 }}>
+          <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: selected ? C.bluePrimary : C.ink }}>
+            Profil IA{selected ? ` — ${selected.emoji} ${selected.nom}` : ''}
+          </p>
+          <p style={{ margin: '2px 0 0', fontSize: 11, color: C.mute }}>
+            {profiles.length === 0
+              ? "Crée un profil pour que l'IA génère un CV à ta voix (optionnel)"
+              : selected
+                ? "Le profil oriente la voix, le ton et le contexte du CV généré"
+                : "Choisis un profil pour personnaliser la voix du CV (optionnel)"}
+          </p>
+        </div>
+      </div>
+
+      {/* Chips de sélection */}
+      {profiles.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
+          {/* Sans profil */}
+          <button
+            onClick={() => onChange('')}
+            style={{
+              padding: '6px 13px', borderRadius: 20, fontSize: 12, fontWeight: 600,
+              border: '1.5px solid ' + (!selectedId ? C.bluePrimary : C.rule),
+              background: !selectedId ? C.bluePrimary : C.bg,
+              color: !selectedId ? '#fff' : C.ink2,
+              cursor: 'pointer', fontFamily: 'Manrope, sans-serif',
+              display: 'flex', alignItems: 'center', gap: 5, transition: 'all .15s',
+            }}
+          >🚫 Sans profil</button>
+
+          {profiles.map(p => {
+            const isSel = String(selectedId) === String(p.id);
+            return (
+              <button key={p.id} onClick={() => onChange(String(p.id))} style={{
+                padding: '6px 13px', borderRadius: 20, fontSize: 12, fontWeight: 600,
+                border: '1.5px solid ' + (isSel ? C.bluePrimary : C.rule),
+                background: isSel ? C.bluePrimary : C.bg,
+                color: isSel ? '#fff' : C.ink2,
+                cursor: 'pointer', fontFamily: 'Manrope, sans-serif',
+                display: 'flex', alignItems: 'center', gap: 6, transition: 'all .15s',
+              }}>
+                <span style={{ fontSize: 15 }}>{p.emoji || '🚀'}</span>
+                {p.nom}
+                {isSel && <span style={{ fontSize: 11 }}>✓</span>}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Lien créer un profil */}
+      <button
+        onClick={onCreateNew}
+        style={{
+          background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+          fontSize: 12, fontWeight: 600, color: C.mute,
+          fontFamily: 'Manrope, sans-serif',
+          display: 'flex', alignItems: 'center', gap: 5,
+        }}
+        onMouseEnter={e => e.currentTarget.style.color = C.bluePrimary}
+        onMouseLeave={e => e.currentTarget.style.color = C.mute}
+      >
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        Créer un nouveau profil
+      </button>
+    </div>
+  );
+}
+
 // ─── Main Component ────────────────────────────────────────────────────────────
 export default function Home() {
   const navigate = useNavigate();
@@ -432,6 +624,16 @@ export default function Home() {
 
   // Clé API : centralisée et protégée par PIN (voir ⚙️ Paramètres)
   const { apiKey } = useSettings();
+
+  // Bridge CRM (postMessage talia-saas ↔ talia-cv)
+  const { embedded, candidate: crmCandidate } = useCRMBridge();
+
+  // Profils personnalité
+  const [profiles] = useState(() => getProfiles());
+  const [selectedProfileId, setSelectedProfileId] = useState(
+    () => localStorage.getItem('talia_cv_active_profile') || ''
+  );
+  const selectedProfile = profiles.find(p => String(p.id) === String(selectedProfileId)) || null;
 
   // Form state
   const [genre,        setGenre]        = useState('');
@@ -502,6 +704,46 @@ export default function Home() {
     return () => window.removeEventListener('keydown', handler);
   });
 
+  // ── Pré-remplissage automatique depuis le CRM (postMessage) ──
+  useEffect(() => {
+    if (!crmCandidate) return;
+    // Formation : utiliser formationVal (slug) si fourni, sinon matcher par label
+    if (crmCandidate.formationVal && !formationVal) {
+      setFormationVal(crmCandidate.formationVal);
+    } else if (crmCandidate.formation && !formationVal) {
+      const match = FORMATIONS.find(f => f.l === crmCandidate.formation);
+      if (match) setFormationVal(match.v);
+    }
+    // Poste visé
+    if (crmCandidate.poste && !posteVal) setPosteVal(crmCandidate.poste);
+    // Genre
+    if (crmCandidate.genre && !genre) setGenre(crmCandidate.genre);
+    // Pré-remplir le texte avec les infos candidat
+    if (!cvText.trim() && !uploadedFile) {
+      const parts = [];
+      if (crmCandidate.prenom || crmCandidate.nom) parts.push(`${crmCandidate.prenom || ''} ${crmCandidate.nom || ''}`.trim());
+      if (crmCandidate.email)     parts.push('Email : ' + crmCandidate.email);
+      if (crmCandidate.telephone) parts.push('Téléphone : ' + crmCandidate.telephone);
+      if (crmCandidate.ville)     parts.push('Ville : ' + crmCandidate.ville);
+      if (crmCandidate.dateNaissance) parts.push('Date de naissance : ' + crmCandidate.dateNaissance);
+      if (parts.length) setCvText(parts.join('\n'));
+    }
+    showToast(`Candidat ${crmCandidate.prenom || ''} ${crmCandidate.nom || ''} chargé depuis le CRM`, 'success', 4000);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [crmCandidate?.id]);
+
+  // ── Réception d'un fichier (PDF/image) envoyé via postMessage ──
+  useEffect(() => {
+    const handler = async (event) => {
+      const file = event.detail;
+      if (!file?.base64) return;
+      setUploadedFile({ type: file.type === 'image' ? 'image' : 'pdf', base64: file.base64, mediaType: file.mediaType, name: file.name || 'CV depuis CRM' });
+      showToast('CV reçu du CRM ✓', 'success');
+    };
+    window.addEventListener('talia-crm-file-received', handler);
+    return () => window.removeEventListener('talia-crm-file-received', handler);
+  }, [showToast]);
+
   // ── Formation change ──
   const onFormationChange = (val) => {
     setFormationVal(val); setDateVal(''); setPosteVal('');
@@ -563,7 +805,8 @@ export default function Home() {
     const formCompSoft = COMP_SOFT[formationVal] || [];
     const formPostes   = POSTES[formationVal] || [];
 
-    const contextInfo = `\n---\nFormation Talia : ${formation.l} (${formation.d})\nDomaine : ${formDomain}\nNiveau : ${formation.n === 'tp' ? 'Bac / Bac+2' : formation.n === 'bachelor' ? 'Bac+3 (Bachelor)' : 'Bac+5 (Mastère)'}\nCompétences programme : ${formCompTech.join(', ')}\nSoft skills programme : ${formCompSoft.join(', ')}\nPostes types : ${formPostes.join(', ')}\nDate de rentrée : ${dateVal || 'Non précisée'}\nPoste visé : ${poste || 'Non précisé'}\nGenre : ${genre === 'F' ? 'Féminin' : genre === 'M' ? 'Masculin' : 'Non précisé'}\nCompétences techniques sélectionnées : ${comp.tech.join(', ') || 'Aucune'}\nCompétences comportementales sélectionnées : ${comp.soft.join(', ') || 'Aucune'}${hasAnnonce ? '\n\n--- ANNONCE À MATCHER ---\n' + annonceText.slice(0, 3000) : ''}`;
+    const profileCtxGenerate = buildProfileContext(selectedProfile);
+    const contextInfo = `\n---\nFormation Talia : ${formation.l} (${formation.d})\nDomaine : ${formDomain}\nNiveau : ${formation.n === 'tp' ? 'Bac / Bac+2' : formation.n === 'bachelor' ? 'Bac+3 (Bachelor)' : 'Bac+5 (Mastère)'}\nCompétences programme : ${formCompTech.join(', ')}\nSoft skills programme : ${formCompSoft.join(', ')}\nPostes types : ${formPostes.join(', ')}\nDate de rentrée : ${dateVal || 'Non précisée'}\nPoste visé : ${poste || 'Non précisé'}\nGenre : ${genre === 'F' ? 'Féminin' : genre === 'M' ? 'Masculin' : 'Non précisé'}\nCompétences techniques sélectionnées : ${comp.tech.join(', ') || 'Aucune'}\nCompétences comportementales sélectionnées : ${comp.soft.join(', ') || 'Aucune'}${profileCtxGenerate}${hasAnnonce ? '\n\n--- ANNONCE À MATCHER ---\n' + annonceText.slice(0, 3000) : ''}`;
 
     const annonceRules = hasAnnonce ? `\n\nADAPTATION À L'ANNONCE (RÈGLES STRICTES) :\n- REFORMULER les missions pour utiliser le vocabulaire de l'annonce quand pertinent et honnête\n- NE JAMAIS AJOUTER de compétences ou expériences que le candidat ne possède pas\n- Ajouter dans le JSON un champ "matchAnalysis" : { "matched": [], "missing": [], "score": 0..100, "adaptations": "", "formationFit": "" }` : '';
 
@@ -626,7 +869,7 @@ RÈGLES :
       await new Promise(r => setTimeout(r, 300));
       const generatedHTML = renderCVFromData(cvData, PALETTES[0]);
       const name = 'Prénom NOM (démo)';
-      saveToHist(name, generatedHTML, cvData, formation.l);
+      saveHistory(name, generatedHTML, cvData, formation.l);
       saveEditorState({ generatedHTML, cvData, palette: PALETTES[0], croppedPhoto: '', logoDataURL: '', name });
       setGenStage(3); setGenProgress(100); setGenProgressText('CV démo prêt !');
       showToast("CV de démonstration généré — remplace les données fictives dans l'éditeur", 'info', 5000);
@@ -684,7 +927,7 @@ RÈGLES :
       const generatedHTML = renderCVFromData(cvData, PALETTES[0]);
       const name = [(cvData.prenom || ''), (cvData.nom || '')].filter(Boolean).join(' ') || 'Candidat';
 
-      saveToHist(name, generatedHTML, cvData, formation.l);
+      saveHistory(name, generatedHTML, cvData, formation.l);
       const editorState = {
         generatedHTML, cvData,
         palette: PALETTES[0],
@@ -789,6 +1032,15 @@ RÈGLES :
           </button>
           <span style={{ color: C.rule, fontSize: 14 }}>|</span>
           <span style={{ fontSize: 13, fontWeight: 700, color: C.ink }}>Nouveau CV</span>
+          {embedded && crmCandidate && (
+            <>
+              <span style={{ color: C.rule, fontSize: 14 }}>|</span>
+              <span style={{ display:'flex', alignItems:'center', gap:6, padding:'4px 12px', background:'linear-gradient(135deg, #ecfdf5, #d1fae5)', border:'1px solid #6ee7b7', borderRadius:99, fontSize:12, fontWeight:700, color:'#065f46' }}>
+                <span style={{ width:6, height:6, borderRadius:'50%', background:'#22c55e' }} />
+                CRM · {crmCandidate.prenom || ''} {crmCandidate.nom || ''}
+              </span>
+            </>
+          )}
           <span style={{ color: C.rule, fontSize: 14 }}>|</span>
           <button
             onClick={() => navigate('/bulk')}
@@ -801,27 +1053,6 @@ RÈGLES :
           </button>
         </div>
 
-        {/* Right: Dernier CV (clé API → ⚙️ Paramètres) */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-          <button
-            onClick={() => navigate('/editor')}
-            style={{
-              padding: '7px 14px',
-              background: C.surface,
-              border: '1px solid ' + C.rule,
-              borderRadius: 10,
-              fontSize: 12, fontWeight: 600, color: C.ink2,
-              cursor: 'pointer', fontFamily: 'Manrope, sans-serif',
-              transition: 'border-color 0.15s, background 0.15s',
-              display: 'flex', alignItems: 'center', gap: 6,
-            }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = C.ink2; e.currentTarget.style.background = '#f0f1f4'; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = C.rule; e.currentTarget.style.background = C.surface; }}
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-            Dernier CV
-          </button>
-        </div>
       </div>
 
       {/* ── PAGE BODY ──────────────────────────────────────────────────────── */}
@@ -838,10 +1069,39 @@ RÈGLES :
             }}>
               Nouveau CV
             </h1>
-            <p style={{ fontSize: 15, color: C.ink2, fontWeight: 400, lineHeight: 1.6 }}>
+            <p style={{ fontSize: 15, color: C.ink2, fontWeight: 400, lineHeight: 1.6, marginBottom: 16 }}>
               Génère un CV Talia professionnel en 3 étapes — formation, contenu, génération.
             </p>
+
+            {/* Promesse Talia — inline sous le sous-titre */}
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 10,
+              background: C.blueSoft, border: '1px solid ' + C.bluePrimary + '33',
+              borderRadius: 12, padding: '10px 16px',
+            }}>
+              <div style={{
+                width: 28, height: 28, background: C.bluePrimary,
+                borderRadius: 8, flexShrink: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                </svg>
+              </div>
+              <p style={{ fontSize: 12, color: C.ink2, lineHeight: 1.5, margin: 0 }}>
+                <strong style={{ color: C.bluePrimary }}>Promesse Talia —</strong>{' '}
+                Le CV est personnalisé au parcours réel du candidat. L'IA ne <strong>jamais invente</strong> d'expériences — elle restructure uniquement les informations fournies.
+              </p>
+            </div>
           </div>
+
+          {/* ── Sélecteur de profil IA ─────────────────────────────────── */}
+          <ProfilePicker
+            profiles={profiles}
+            selectedId={selectedProfileId}
+            onChange={setSelectedProfileId}
+            onCreateNew={() => navigate('/profils/nouveau')}
+          />
 
           {/* Stepper */}
           <Stepper
@@ -857,11 +1117,12 @@ RÈGLES :
             }}
           />
 
-          {/* ── CARD 1 : Formation Talia ───────────────────────────────── */}
+          {/* ── CARD 1 : Formation & objectif ─────────────────────────── */}
           <SectionCard ref={card1Ref} active={stepperActive === 0} complete={hasFormation && stepperActive > 0}>
-            <CardHeader label="Formation Talia" status={hasFormation ? 'pending' : 'active'} />
+            <CardHeader label="Formation & objectif" status={hasFormation ? 'pending' : 'active'} />
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 16 }}>
+            {/* Ligne principale : 4 champs compacts */}
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr auto', gap: 12, alignItems: 'end' }}>
               <div>
                 <FieldLabel>Formation souhaitée</FieldLabel>
                 <select value={formationVal} onChange={e => onFormationChange(e.target.value)} style={selectStyle}>
@@ -891,59 +1152,69 @@ RÈGLES :
                   {postes.map(p => <option key={p} value={p}>{p}</option>)}
                 </select>
               </div>
+
+              {/* Genre — compact pills alignées en bas */}
+              <div style={{ paddingBottom: 1 }}>
+                <FieldLabel>Genre</FieldLabel>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {[
+                    { val: 'F', label: '♀', title: 'Féminin',  activeColor: '#C2185B', activeBg: '#FDE7F0', activeBorder: '#E91E8C' },
+                    { val: 'M', label: '♂', title: 'Masculin', activeColor: C.bluePrimary, activeBg: C.blueSoft, activeBorder: C.bluePrimary },
+                  ].map(({ val, label, title, activeColor, activeBg, activeBorder }) => {
+                    const on = genre === val;
+                    return (
+                      <button
+                        key={val} title={title}
+                        onClick={() => setGenre(g => g === val ? '' : val)}
+                        style={{
+                          width: 38, height: 38, borderRadius: 10,
+                          border: '1px solid ' + (on ? activeBorder : C.rule),
+                          background: on ? activeBg : C.bg,
+                          color: on ? activeColor : C.mute,
+                          fontSize: 16, fontWeight: 700,
+                          cursor: 'pointer', fontFamily: 'Manrope, sans-serif',
+                          transition: 'all 0.15s', display: 'flex',
+                          alignItems: 'center', justifyContent: 'center',
+                        }}
+                      >{label}</button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
 
-            {/* Genre chips */}
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 12,
-              padding: '12px 14px', background: C.surface,
-              borderRadius: 12, border: '1px solid ' + C.rule,
-            }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: C.mute, textTransform: 'uppercase', letterSpacing: '0.08em', flexShrink: 0 }}>Genre</span>
-              <div style={{ display: 'flex', gap: 8 }}>
-                {[
-                  { val: 'F', label: 'Féminin',  activeColor: '#C2185B', activeBg: '#FDE7F0', activeBorder: '#E91E8C' },
-                  { val: 'M', label: 'Masculin', activeColor: C.bluePrimary, activeBg: C.blueSoft, activeBorder: C.bluePrimary },
-                ].map(({ val, label, activeColor, activeBg, activeBorder }) => {
-                  const on = genre === val;
-                  return (
-                    <button
-                      key={val}
-                      onClick={() => setGenre(g => g === val ? '' : val)}
-                      style={{
-                        padding: '6px 16px', borderRadius: 99,
-                        border: '1px solid ' + (on ? activeBorder : C.rule),
-                        background: on ? activeBg : C.bg,
-                        color: on ? activeColor : C.mute,
-                        fontSize: 13, fontWeight: on ? 700 : 500,
-                        cursor: 'pointer', fontFamily: 'Manrope, sans-serif',
-                        transition: 'all 0.15s',
-                      }}
-                    >{label}</button>
-                  );
-                })}
-              </div>
-              <span style={{ fontSize: 12, color: C.mute }}>Accorde le CV automatiquement</span>
-              {formation && (
+            {/* Badge formation sélectionnée */}
+            {formation && (
+              <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <div style={{
-                  marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 6,
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
                   background: C.blueSoft, border: '1px solid ' + C.bluePrimary + '33',
                   borderRadius: 99, padding: '4px 12px',
-                  fontSize: 11, fontWeight: 600, color: C.bluePrimary, flexShrink: 0,
+                  fontSize: 11, fontWeight: 600, color: C.bluePrimary,
                 }}>
-                  {formation.d} · 1j / 4j
+                  ✓ {formation.l} · {formation.d} · 1j cours / 4j entreprise
                 </div>
-              )}
-            </div>
+                {genre && (
+                  <div style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 5,
+                    background: genre === 'F' ? '#FDE7F0' : C.blueSoft,
+                    border: '1px solid ' + (genre === 'F' ? '#E91E8C33' : C.bluePrimary + '33'),
+                    borderRadius: 99, padding: '4px 10px',
+                    fontSize: 11, fontWeight: 600,
+                    color: genre === 'F' ? '#C2185B' : C.bluePrimary,
+                  }}>
+                    {genre === 'F' ? '♀ Féminin' : '♂ Masculin'}
+                  </div>
+                )}
+              </div>
+            )}
 
-            {/* Competences (shown when formation selected) */}
+            {/* Compétences (shown when formation selected) */}
             {formationVal && (
-              <div style={{ marginTop: 18 }}>
-                <div style={{
-                  height: 1, background: C.rule, margin: '0 0 16px',
-                }} />
-                <div style={{ fontSize: 13, fontWeight: 700, color: C.ink, marginBottom: 14 }}>
-                  Compétences à mettre en avant
+              <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid ' + C.rule }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: C.ink2, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+                  Compétences à mettre en avant <span style={{ fontWeight: 400, color: C.mute }}>(optionnel)</span>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                   {[
@@ -951,25 +1222,21 @@ RÈGLES :
                     { title: 'Comportementales', tags: softTags, selected: selectedSoft, setSelected: setSelectedSoft },
                   ].map(({ title, tags, selected, setSelected }) => (
                     <div key={title}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: C.mute, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>{title}</div>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: C.mute, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 7 }}>{title}</div>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                         {tags.map(tag => {
                           const on = selected.includes(tag);
                           return (
-                            <span
-                              key={tag}
-                              onClick={() => toggleTag(selected, setSelected, tag)}
-                              style={{
-                                display: 'inline-flex', alignItems: 'center',
-                                padding: '4px 11px', borderRadius: 99,
-                                border: '1px solid ' + (on ? C.bluePrimary : C.rule),
-                                background: on ? C.bluePrimary : C.bg,
-                                color: on ? '#fff' : C.ink2,
-                                fontSize: 12, fontWeight: 500,
-                                cursor: 'pointer', fontFamily: 'Manrope, sans-serif',
-                                transition: 'all 0.15s',
-                              }}
-                            >{tag}</span>
+                            <span key={tag} onClick={() => toggleTag(selected, setSelected, tag)} style={{
+                              display: 'inline-flex', alignItems: 'center',
+                              padding: '3px 10px', borderRadius: 99,
+                              border: '1px solid ' + (on ? C.bluePrimary : C.rule),
+                              background: on ? C.bluePrimary : C.bg,
+                              color: on ? '#fff' : C.ink2,
+                              fontSize: 11.5, fontWeight: 500,
+                              cursor: 'pointer', fontFamily: 'Manrope, sans-serif',
+                              transition: 'all 0.15s',
+                            }}>{tag}</span>
                           );
                         })}
                       </div>
@@ -980,16 +1247,16 @@ RÈGLES :
             )}
           </SectionCard>
 
-          {/* ── CARD 2 : Contenu du CV candidat ───────────────────────── */}
+          {/* ── CARD 2 : Votre CV ─────────────────────────────────────── */}
           <SectionCard ref={card2Ref} active={hasFormation && !hasCV} complete={hasFormation && hasCV}>
-            <CardHeader label="Contenu du CV candidat" status={!hasFormation ? 'locked' : hasCV ? 'pending' : 'active'} />
+            <CardHeader label="Votre CV" status={!hasFormation ? 'locked' : hasCV ? 'pending' : 'active'} />
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, alignItems: 'start', marginBottom: 16 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, alignItems: 'start' }}>
               {/* Upload zone */}
               <div>
-                <FieldLabel>Glisser un CV</FieldLabel>
+                <FieldLabel>Glisser un CV (PDF ou image)</FieldLabel>
                 <div
-                  onDragOver={e => { e.preventDefault(); e.currentTarget.dataset.drag = '1'; e.currentTarget.style.borderColor = C.bluePrimary; e.currentTarget.style.background = C.blueSoft; }}
+                  onDragOver={e => { e.preventDefault(); e.currentTarget.style.borderColor = C.bluePrimary; e.currentTarget.style.background = C.blueSoft; }}
                   onDragLeave={e => { e.currentTarget.style.borderColor = uploadedFile ? '#22c55e55' : C.rule; e.currentTarget.style.background = uploadedFile ? '#f0fdf4' : C.surface; }}
                   onDrop={e => { e.preventDefault(); e.currentTarget.style.borderColor = C.rule; e.currentTarget.style.background = C.surface; const f = e.dataTransfer.files[0]; if (f) processFile(f); }}
                   onClick={() => !uploadedFile && fileInputRef.current?.click()}
@@ -998,7 +1265,7 @@ RÈGLES :
                     borderRadius: 12, padding: '18px 16px',
                     textAlign: 'center', cursor: uploadedFile ? 'default' : 'pointer',
                     background: uploadedFile ? '#f0fdf4' : C.surface,
-                    transition: 'all 0.2s', minHeight: 100,
+                    transition: 'all 0.2s', minHeight: 108,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}
                 >
@@ -1010,16 +1277,14 @@ RÈGLES :
                   )}
                   {!uploadLoading && !uploadedFile && (
                     <div>
-                      <div style={{ marginBottom: 8 }}>
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={C.mute} strokeWidth="1.5" strokeLinecap="round" style={{ margin: '0 auto', display: 'block' }}>
-                          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-                          <polyline points="14 2 14 8 20 8"/>
-                          <line x1="12" y1="18" x2="12" y2="12"/>
-                          <polyline points="9 15 12 12 15 15"/>
-                        </svg>
-                      </div>
+                      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={C.mute} strokeWidth="1.5" strokeLinecap="round" style={{ margin: '0 auto 8px', display: 'block' }}>
+                        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                        <line x1="12" y1="18" x2="12" y2="12"/>
+                        <polyline points="9 15 12 12 15 15"/>
+                      </svg>
                       <div style={{ fontSize: 13, fontWeight: 600, color: C.ink2, marginBottom: 3 }}>Glisser un CV ici</div>
-                      <div style={{ fontSize: 11, color: C.mute }}>PDF ou image (JPG, PNG)</div>
+                      <div style={{ fontSize: 11, color: C.mute }}>PDF · JPG · PNG</div>
                     </div>
                   )}
                   {!uploadLoading && uploadedFile && (
@@ -1039,14 +1304,7 @@ RÈGLES :
                         </div>
                         <div style={{ fontSize: 11, color: C.mute }}>{uploadedFile.type === 'image' ? 'Image' : 'PDF'} · Prêt</div>
                       </div>
-                      <button
-                        onClick={e => { e.stopPropagation(); setUploadedFile(null); }}
-                        style={{
-                          flexShrink: 0, background: 'none', border: '1px solid #fca5a5',
-                          color: '#dc2626', borderRadius: 8, fontSize: 11,
-                          padding: '3px 9px', cursor: 'pointer', fontFamily: 'Manrope, sans-serif',
-                        }}
-                      >Retirer</button>
+                      <button onClick={e => { e.stopPropagation(); setUploadedFile(null); }} style={{ flexShrink: 0, background: 'none', border: '1px solid #fca5a5', color: '#dc2626', borderRadius: 8, fontSize: 11, padding: '3px 9px', cursor: 'pointer', fontFamily: 'Manrope, sans-serif' }}>Retirer</button>
                     </div>
                   )}
                 </div>
@@ -1054,152 +1312,95 @@ RÈGLES :
               </div>
 
               {/* Texte libre */}
-              <div>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
                   <div style={{ flex: 1, height: 1, background: C.rule }} />
-                  <span style={{ fontSize: 11, color: C.mute, whiteSpace: 'nowrap' }}>ou saisie manuelle</span>
+                  <span style={{ fontSize: 11, color: C.mute, whiteSpace: 'nowrap', fontWeight: 500 }}>ou coller le texte</span>
                   <div style={{ flex: 1, height: 1, background: C.rule }} />
                 </div>
-                <FieldLabel>Texte du CV</FieldLabel>
                 <textarea
                   value={cvText}
                   onChange={e => setCvText(e.target.value)}
                   placeholder="Copiez-collez le contenu du CV : nom, coordonnées, expériences, formations, compétences…"
                   rows={5}
-                  style={textareaStyle}
+                  style={{ ...textareaStyle, flex: 1, minHeight: 108 }}
                 />
-              </div>
-            </div>
-
-            {/* Annonce section */}
-            <div style={{ borderTop: '1px solid ' + C.rule, paddingTop: 16 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                <span style={{ fontSize: 13, fontWeight: 700, color: C.ink }}>Adapter à une annonce</span>
-                <span style={{
-                  display: 'inline-flex', alignItems: 'center',
-                  padding: '2px 10px', borderRadius: 99,
-                  fontSize: 11, fontWeight: 600,
-                  background: annonceBadgeActive ? '#FFF9E6' : C.surface,
-                  color: annonceBadgeActive ? '#92400e' : C.mute,
-                  border: '1px solid ' + (annonceBadgeActive ? '#FDE68A' : C.rule),
-                  transition: 'all 0.2s',
-                }}>
-                  {annonceBadgeActive ? 'Annonce ajoutée' : 'Optionnel'}
-                </span>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, alignItems: 'start' }}>
-                <div style={{
-                  background: '#FFFBEB', border: '1px solid #FDE68A',
-                  borderRadius: 10, padding: '10px 14px',
-                  fontSize: 12, color: '#92400e', lineHeight: 1.6,
-                }}>
-                  <strong>Comment ça marche :</strong> Collez le texte d'une offre pour adapter le CV. Les missions seront reformulées — sans jamais inventer d'expériences.
-                </div>
-                <div>
-                  <FieldLabel>Texte de l'annonce</FieldLabel>
-                  <textarea
-                    value={annonceText}
-                    onChange={e => handleAnnonceInput(e.target.value)}
-                    placeholder="Collez ici le texte de l'offre d'emploi…"
-                    rows={3}
-                    style={textareaStyle}
-                  />
-                  {annonceKeywords.length > 0 && (
-                    <div style={{ marginTop: 8 }}>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: C.mute, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 5 }}>Mots-clés détectés</div>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                        {annonceKeywords.map(k => (
-                          <span key={k} style={{
-                            display: 'inline-block', fontSize: 11, padding: '3px 10px',
-                            borderRadius: 99, background: '#FFF9E6',
-                            color: '#92400e', border: '1px solid #FDE68A',
-                            fontFamily: 'Manrope, sans-serif',
-                          }}>{k}</span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
               </div>
             </div>
           </SectionCard>
 
-          {/* ── CARD 3 : Génération ────────────────────────────────────── */}
-          <SectionCard ref={card3Ref} active={canGenerate} style={{ background: canGenerate ? '#FDFAF2' : C.bg, border: '1.5px solid ' + (canGenerate ? C.star + '88' : C.rule), boxShadow: canGenerate ? '0 8px 28px '+C.star+'22' : 'none' }}>
-            <CardHeader label="Génération du CV" status={!canGenerate ? 'locked' : 'active'} />
+          {/* ── ACCORDÉON : Adapter à une annonce ─────────────────────── */}
+          <AnnonceAccordion
+            active={annonceBadgeActive}
+            text={annonceText}
+            keywords={annonceKeywords}
+            onChange={handleAnnonceInput}
+          />
 
-            {/* Generate button */}
+          {/* ── BOUTON GÉNÉRER ────────────────────────────────────────── */}
+          <div ref={card3Ref} style={{ marginBottom: 16 }}>
             <button
               onClick={generate}
               disabled={generating || !canGenerate}
               style={{
-                width: '100%', padding: '14px 20px',
-                background: generating || !canGenerate ? C.ink2 : C.ink,
-                color: '#fff', border: 'none', borderRadius: 10,
-                fontSize: 14, fontWeight: 700,
+                width: '100%', padding: '16px 24px',
+                background: canGenerate && !generating
+                  ? 'linear-gradient(135deg, ' + C.ink + ' 0%, #1a1a40 100%)'
+                  : C.mute,
+                color: '#fff', border: 'none', borderRadius: 14,
+                fontSize: 15, fontWeight: 700, letterSpacing: '-0.2px',
                 cursor: generating || !canGenerate ? 'not-allowed' : 'pointer',
                 fontFamily: 'Manrope, sans-serif',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-                opacity: !canGenerate && !generating ? 0.45 : 1,
+                opacity: !canGenerate && !generating ? 0.5 : 1,
                 transition: 'all 0.2s',
+                boxShadow: canGenerate && !generating
+                  ? '0 8px 28px rgba(11,16,32,0.28), 0 1px 2px rgba(0,0,0,0.1)'
+                  : 'none',
               }}
-              onMouseEnter={e => { if (canGenerate && !generating) e.currentTarget.style.background = '#1a1a2e'; }}
-              onMouseLeave={e => { if (canGenerate && !generating) e.currentTarget.style.background = C.ink; }}
+              onMouseEnter={e => { if (canGenerate && !generating) { e.currentTarget.style.opacity = '0.88'; e.currentTarget.style.transform = 'translateY(-1px)'; } }}
+              onMouseLeave={e => { e.currentTarget.style.opacity = canGenerate ? '1' : '0.5'; e.currentTarget.style.transform = 'none'; }}
             >
-              {generating && (
-                <div style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
-              )}
-              {!generating && (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                </svg>
-              )}
+              {generating
+                ? <div style={{ width: 18, height: 18, border: '2.5px solid rgba(255,255,255,0.35)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+                : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              }
               {generating
                 ? (genProgressText || 'Génération en cours…')
-                : apiKey.trim()
-                  ? 'Générer le CV Talia'
-                  : 'Tester sans clé API (données fictives)'}
+                : apiKey.trim() ? 'Générer mon CV Talia' : 'Tester sans clé (données fictives)'}
             </button>
 
             {/* Progress bar */}
             {genProgress > 0 && generating && (
-              <div style={{ marginTop: 12 }}>
+              <div style={{ marginTop: 10 }}>
                 <div style={{ height: 4, background: C.rule, borderRadius: 99, overflow: 'hidden' }}>
-                  <div style={{
-                    height: '100%', borderRadius: 99,
-                    background: 'linear-gradient(90deg, ' + C.bluePrimary + ', ' + C.blueHover + ')',
-                    width: genProgress + '%', transition: 'width 0.4s ease',
-                  }} />
+                  <div style={{ height: '100%', borderRadius: 99, background: 'linear-gradient(90deg, ' + C.bluePrimary + ', ' + C.blueHover + ')', width: genProgress + '%', transition: 'width 0.4s ease' }} />
                 </div>
-                <div style={{ fontSize: 11, color: C.mute, marginTop: 5 }}>{genProgressText}</div>
+                <div style={{ fontSize: 11, color: C.mute, marginTop: 4, textAlign: 'center' }}>{genProgressText}</div>
               </div>
             )}
 
-            {/* Missing info warning */}
+            {/* Missing info */}
             {!canGenerate && !generating && (
-              <div style={{ marginTop: 10, fontSize: 12, color: C.mute, display: 'flex', alignItems: 'center', gap: 6 }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.star} strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <div style={{ marginTop: 10, fontSize: 12, color: C.mute, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={C.star} strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                 Il manque : {[!hasFormation && 'une formation', !hasCV && 'le CV du candidat'].filter(Boolean).join(' et ')}
               </div>
             )}
 
             {/* Error */}
             {genError && (
-              <div style={{
-                marginTop: 10, padding: '10px 14px',
-                background: '#fff1f2', border: '1px solid #fca5a5',
-                borderRadius: 10, fontSize: 12, color: '#dc2626',
-              }}>{genError}</div>
+              <div style={{ marginTop: 10, padding: '10px 14px', background: '#fff1f2', border: '1px solid #fca5a5', borderRadius: 10, fontSize: 12, color: '#dc2626' }}>{genError}</div>
             )}
 
-            {/* Keyboard shortcut hint */}
-            <div style={{ marginTop: 12, fontSize: 11, color: C.mute, textAlign: 'center' }}>
-              Raccourci&nbsp;:&nbsp;
+            {/* Keyboard shortcut */}
+            <div style={{ marginTop: 10, fontSize: 11, color: C.mute, textAlign: 'center' }}>
               <span style={{ display: 'inline-block', background: C.surface, border: '1px solid ' + C.rule, borderRadius: 4, padding: '1px 6px', fontSize: 10, fontFamily: 'monospace' }}>Ctrl</span>
               &nbsp;+&nbsp;
               <span style={{ display: 'inline-block', background: C.surface, border: '1px solid ' + C.rule, borderRadius: 4, padding: '1px 6px', fontSize: 10, fontFamily: 'monospace' }}>Enter</span>
+              &nbsp;pour générer directement
             </div>
-          </SectionCard>
+          </div>
         </div>
 
         {/* ── SIDEBAR RIGHT ─────────────────────────────────────────────── */}
@@ -1208,22 +1409,6 @@ RÈGLES :
           {/* Recap card */}
           <div style={{ background: C.bg, border: '1px solid ' + C.rule, borderRadius: 16, padding: 20 }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: C.ink, marginBottom: 16 }}>Récapitulatif</div>
-
-            {/* Statut clé API (configurée via ⚙️ Paramètres) */}
-            <div style={{ marginBottom: 16 }}>
-              <FieldLabel>Clé API Anthropic</FieldLabel>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', border: '1px solid ' + C.rule, borderRadius: 10, background: C.surface }}>
-                <span style={{ flex: 1, fontSize: 12, color: apiKey ? C.ink : C.mute }}>
-                  {apiKey ? 'Clé configurée' : 'Aucune clé — mode démo'}
-                </span>
-                {apiKey && <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#22c55e' }} />}
-              </div>
-              <p style={{ fontSize: 11, color: C.mute, marginTop: 5, lineHeight: 1.5 }}>
-                {apiKey
-                  ? 'Modifiable dans ⚙️ Paramètres (PIN requis).'
-                  : 'Configure ta clé dans ⚙️ Paramètres (en bas à droite). Sans clé, données fictives.'}
-              </p>
-            </div>
 
             {/* Recap rows */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -1238,48 +1423,6 @@ RÈGLES :
                   }} title={value}>{value}</span>
                 </div>
               ))}
-            </div>
-
-            {/* Dernier CV link */}
-            <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid ' + C.rule }}>
-              <button
-                onClick={() => navigate('/editor')}
-                style={{
-                  width: '100%', padding: '8px 14px',
-                  background: C.surface, border: '1px solid ' + C.rule,
-                  borderRadius: 10, fontSize: 12, fontWeight: 600, color: C.ink2,
-                  cursor: 'pointer', fontFamily: 'Manrope, sans-serif',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                  transition: 'border-color 0.15s',
-                }}
-                onMouseEnter={e => e.currentTarget.style.borderColor = C.ink2}
-                onMouseLeave={e => e.currentTarget.style.borderColor = C.rule}
-              >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                Voir le dernier CV
-              </button>
-            </div>
-          </div>
-
-          {/* Promesse Talia card */}
-          <div style={{ background: C.blueSoft, border: '1px solid ' + C.bluePrimary + '33', borderRadius: 16, padding: 20 }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-              <div style={{
-                width: 36, height: 36, background: C.bluePrimary,
-                borderRadius: 10, flexShrink: 0,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                </svg>
-              </div>
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: C.bluePrimary, marginBottom: 6 }}>Promesse Talia</div>
-                <p style={{ fontSize: 12, color: C.ink2, lineHeight: 1.6 }}>
-                  Le CV généré est personnalisé au parcours réel du candidat. L'IA ne
-                  <strong> jamais invente</strong> d'expériences ou de compétences — elle restructure et valorise uniquement les informations fournies.
-                </p>
-              </div>
             </div>
           </div>
 

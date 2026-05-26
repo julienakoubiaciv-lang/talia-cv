@@ -4,6 +4,7 @@ import { saveEditorState, PALETTES, colorForFormation } from '@/lib/cvData';
 import { getHistorySync, deleteHistory } from '@/lib/historySync';
 import { useCRMBridge } from '@/hooks/useCRMBridge.jsx';
 import { useAuth } from '@/hooks/useAuth.jsx';
+import { useIsMobile } from '@/hooks/useWindowWidth';
 
 /* ─── Design tokens ─────────────────────────────────────────────────────── */
 const C = {
@@ -153,87 +154,91 @@ function ConfirmModal({ name, onConfirm, onCancel }) {
 
 /* ─── Preview Modal ──────────────────────────────────────────────────────── */
 function PreviewModal({ item, onModify, onClose }) {
+  const isMobile = useIsMobile();
   if (!item) return null;
   const stars = 4;
   const pct = 83;
-  const scale = 0.52;
+  // Adapte le scale selon la largeur disponible
+  const scale = isMobile ? 0.38 : 0.52;
   return (
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(11,16,32,0.45)', backdropFilter: 'blur(3px)', zIndex: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(11,16,32,0.45)', backdropFilter: 'blur(3px)', zIndex: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: isMobile ? 12 : 24 }}>
       <div onClick={e => e.stopPropagation()} style={{
-        width: '100%', maxWidth: 1040, height: 'min(740px, 90vh)',
-        background: '#fff', borderRadius: 20, overflow: 'hidden',
+        width: '100%', maxWidth: isMobile ? '100%' : 1040,
+        height: isMobile ? 'min(88vh, 640px)' : 'min(740px, 90vh)',
+        background: '#fff', borderRadius: isMobile ? 16 : 20, overflow: 'hidden',
         boxShadow: '0 40px 100px rgba(11,16,32,.28), 0 0 0 1px rgba(0,0,0,.04)',
         display: 'flex', flexDirection: 'column', fontFamily: FONT,
       }}>
         {/* Modal header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px', borderBottom: `1px solid ${C.rule}`, flexShrink: 0 }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 3 }}>
-              <span style={{ fontSize: 17, fontWeight: 700, color: C.ink }}>{item.name}</span>
-              <span style={{ padding: '2px 8px', background: C.okBg, color: C.ok, fontSize: 11, fontWeight: 600, borderRadius: 99 }}>Prêt à l'envoi</span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: isMobile ? '12px 16px' : '16px 24px', borderBottom: `1px solid ${C.rule}`, flexShrink: 0, gap: 8 }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: isMobile ? 15 : 17, fontWeight: 700, color: C.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: isMobile ? 160 : 'none' }}>{item.name}</span>
+              {!isMobile && <span style={{ padding: '2px 8px', background: C.okBg, color: C.ok, fontSize: 11, fontWeight: 600, borderRadius: 99, whiteSpace: 'nowrap' }}>Prêt à l'envoi</span>}
             </div>
-            <div style={{ fontSize: 11.5, fontWeight: 600, color: C.bluePrimary, letterSpacing: '1.2px', textTransform: 'uppercase' }}>
-              {item.data?.poste || item.formation || ''}
-            </div>
+            {!isMobile && (
+              <div style={{ fontSize: 11.5, fontWeight: 600, color: C.bluePrimary, letterSpacing: '1.2px', textTransform: 'uppercase' }}>
+                {item.data?.poste || item.formation || ''}
+              </div>
+            )}
           </div>
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-            <button onClick={() => { onModify(item); onClose(); }} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 18px', border: `1px solid ${C.rule}`, borderRadius: 10, background: '#fff', fontSize: 13, fontWeight: 600, color: C.ink, cursor: 'pointer' }}>
-              <IconDownload s={13} /> Télécharger PDF
-            </button>
-            <button onClick={() => { onModify(item); onClose(); }} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 18px', border: 'none', borderRadius: 10, background: C.bluePrimary, fontSize: 13, fontWeight: 600, color: '#fff', cursor: 'pointer' }}>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
+            {!isMobile && (
+              <button onClick={() => { onModify(item); onClose(); }} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 18px', border: `1px solid ${C.rule}`, borderRadius: 10, background: '#fff', fontSize: 13, fontWeight: 600, color: C.ink, cursor: 'pointer' }}>
+                <IconDownload s={13} /> Télécharger PDF
+              </button>
+            )}
+            <button onClick={() => { onModify(item); onClose(); }} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: isMobile ? '8px 14px' : '9px 18px', border: 'none', borderRadius: 10, background: C.bluePrimary, fontSize: 13, fontWeight: 600, color: '#fff', cursor: 'pointer' }}>
               <IconEdit s={13} /> Modifier
             </button>
-            <button onClick={onClose} style={{ width: 36, height: 36, border: `1px solid ${C.rule}`, borderRadius: 10, background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.mute }}>
-              <IconX s={16} />
+            <button onClick={onClose} style={{ width: 34, height: 34, border: `1px solid ${C.rule}`, borderRadius: 10, background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.mute, flexShrink: 0 }}>
+              <IconX s={15} />
             </button>
           </div>
         </div>
 
-        {/* Modal body: preview + sidebar */}
-        <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 300px', overflow: 'hidden' }}>
-          {/* CV preview centered */}
-          <div style={{ background: C.surface, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', padding: 32 }}>
+        {/* Modal body: preview + sidebar (sidebar masquée sur mobile) */}
+        <div style={{ flex: 1, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 300px', overflow: 'hidden' }}>
+          {/* CV preview */}
+          <div style={{ background: C.surface, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', padding: isMobile ? 16 : 32 }}>
             <div style={{ width: 794 * scale, height: 1122 * scale, position: 'relative', flexShrink: 0, boxShadow: '0 20px 60px rgba(11,16,32,.18), 0 0 0 1px rgba(0,0,0,.04)', borderRadius: 4, overflow: 'hidden' }}>
               <iframe srcDoc={item.html} style={{ width: 794, height: 1122, border: 'none', display: 'block', transformOrigin: 'top left', transform: `scale(${scale})` }} title={item.name} scrolling="no" />
             </div>
           </div>
 
-          {/* Sidebar */}
-          <div style={{ borderLeft: `1px solid ${C.rule}`, overflow: 'auto', padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: 24 }}>
-            {/* Quality */}
-            <div>
-              <div style={{ fontSize: 11, fontWeight: 600, color: C.mute, textTransform: 'uppercase', letterSpacing: '1.8px', marginBottom: 14 }}>QUALITÉ DU CV</div>
-              <Stars value={stars} size={22} />
-              <div style={{ fontSize: 13.5, fontWeight: 600, color: C.ink, marginTop: 10 }}>Excellent — prêt à l'envoi</div>
-              <div style={{ fontSize: 12, color: C.mute, marginTop: 4 }}>{pct} / 100 · {stars} étoiles sur 5</div>
+          {/* Sidebar — desktop uniquement */}
+          {!isMobile && (
+            <div style={{ borderLeft: `1px solid ${C.rule}`, overflow: 'auto', padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: 24 }}>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: C.mute, textTransform: 'uppercase', letterSpacing: '1.8px', marginBottom: 14 }}>QUALITÉ DU CV</div>
+                <Stars value={stars} size={22} />
+                <div style={{ fontSize: 13.5, fontWeight: 600, color: C.ink, marginTop: 10 }}>Excellent — prêt à l'envoi</div>
+                <div style={{ fontSize: 12, color: C.mute, marginTop: 4 }}>{pct} / 100 · {stars} étoiles sur 5</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: C.mute, textTransform: 'uppercase', letterSpacing: '1.8px', marginBottom: 14 }}>PROCHAINES ACTIONS</div>
+                {['Ajouter une photo', 'Lier votre LinkedIn', 'Télécharger en PDF'].map((action, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                    <div style={{ width: 18, height: 18, border: `1.5px solid ${C.rule}`, borderRadius: 5, flexShrink: 0 }} />
+                    <span style={{ fontSize: 13, color: C.ink2 }}>{action}</span>
+                  </div>
+                ))}
+              </div>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: C.mute, textTransform: 'uppercase', letterSpacing: '1.8px', marginBottom: 14 }}>DÉTAILS</div>
+                {[
+                  ['Créé', formatDate(item.id)],
+                  ['Format', 'A4'],
+                  ['Formation', item.formation || '—'],
+                ].map(([k, v]) => (
+                  <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 8 }}>
+                    <span style={{ color: C.mute }}>{k}</span>
+                    <span style={{ color: C.ink, fontWeight: 500 }}>{v}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-
-            {/* Next actions */}
-            <div>
-              <div style={{ fontSize: 11, fontWeight: 600, color: C.mute, textTransform: 'uppercase', letterSpacing: '1.8px', marginBottom: 14 }}>PROCHAINES ACTIONS</div>
-              {['Ajouter une photo', 'Lier votre LinkedIn', 'Télécharger en PDF'].map((action, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                  <div style={{ width: 18, height: 18, border: `1.5px solid ${C.rule}`, borderRadius: 5, flexShrink: 0 }} />
-                  <span style={{ fontSize: 13, color: C.ink2 }}>{action}</span>
-                </div>
-              ))}
-            </div>
-
-            {/* Details */}
-            <div>
-              <div style={{ fontSize: 11, fontWeight: 600, color: C.mute, textTransform: 'uppercase', letterSpacing: '1.8px', marginBottom: 14 }}>DÉTAILS</div>
-              {[
-                ['Créé', formatDate(item.id)],
-                ['Format', 'A4'],
-                ['Formation', item.formation || '—'],
-              ].map(([k, v]) => (
-                <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 8 }}>
-                  <span style={{ color: C.mute }}>{k}</span>
-                  <span style={{ color: C.ink, fontWeight: 500 }}>{v}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
@@ -489,6 +494,7 @@ export default function Home() {
   const navigate = useNavigate();
   const { embedded, notifyCreateLead } = useCRMBridge();
   const { user, signOut } = useAuth();
+  const isMobile = useIsMobile();
   const [cvList, setCvList] = useState([]);
   const [viewCV, setViewCV] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -581,76 +587,106 @@ export default function Home() {
         button { font-family: inherit; }
         @keyframes cardIn { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
         @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+        @keyframes fadeInUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes spin { to { transform: rotate(360deg); } }
       `}</style>
 
       {/* ── Topbar ──────────────────────────────────────────────────────── */}
-      <header style={{ background: C.bg, borderBottom: `1px solid ${C.rule}`, height: 79, display: 'flex', alignItems: 'center', padding: '0 40px', position: 'sticky', top: 0, zIndex: 100 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 34, height: 34, background: C.ink, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', flexShrink: 0 }}>
-            <IconDoc s={17} />
+      <header style={{
+        background: C.bg, borderBottom: `1px solid ${C.rule}`,
+        height: isMobile ? 60 : 79,
+        display: 'flex', alignItems: 'center',
+        padding: isMobile ? '0 16px' : '0 40px',
+        gap: isMobile ? 8 : 12,
+        position: 'sticky', top: 0, zIndex: 100,
+      }}>
+        {/* Logo */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          <div style={{ width: 32, height: 32, background: C.ink, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+            <IconDoc s={16} />
           </div>
-          <span style={{ fontSize: 17, fontWeight: 700, color: C.ink, letterSpacing: '-0.2px' }}>
-            Talia<span style={{ color: C.bluePrimary }}>CV</span>
-          </span>
+          {!isMobile && (
+            <span style={{ fontSize: 17, fontWeight: 700, color: C.ink, letterSpacing: '-0.2px' }}>
+              Talia<span style={{ color: C.bluePrimary }}>CV</span>
+            </span>
+          )}
         </div>
 
-        <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 18px', background: C.surface, border: `1px solid ${C.rule}`, borderRadius: 99, fontSize: 13.5, fontWeight: 600, color: C.ink }}>
-            <IconGrid s={14} />
-            Tableau de bord
+        {/* Centre — masqué sur mobile */}
+        {!isMobile && (
+          <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 18px', background: C.surface, border: `1px solid ${C.rule}`, borderRadius: 99, fontSize: 13.5, fontWeight: 600, color: C.ink }}>
+              <IconGrid s={14} />
+              Tableau de bord
+            </div>
           </div>
-        </div>
+        )}
 
-        <button onClick={() => navigate('/generate')} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '10px 22px', background: C.ink, color: '#fff', border: 'none', borderRadius: 99, fontSize: 13.5, fontWeight: 700, cursor: 'pointer', transition: 'opacity .15s', letterSpacing: '-0.1px' }}
+        <div style={{ flex: isMobile ? 1 : 'none' }} />
+
+        {/* Nouveau CV */}
+        <button onClick={() => navigate('/generate')} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: isMobile ? '9px 14px' : '10px 22px', background: C.ink, color: '#fff', border: 'none', borderRadius: 99, fontSize: isMobile ? 13 : 13.5, fontWeight: 700, cursor: 'pointer', transition: 'opacity .15s', letterSpacing: '-0.1px', whiteSpace: 'nowrap' }}
           onMouseEnter={e => e.currentTarget.style.opacity = '.85'}
           onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
-          <IconPlus s={13} /> Nouveau CV
+          <IconPlus s={12} /> {isMobile ? 'Nouveau' : 'Nouveau CV'}
         </button>
-        <button onClick={() => navigate('/bulk')} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '10px 18px', background: C.bg, color: C.ink, border: '1.5px solid ' + C.rule, borderRadius: 99, fontSize: 13.5, fontWeight: 700, cursor: 'pointer', transition: 'border-color .15s', letterSpacing: '-0.1px' }}
-          onMouseEnter={e => e.currentTarget.style.borderColor = C.ink}
-          onMouseLeave={e => e.currentTarget.style.borderColor = C.rule}>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-          En masse
-        </button>
-        {/* Bouton auth */}
+
+        {/* En masse — masqué sur mobile */}
+        {!isMobile && (
+          <button onClick={() => navigate('/bulk')} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '10px 18px', background: C.bg, color: C.ink, border: '1.5px solid ' + C.rule, borderRadius: 99, fontSize: 13.5, fontWeight: 700, cursor: 'pointer', transition: 'border-color .15s', letterSpacing: '-0.1px' }}
+            onMouseEnter={e => e.currentTarget.style.borderColor = C.ink}
+            onMouseLeave={e => e.currentTarget.style.borderColor = C.rule}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            En masse
+          </button>
+        )}
+
+        {/* Auth — email masqué sur mobile */}
         {user ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 4 }}>
-            <div style={{ fontSize: 12, color: C.mute, maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={user.email}>
-              {user.email}
-            </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {!isMobile && (
+              <div style={{ fontSize: 12, color: C.mute, maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={user.email}>
+                {user.email}
+              </div>
+            )}
             <button onClick={signOut}
-              style={{ padding: '7px 14px', borderRadius: 99, fontSize: 12, fontWeight: 600, background: C.surface, color: C.ink2, border: `1px solid ${C.rule}`, cursor: 'pointer', fontFamily: 'Manrope,sans-serif', whiteSpace: 'nowrap' }}
+              style={{ padding: isMobile ? '7px 10px' : '7px 14px', borderRadius: 99, fontSize: 12, fontWeight: 600, background: C.surface, color: C.ink2, border: `1px solid ${C.rule}`, cursor: 'pointer', fontFamily: 'Manrope,sans-serif', whiteSpace: 'nowrap' }}
               onMouseEnter={e => e.currentTarget.style.borderColor = C.ink}
               onMouseLeave={e => e.currentTarget.style.borderColor = C.rule}>
-              Déconnexion
+              {isMobile ? '↩' : 'Déconnexion'}
             </button>
           </div>
         ) : (
           <button onClick={() => navigate('/auth')}
-            style={{ marginLeft: 4, padding: '7px 16px', borderRadius: 99, fontSize: 12, fontWeight: 700, background: C.blueSoft, color: C.bluePrimary, border: `1.5px solid ${C.bluePrimary}33`, cursor: 'pointer', fontFamily: 'Manrope,sans-serif', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 5 }}>
-            ☁ Connexion
+            style={{ padding: isMobile ? '7px 10px' : '7px 16px', borderRadius: 99, fontSize: 12, fontWeight: 700, background: C.blueSoft, color: C.bluePrimary, border: `1.5px solid ${C.bluePrimary}33`, cursor: 'pointer', fontFamily: 'Manrope,sans-serif', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 5 }}>
+            {isMobile ? '☁' : '☁ Connexion'}
           </button>
         )}
 
-        <button onClick={() => setTourOpen(true)} title="Visite guidée"
-          style={{ marginLeft:8, width:38, height:38, background:C.surface, color:C.ink2, border:`1px solid ${C.rule}`, borderRadius:'50%', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', transition:'all .15s' }}
-          onMouseEnter={e => { e.currentTarget.style.background=C.blueSoft; e.currentTarget.style.color=C.bluePrimary; e.currentTarget.style.borderColor=`${C.bluePrimary}55`; }}
-          onMouseLeave={e => { e.currentTarget.style.background=C.surface; e.currentTarget.style.color=C.ink2; e.currentTarget.style.borderColor=C.rule; }}>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-          </svg>
-        </button>
+        {/* Aide */}
+        {!isMobile && (
+          <button onClick={() => setTourOpen(true)} title="Visite guidée"
+            style={{ flexShrink: 0, width: 34, height: 34, background: C.surface, color: C.ink2, border: `1px solid ${C.rule}`, borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .15s' }}
+            onMouseEnter={e => { e.currentTarget.style.background=C.blueSoft; e.currentTarget.style.color=C.bluePrimary; e.currentTarget.style.borderColor=`${C.bluePrimary}55`; }}
+            onMouseLeave={e => { e.currentTarget.style.background=C.surface; e.currentTarget.style.color=C.ink2; e.currentTarget.style.borderColor=C.rule; }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+          </button>
+        )}
       </header>
 
       {/* ── Main content ─────────────────────────────────────────────────── */}
-      <main style={{ maxWidth: 1180, margin: '0 auto', padding: '56px 64px 80px' }}>
+      <main style={{ maxWidth: 1180, margin: '0 auto', padding: isMobile ? '24px 16px 60px' : '56px 64px 80px' }}>
 
         {/* Hero */}
-        <div style={{ marginBottom: 48, animation: 'fadeIn 0.8s ease both' }}>
-          <h1 style={{ fontSize: 64, fontWeight: 700, color: C.ink, letterSpacing: '-2px', lineHeight: 1.05, marginBottom: 12 }}>Mes CV</h1>
-          <p style={{ fontSize: 16.5, color: C.ink2, fontWeight: 400, lineHeight: 1.55 }}>
-            Créez et gérez vos CV professionnels avec un design premium.
-          </p>
+        <div style={{ marginBottom: isMobile ? 28 : 48, animation: 'fadeIn 0.8s ease both' }}>
+          <h1 style={{ fontSize: isMobile ? 36 : 64, fontWeight: 700, color: C.ink, letterSpacing: isMobile ? '-0.8px' : '-2px', lineHeight: 1.05, marginBottom: 8 }}>Mes CV</h1>
+          {!isMobile && (
+            <p style={{ fontSize: 16.5, color: C.ink2, fontWeight: 400, lineHeight: 1.55 }}>
+              Créez et gérez vos CV professionnels avec un design premium.
+            </p>
+          )}
         </div>
 
         {/* Stats */}

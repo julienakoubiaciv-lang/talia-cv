@@ -2,6 +2,7 @@ import React, { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from './hooks/useTheme.jsx';
 import { SettingsProvider } from './hooks/useSettings.jsx';
+import { AuthProvider } from './hooks/useAuth.jsx';
 import SettingsPanel from './components/SettingsPanel.jsx';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
 
@@ -13,6 +14,7 @@ const Bulk          = lazy(() => import('./pages/Bulk.jsx'));
 const History       = lazy(() => import('./pages/History.jsx'));
 const Profiles      = lazy(() => import('./pages/Profiles.jsx'));
 const ProfileWizard = lazy(() => import('./pages/ProfileWizard.jsx'));
+const Auth          = lazy(() => import('./pages/Auth.jsx'));
 
 // Spinner minimal affiché pendant le chargement d'un chunk
 function PageLoader() {
@@ -36,22 +38,25 @@ export default function App() {
     <ThemeProvider>
       <SettingsProvider>
         <BrowserRouter>
-          <ErrorBoundary>
-          <Suspense fallback={<PageLoader />}>
-            <Routes>
-              <Route path="/"            element={<Home />} />
-              <Route path="/generate"    element={<Generate />} />
-              <Route path="/bulk"        element={<Bulk />} />
-              <Route path="/editor"      element={<Editor />} />
-              <Route path="/editor/:id"  element={<Editor />} />
-              <Route path="/history"            element={<History />} />
-              <Route path="/profils"            element={<Profiles />} />
-              <Route path="/profils/nouveau"    element={<ProfileWizard />} />
-              <Route path="/profils/:id/editer" element={<ProfileWizard />} />
-            </Routes>
-          </Suspense>
-          </ErrorBoundary>
-          <SettingsPanel />
+          <AuthProvider>
+            <ErrorBoundary>
+            <Suspense fallback={<PageLoader />}>
+              <Routes>
+                <Route path="/"            element={<Home />} />
+                <Route path="/auth"        element={<Auth />} />
+                <Route path="/generate"    element={<Generate />} />
+                <Route path="/bulk"        element={<Bulk />} />
+                <Route path="/editor"      element={<Editor />} />
+                <Route path="/editor/:id"  element={<Editor />} />
+                <Route path="/history"            element={<History />} />
+                <Route path="/profils"            element={<Profiles />} />
+                <Route path="/profils/nouveau"    element={<ProfileWizard />} />
+                <Route path="/profils/:id/editer" element={<ProfileWizard />} />
+              </Routes>
+            </Suspense>
+            </ErrorBoundary>
+            <SettingsPanel />
+          </AuthProvider>
         </BrowserRouter>
       </SettingsProvider>
     </ThemeProvider>

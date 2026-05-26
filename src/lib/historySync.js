@@ -10,6 +10,7 @@
  */
 import { supabase, supabaseReady } from './supabase';
 import { getDeviceId } from './deviceId';
+import { getCurrentUserId, isAuthenticated } from './currentUser';
 
 // ── helpers locaux ──────────────────────────────────────────────────────────
 
@@ -48,6 +49,7 @@ function toRow(entry) {
   return {
     id:           String(entry.id),
     device_id:    getDeviceId(),
+    user_id:      isAuthenticated() ? getCurrentUserId() : null,
     name:         entry.name         || '',
     date:         entry.date         || '',
     html:         entry.html         || '',
@@ -73,12 +75,13 @@ export async function getHistory() {
   if (!supabaseReady || !supabase) return local;
 
   try {
-    const { data, error } = await supabase
-      .from('cv_history')
-      .select('*')
-      .eq('device_id', getDeviceId())
-      .order('created_at', { ascending: false })
-      .limit(100);
+    // Si connecté → cherche par user_id, sinon par device_id
+    const query = supabase.from('cv_history').select('*');
+    const { data, error } = await (
+      isAuthenticated()
+        ? query.eq('user_id', getCurrentUserId())
+        : query.eq('device_id', getDeviceId())
+    ).order('created_at', { ascending: false }).limit(100);
 
     if (error || !data) return local;
 

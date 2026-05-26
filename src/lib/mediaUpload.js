@@ -5,7 +5,7 @@
  * l'app continue d'utiliser les data URLs base64 en localStorage.
  */
 import { supabase, supabaseReady } from './supabase';
-import { getDeviceId } from './deviceId';
+import { getCurrentUserId } from './currentUser';
 
 const BUCKET = 'cv-media';
 
@@ -31,7 +31,7 @@ export async function uploadMedia(source, type, cvId) {
   if (!supabaseReady || !supabase || !source) return null;
 
   try {
-    const deviceId = getDeviceId();
+    const deviceId = getCurrentUserId();
     const path     = `${deviceId}/${type}s/${cvId}.jpg`;
 
     let blob;

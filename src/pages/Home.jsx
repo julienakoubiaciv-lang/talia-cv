@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { saveEditorState, PALETTES, colorForFormation } from '@/lib/cvData';
 import { getHistorySync, deleteHistory } from '@/lib/historySync';
 import { useCRMBridge } from '@/hooks/useCRMBridge.jsx';
+import { useAuth } from '@/hooks/useAuth.jsx';
 
 /* ─── Design tokens ─────────────────────────────────────────────────────── */
 const C = {
@@ -487,6 +488,7 @@ function OnboardingTour({ onClose, onAction }) {
 export default function Home() {
   const navigate = useNavigate();
   const { embedded, notifyCreateLead } = useCRMBridge();
+  const { user, signOut } = useAuth();
   const [cvList, setCvList] = useState([]);
   const [viewCV, setViewCV] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -610,6 +612,26 @@ export default function Home() {
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
           En masse
         </button>
+        {/* Bouton auth */}
+        {user ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 4 }}>
+            <div style={{ fontSize: 12, color: C.mute, maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={user.email}>
+              {user.email}
+            </div>
+            <button onClick={signOut}
+              style={{ padding: '7px 14px', borderRadius: 99, fontSize: 12, fontWeight: 600, background: C.surface, color: C.ink2, border: `1px solid ${C.rule}`, cursor: 'pointer', fontFamily: 'Manrope,sans-serif', whiteSpace: 'nowrap' }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = C.ink}
+              onMouseLeave={e => e.currentTarget.style.borderColor = C.rule}>
+              Déconnexion
+            </button>
+          </div>
+        ) : (
+          <button onClick={() => navigate('/auth')}
+            style={{ marginLeft: 4, padding: '7px 16px', borderRadius: 99, fontSize: 12, fontWeight: 700, background: C.blueSoft, color: C.bluePrimary, border: `1.5px solid ${C.bluePrimary}33`, cursor: 'pointer', fontFamily: 'Manrope,sans-serif', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 5 }}>
+            ☁ Connexion
+          </button>
+        )}
+
         <button onClick={() => setTourOpen(true)} title="Visite guidée"
           style={{ marginLeft:8, width:38, height:38, background:C.surface, color:C.ink2, border:`1px solid ${C.rule}`, borderRadius:'50%', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', transition:'all .15s' }}
           onMouseEnter={e => { e.currentTarget.style.background=C.blueSoft; e.currentTarget.style.color=C.bluePrimary; e.currentTarget.style.borderColor=`${C.bluePrimary}55`; }}

@@ -19,9 +19,13 @@ create table if not exists cv_history (
   logo_url     text,                      -- URL Supabase Storage (nullable)
   profile_id   text,                      -- ID du profil personnalité utilisé (nullable)
   profile_name text,                      -- Nom du profil (dénormalisé pour affichage rapide)
+  user_id      text,                      -- UUID Supabase Auth (null si anonyme)
   created_at  timestamptz default now(),
   updated_at  timestamptz default now()
 );
+
+-- Index user_id pour les requêtes authentifiées
+create index if not exists cv_history_user_idx on cv_history(user_id);
 
 -- Index pour accélérer les requêtes par device
 create index if not exists cv_history_device_idx on cv_history(device_id);
@@ -41,13 +45,24 @@ create trigger cv_history_updated_at
   for each row execute function update_updated_at();
 
 -- ── 2. RLS (Row Level Security) ─────────────────────────────
--- Chaque device ne voit et ne modifie que ses propres CVs.
 alter table cv_history enable row level security;
 
+-- Politique unifiée : user authentifié OU device anonyme
 drop policy if exists "device owns its cvs" on cv_history;
-create policy "device owns its cvs" on cv_history
-  using (device_id = current_setting('request.headers', true)::jsonb->>'x-device-id')
-  with check (device_id = current_setting('request.headers', true)::jsonb->>'x-device-id');
+drop policy if exists "owner access" on cv_history;
+create policy "owner access" on cv_history
+  using (
+    -- Utilisateur connecté : accès via user_id (auth.uid())
+    (auth.uid() is not null and user_id = auth.uid()::text)
+    OR
+    -- Anonyme : accès via device_id dans le header custom
+    (auth.uid() is null and device_id = current_setting('request.headers', true)::jsonb->>'x-device-id')
+  )
+  with check (
+    (auth.uid() is not null and user_id = auth.uid()::text)
+    OR
+    (auth.uid() is null and device_id = current_setting('request.headers', true)::jsonb->>'x-device-id')
+  );
 
 -- ── 3. Bucket Storage pour photos et logos ──────────────────
 -- À créer manuellement dans Storage → New Bucket si pas déjà fait :

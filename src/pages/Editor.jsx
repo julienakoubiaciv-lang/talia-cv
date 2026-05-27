@@ -2,12 +2,10 @@ import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   PALETTES,
-  TEMPLATES,
-  SIDEBAR_TEXTURES,
-  renderCVFromData,
   saveEditorState, loadEditorState, loadBulkSession,
   saveVersion, getVersions, relativeTime,
 } from '@/lib/cvData';
+import { TEMPLATES, SIDEBAR_TEXTURES, renderCVFromData } from '@/lib/cvTemplates';
 import {
   saveHistory, updateHistory, getHistorySync,
 } from '@/lib/historySync';

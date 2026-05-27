@@ -2,8 +2,9 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   FORMATIONS, DATES, POSTES, COMP_TECH, COMP_SOFT, PALETTES,
-  adaptPoste, renderCVFromData, saveEditorState, escH
+  saveEditorState,
 } from '@/lib/cvData';
+import { adaptPoste, renderCVFromData, escH } from '@/lib/cvTemplates';
 import { saveHistory } from '@/lib/historySync';
 import { getProfiles, buildProfileContext } from '@/lib/profileData';
 import { useSettings } from '@/hooks/useSettings.jsx';

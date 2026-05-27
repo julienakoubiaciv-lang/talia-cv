@@ -62,10 +62,10 @@ function Toast({ toasts, remove }) {
 }
 
 // ─── API ─────────────────────────────────────────────────────────────────────
-const ANTHROPIC_URL = import.meta.env.DEV ? '/api/anthropic/v1/messages' : 'https://api.anthropic.com/v1/messages';
+// Toujours passer par le proxy — voir api/anthropic.js
+const ANTHROPIC_URL = '/api/anthropic';
 async function callAPI(body, apiKey) {
   const headers = { 'Content-Type':'application/json', 'anthropic-version':'2023-06-01' };
-  if (!import.meta.env.DEV) headers['anthropic-dangerous-direct-browser-access'] = 'true';
   if (apiKey) headers['x-api-key'] = apiKey;
   const res = await fetch(ANTHROPIC_URL, { method:'POST', headers, body:JSON.stringify(body) });
   if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.error?.message || 'Erreur API (HTTP '+res.status+')'); }

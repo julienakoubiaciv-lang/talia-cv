@@ -8,6 +8,12 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # Ne pas déployer les commits de test, chore ou wip
+    if: |
+      !startsWith(github.event.head_commit.message, 'test:') &&
+      !startsWith(github.event.head_commit.message, 'chore:') &&
+      !startsWith(github.event.head_commit.message, 'wip:') &&
+      !startsWith(github.event.head_commit.message, 'WIP')
     steps:
       - name: Trigger Vercel deployment
         run: |

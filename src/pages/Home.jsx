@@ -8,6 +8,8 @@ import { useIsMobile } from '@/hooks/useWindowWidth';
 import { useCRMToken } from '@/hooks/useCRMToken';
 import { usePlan } from '@/hooks/usePlan';
 import { PlanBanner } from '@/components/PlanGate';
+import { CheckoutSuccessBanner } from '@/components/CheckoutSuccessBanner.jsx';
+import { useCheckoutSuccess } from '@/hooks/useCheckoutSuccess';
 
 /* ─── Design tokens ─────────────────────────────────────────────────────── */
 const C = {
@@ -499,7 +501,13 @@ export default function Home() {
   const { user, signOut } = useAuth();
   const isMobile = useIsMobile();
   const { crmLink, isLinked: isCRMLinked, linkFromURL, unlink: unlinkCRM } = useCRMToken();
-  const { isFree, canCV, remainingCVs, canBulk, nextPlan } = usePlan();
+  const { isFree, canCV, remainingCVs, canBulk, nextPlan, upgrade } = usePlan();
+
+  // ── Retour paiement Stripe (?checkout=success) ──────────────────────────
+  const { checkoutState, activatedTier, dismiss: dismissCheckout } = useCheckoutSuccess({
+    onActivated: (tier) => upgrade(tier, 'stripe'),
+  });
+
   const [cvList, setCvList] = useState([]);
   const [viewCV, setViewCV] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -589,6 +597,12 @@ export default function Home() {
 
   return (
     <div style={{ minHeight: '100vh', background: C.bg, fontFamily: FONT }}>
+      {/* ── Bandeau retour Stripe ── */}
+      <CheckoutSuccessBanner
+        checkoutState={checkoutState}
+        activatedTier={activatedTier}
+        onDismiss={dismissCheckout}
+      />
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }

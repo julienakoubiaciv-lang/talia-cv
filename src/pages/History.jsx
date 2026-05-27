@@ -19,12 +19,18 @@ function relTime(dateStr) {
 }
 
 function TemplateTag({ id }) {
-  const map = { classic: 'Classique', minimal: 'Minimaliste', compact: 'Colonne' };
-  const label = map[id] || id || '—';
+  const map = {
+    classic: 'Classique',
+    minimal: 'Minimaliste',
+    compact: 'Colonne',
+    impact:  'Impact',
+  };
+  const label = map[id] || (id ? id.charAt(0).toUpperCase() + id.slice(1) : '—');
   const colors = {
     classic:  { bg: '#EEF2FF', color: '#1539B7' },
     minimal:  { bg: '#F0FDF4', color: '#15803D' },
     compact:  { bg: '#FFF7ED', color: '#C2410C' },
+    impact:   { bg: '#FDF4FF', color: '#9333EA' },
   };
   const c = colors[id] || { bg: '#F3F4F6', color: '#6B7280' };
   return (

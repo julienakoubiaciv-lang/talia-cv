@@ -59,18 +59,37 @@ Deno.serve(async (req) => {
     case 'checkout.session.completed': {
       const session = event.data.object as Stripe.Checkout.Session;
       const userId  = session.metadata?.user_id;
-      if (!userId || session.mode !== 'subscription') break;
 
-      const sub = await stripe.subscriptions.retrieve(session.subscription as string);
-      await supabaseAdmin.from('subscriptions').upsert({
+      if (!userId) {
+        console.error('[stripe-webhook] checkout.session.completed sans user_id dans metadata:', session.id);
+        break;
+      }
+      if (session.mode !== 'subscription') {
+        console.log('[stripe-webhook] session mode non-subscription ignoré:', session.mode);
+        break;
+      }
+
+      const sub  = await stripe.subscriptions.retrieve(session.subscription as string);
+      const tier = tierFromSubscription(sub);
+      console.log(`[stripe-webhook] activation plan '${tier}' pour user ${userId} (session: ${session.id})`);
+
+      const { error: upsertErr } = await supabaseAdmin.from('subscriptions').upsert({
         user_id:            userId,
         stripe_customer_id: session.customer as string,
         stripe_sub_id:      sub.id,
-        tier:               tierFromSubscription(sub),
+        tier,
         status:             sub.status,
         current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
         updated_at:         new Date().toISOString(),
       }, { onConflict: 'user_id' });
+
+      if (upsertErr) {
+        console.error('[stripe-webhook] erreur upsert subscriptions:', upsertErr.message);
+        // Retourner 500 pour que Stripe retente le webhook
+        return new Response(JSON.stringify({ error: 'db_error', detail: upsertErr.message }), {
+          status: 500, headers: { 'Content-Type': 'application/json' },
+        });
+      }
       break;
     }
 
@@ -103,7 +122,15 @@ Deno.serve(async (req) => {
     }
 
     case 'invoice.payment_failed': {
-      const invoice = event.data.object as Stripe.Invoice;
+      const invoice    = event.data.object as Stripe.Invoice;
+      const customerEmail = typeof invoice.customer_email === 'string'
+        ? invoice.customer_email
+        : '(email inconnu)';
+      console.warn(
+        `[stripe-webhook] paiement échoué — client: ${customerEmail}, ` +
+        `montant: ${(invoice.amount_due / 100).toFixed(2)} ${invoice.currency?.toUpperCase()}, ` +
+        `tentative: ${invoice.attempt_count}`
+      );
       if (invoice.subscription) {
         await supabaseAdmin.from('subscriptions').update({
           status:     'past_due',

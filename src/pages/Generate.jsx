@@ -2,8 +2,9 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   FORMATIONS, DATES, POSTES, COMP_TECH, COMP_SOFT, PALETTES,
-  adaptPoste, renderCVFromData, saveEditorState, escH
+  saveEditorState,
 } from '@/lib/cvData';
+import { adaptPoste, renderCVFromData, escH } from '@/lib/cvTemplates';
 import { saveHistory } from '@/lib/historySync';
 import { getProfiles, buildProfileContext } from '@/lib/profileData';
 import { useSettings } from '@/hooks/useSettings.jsx';
@@ -68,18 +69,18 @@ function useToast() {
 }
 
 // ─── API Anthropic ─────────────────────────────────────────────────────────────
-const ANTHROPIC_URL = import.meta.env.DEV
-  ? '/api/anthropic/v1/messages'
-  : 'https://api.anthropic.com/v1/messages';
+// Toujours passer par le proxy Vercel — la clé n'est jamais exposée côté client.
+// En dev : Vite proxifie /api/anthropic → https://api.anthropic.com/v1/messages
+// En prod : Vercel serverless function lit process.env.ANTHROPIC_API_KEY
+const ANTHROPIC_URL = '/api/anthropic';
 
 async function callAnthropicAPI(body, apiKey) {
   const headers = {
     'Content-Type': 'application/json',
     'anthropic-version': '2023-06-01',
   };
-  if (!import.meta.env.DEV) {
-    headers['anthropic-dangerous-direct-browser-access'] = 'true';
-  }
+  // La clé perso de l'utilisateur (optionnelle) est transmise au proxy,
+  // qui lui donne priorité sur la clé serveur.
   if (apiKey) headers['x-api-key'] = apiKey;
   const res = await fetch(ANTHROPIC_URL, {
     method: 'POST', headers, body: JSON.stringify(body),
@@ -646,6 +647,7 @@ export default function Home() {
     }
   }, [selectedProfileId]);
 
+
   // Form state
   const [genre,        setGenre]        = useState('');
   const [formationVal, setFormationVal] = useState('');
@@ -869,8 +871,9 @@ RÈGLES :
       userContent = `Extrais toutes les données de ce CV :\n${cvText.slice(0, 7000)}${contextInfo}`;
     }
 
-    // ── Mode démo : pas de clé API → génération locale ──────────────────
-    if (!apiKey.trim()) {
+    // ── Mode démo : pas de clé perso ET pas de clé serveur → génération locale ──
+    const hasServerKey = import.meta.env.VITE_API_HOSTED === 'true';
+    if (!apiKey.trim() && !hasServerKey) {
       setGenStage(0); setGenProgress(25); setGenProgressText('Extraction (mode démo)…');
       await new Promise(r => setTimeout(r, 500));
       setGenStage(1); setGenProgress(55); setGenProgressText('Enrichissement…');

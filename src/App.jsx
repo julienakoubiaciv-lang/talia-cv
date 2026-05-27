@@ -3,8 +3,11 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from './hooks/useTheme.jsx';
 import { SettingsProvider } from './hooks/useSettings.jsx';
 import { AuthProvider } from './hooks/useAuth.jsx';
-import SettingsPanel from './components/SettingsPanel.jsx';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
+
+// SettingsPanel chargé en lazy : il n'est jamais visible au premier rendu
+// (s'ouvre uniquement sur clic icône ⚙) → hors du bundle initial
+const SettingsPanel = lazy(() => import('./components/SettingsPanel.jsx'));
 
 // Chargement paresseux des pages — chaque route crée son propre chunk JS
 const Home          = lazy(() => import('./pages/Home.jsx'));
@@ -41,23 +44,26 @@ export default function App() {
         <BrowserRouter>
           <AuthProvider>
             <ErrorBoundary>
-            <Suspense fallback={<PageLoader />}>
-              <Routes>
-                <Route path="/"            element={<Home />} />
-                <Route path="/auth"        element={<Auth />} />
-                <Route path="/generate"    element={<Generate />} />
-                <Route path="/bulk"        element={<Bulk />} />
-                <Route path="/editor"      element={<Editor />} />
-                <Route path="/editor/:id"  element={<Editor />} />
-                <Route path="/history"            element={<History />} />
-                <Route path="/profils"            element={<Profiles />} />
-                <Route path="/profils/nouveau"    element={<ProfileWizard />} />
-                <Route path="/profils/:id/editer" element={<ProfileWizard />} />
-                <Route path="/pricing"            element={<Pricing />} />
-              </Routes>
-            </Suspense>
+              <Suspense fallback={<PageLoader />}>
+                <Routes>
+                  <Route path="/"            element={<Home />} />
+                  <Route path="/auth"        element={<Auth />} />
+                  <Route path="/generate"    element={<Generate />} />
+                  <Route path="/bulk"        element={<Bulk />} />
+                  <Route path="/editor"      element={<Editor />} />
+                  <Route path="/editor/:id"  element={<Editor />} />
+                  <Route path="/history"            element={<History />} />
+                  <Route path="/profils"            element={<Profiles />} />
+                  <Route path="/profils/nouveau"    element={<ProfileWizard />} />
+                  <Route path="/profils/:id/editer" element={<ProfileWizard />} />
+                  <Route path="/pricing"            element={<Pricing />} />
+                </Routes>
+              </Suspense>
             </ErrorBoundary>
-            <SettingsPanel />
+            {/* SettingsPanel lazy — se charge au premier clic ⚙, jamais avant */}
+            <Suspense fallback={null}>
+              <SettingsPanel />
+            </Suspense>
           </AuthProvider>
         </BrowserRouter>
       </SettingsProvider>

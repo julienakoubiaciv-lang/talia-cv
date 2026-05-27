@@ -12,8 +12,10 @@
  */
 
 export default async function handler(req, res) {
-  // CORS — autorise uniquement les appels depuis la même origine en prod
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  // CORS — restreint à la même origine en production
+  const origin = req.headers.origin || '';
+  const allowed = process.env.NODE_ENV !== 'production' || origin.includes('talia');
+  res.setHeader('Access-Control-Allow-Origin', allowed ? origin || '*' : '');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-api-key');
 

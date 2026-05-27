@@ -142,8 +142,27 @@ export default function SettingsPanel() {
 
           <div style={{ padding: 20 }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: INK, marginBottom: 4 }}>Clé API Anthropic</div>
+
+            {/* Indicateur clé serveur */}
+            {import.meta.env.VITE_API_HOSTED === 'true' ? (
+              <div style={{ display:'flex', alignItems:'center', gap:8, background:'#f0fdf4', border:'1px solid #bbf7d0', borderRadius:10, padding:'9px 12px', marginBottom:14 }}>
+                <span style={{ width:8, height:8, borderRadius:'50%', background:'#22c55e', flexShrink:0 }} />
+                <span style={{ fontSize:12, color:'#15803d', lineHeight:1.4 }}>
+                  <strong>Clé serveur active</strong> — la génération fonctionne sans clé perso.
+                  Ta clé ci-dessous est optionnelle (priorité sur la clé serveur si renseignée).
+                </span>
+              </div>
+            ) : (
+              <div style={{ display:'flex', alignItems:'center', gap:8, background:'#fff7ed', border:'1px solid #fed7aa', borderRadius:10, padding:'9px 12px', marginBottom:14 }}>
+                <span style={{ fontSize:13 }}>⚠️</span>
+                <span style={{ fontSize:12, color:'#92400e', lineHeight:1.4 }}>
+                  Aucune clé serveur détectée. Renseigne ta clé perso pour activer la génération IA.
+                </span>
+              </div>
+            )}
+
             <p style={{ fontSize: 12, color: MUTE, lineHeight: 1.5, marginBottom: 16 }}>
-              Clé du compte principal — protégée par code PIN. Toute modification exige le PIN.
+              Clé personnelle protégée par code PIN — prioritaire sur la clé serveur.
             </p>
 
             {/* ── CRÉATION DU PIN (1ère fois) ── */}

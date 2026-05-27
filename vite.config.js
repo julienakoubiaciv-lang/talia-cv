@@ -31,11 +31,20 @@ export default defineConfig({
     rollupOptions: {
       output: {
         // Séparer les vendors stables en chunks cachables indépendamment du code app
-        manualChunks: {
-          'vendor-react':  ['react', 'react-dom', 'react-dom/server'],
-          'vendor-router': ['react-router-dom'],
-          'vendor-dnd':    ['@dnd-kit/core', '@dnd-kit/sortable', '@dnd-kit/utilities'],
-          'vendor-lucide': ['lucide-react'],
+        manualChunks(id) {
+          // ── Vendors stables — chunksables indépendamment du code app ──
+          if (id.includes('node_modules/react-dom') || id.includes('node_modules/react/'))
+            return 'vendor-react';
+          if (id.includes('node_modules/react-router'))
+            return 'vendor-router';
+          if (id.includes('node_modules/@dnd-kit'))
+            return 'vendor-dnd';
+          if (id.includes('node_modules/lucide-react'))
+            return 'vendor-lucide';
+          // Supabase complet dans son propre chunk cacheable
+          // (évite de polluer index.js avec WebSocket / GoTrue / Realtime)
+          if (id.includes('node_modules/@supabase'))
+            return 'vendor-supabase';
         },
       },
     },

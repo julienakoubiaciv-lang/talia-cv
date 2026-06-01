@@ -500,7 +500,8 @@ export default function Home() {
   const { embedded, notifyCreateLead } = useCRMBridge();
   const { user, signOut } = useAuth();
   const isMobile = useIsMobile();
-  const { crmLink, isLinked: isCRMLinked, linkFromURL, unlink: unlinkCRM } = useCRMToken();
+  const { crmLink, isLinked: isCRMLinked, linkFromURL, link: linkCRM, unlink: unlinkCRM } = useCRMToken();
+  const [crmKeyInput, setCrmKeyInput] = useState('');
   const { isFree, canCV, remainingCVs, canBulk, nextPlan, upgrade } = usePlan();
 
   // ── Retour paiement Stripe (?checkout=success) ──────────────────────────
@@ -681,7 +682,7 @@ export default function Home() {
             <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#16A34A', flexShrink: 0 }} />
             {!isMobile && (
               <span style={{ fontSize: 11.5, fontWeight: 600, color: '#15803D', whiteSpace: 'nowrap' }}>
-                {crmLink.orgName}
+                CRM Altio
               </span>
             )}
             <button onClick={unlinkCRM} title="Délier le CRM"
@@ -756,7 +757,7 @@ export default function Home() {
             <span style={{ fontSize: 20 }}>🔗</span>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: '#15803D' }}>
-                Connecté à {crmLink.orgName}
+                Connecté au CRM Altio
               </div>
               <div style={{ fontSize: 11.5, color: '#16A34A', marginTop: 1 }}>
                 Les CV générés sont automatiquement envoyés vers votre espace CRM.
@@ -771,13 +772,30 @@ export default function Home() {
           </div>
         )}
 
-        {/* Invite lien CRM — si pas lié, pas embedded, et page non vide */}
-        {!embedded && !isCRMLinked && cvList.length > 0 && !isMobile && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px', background: C.surface, border: `1px solid ${C.rule}`, borderRadius: 10, marginBottom: 24, animation: 'fadeIn .4s ease' }}>
+        {/* Lier le CRM — saisie de la clé de connexion (si pas lié, pas embedded) */}
+        {!embedded && !isCRMLinked && !isMobile && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', background: C.surface, border: `1px solid ${C.rule}`, borderRadius: 10, marginBottom: 24, animation: 'fadeIn .4s ease', flexWrap: 'wrap' }}>
             <span style={{ fontSize: 16 }}>🔗</span>
-            <div style={{ flex: 1, fontSize: 12.5, color: C.ink2 }}>
-              <strong style={{ color: C.ink }}>Lier votre CRM Talia</strong> — demandez un lien de connexion à votre administrateur pour synchroniser les CV automatiquement.
+            <div style={{ flex: 1, minWidth: 200, fontSize: 12.5, color: C.ink2 }}>
+              <strong style={{ color: C.ink }}>Lier votre CRM Altio</strong> — collez votre clé de connexion (CRM → Paramètres → Connecteur CV) pour envoyer vos CV automatiquement.
             </div>
+            <input
+              type="text"
+              value={crmKeyInput}
+              onChange={e => setCrmKeyInput(e.target.value)}
+              placeholder="altio_xxxxxxxx"
+              style={{ flex: 1, minWidth: 200, padding: '8px 12px', borderRadius: 8, border: `1px solid ${C.rule}`, fontSize: 13, fontFamily: 'monospace' }}
+            />
+            <button
+              onClick={() => {
+                const k = crmKeyInput.trim();
+                if (!/^altio_[a-f0-9]{8,}$/i.test(k)) { alert('Clé invalide. Elle commence par « altio_ ».'); return; }
+                linkCRM(k);
+                setCrmKeyInput('');
+              }}
+              style={{ padding: '8px 16px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, background: C.bluePrimary, color: '#fff', border: 'none', cursor: 'pointer', fontFamily: FONT, whiteSpace: 'nowrap' }}>
+              Lier le CRM
+            </button>
           </div>
         )}
 

@@ -138,31 +138,54 @@ export function analyzeMatch(offerText, cvData) {
   return { present, missing, score, total: offerKeywords.length };
 }
 
-// ─── Analyse sémantique via Claude API ───────────────────────────────────────
+// ─── Analyse sémantique via Claude (Edge Function claude-proxy) ───────────────
+//
+// Migration V0 : plus aucun fetch direct à /api/anthropic.
+// Tout passe par callClaude() avec auth JWT + quota serveur + prompt caching.
 
-const ANTHROPIC_URL = '/api/anthropic';
+import { callClaude } from '@/lib/claudeClient';
 
 /**
- * analyzeMatchSemantic(offerText, cvData, apiKey)
+ * Prompt système (cacheable — invariant entre appels). Les instructions
+ * structurelles sont placées ici pour bénéficier du prompt caching Anthropic.
+ */
+const SEMANTIC_SYSTEM = `Tu es un expert en recrutement spécialisé dans l'analyse de correspondance offre/profil.
+
+Tu reçois :
+  - une OFFRE D'EMPLOI
+  - un PROFIL CANDIDAT (résumé)
+  - une LISTE DE MOTS-CLÉS extraits de l'offre
+
+Pour chaque mot-clé, classifie-le en :
+  - PRESENT  : couvert littéralement par le profil (même mot ou racine évidente)
+  - SEMANTIQUE : couvert par un concept équivalent mais avec un vocabulaire différent
+                 (ex: "gérer" → "management", "développer" → "développement")
+  - ABSENT   : vraiment absent du profil
+
+Réponds UNIQUEMENT en JSON valide, sans markdown, sans backticks, sans commentaires :
+{
+  "present":  ["mot1", "mot2"],
+  "semantic": { "mot3": "raison courte (≤ 8 mots)", "mot4": "raison courte" },
+  "absent":   ["mot5", "mot6"],
+  "conseil":  "1 phrase actionnable pour améliorer la correspondance"
+}`;
+
+/**
+ * analyzeMatchSemantic(offerText, cvData)
  *
- * Appel Claude pour une analyse sémantique profonde :
- * détecte les correspondances de sens même si le vocabulaire diffère.
+ * Appel Claude pour une analyse sémantique profonde.
+ * L'authentification + les quotas sont gérés côté Edge Function.
  *
  * Retourne { present, missing, semantic, score, total, explanation }
- *   present  : mots-clés couverts (exact ou sémantique)
- *   missing  : mots-clés vraiment absents du profil
- *   semantic : sous-ensemble de present détectés sémantiquement (pas littéraux)
- *   score    : 0-100
+ *   present     : mots-clés couverts (exact ou sémantique)
+ *   missing     : mots-clés vraiment absents du profil
+ *   semantic    : { mot: "raison" } pour les matchs sémantiques uniquement
+ *   score       : 0-100
  *   explanation : conseil bref de Claude
+ *
+ * @throws {QuotaError} si quota dépassé (à intercepter côté UI pour upgrade modal)
  */
-export async function analyzeMatchSemantic(offerText, cvData, apiKey) {
-  const hasServerKey = typeof import.meta !== 'undefined'
-    && import.meta.env?.VITE_API_HOSTED === 'true';
-
-  if (!apiKey?.trim() && !hasServerKey) {
-    throw new Error('no_key');
-  }
-
+export async function analyzeMatchSemantic(offerText, cvData) {
   // Résumé compact du CV pour limiter les tokens
   const cvSummary = [
     cvData.poste && `Poste : ${cvData.poste}`,
@@ -184,55 +207,31 @@ export async function analyzeMatchSemantic(offerText, cvData, apiKey) {
   const local = analyzeMatch(offerText, cvData);
   const allKeywords = [...local.present, ...local.missing];
 
-  const prompt = `Tu es un expert en recrutement. Analyse la correspondance entre cette offre d'emploi et ce profil de candidat.
-
-OFFRE D'EMPLOI :
+  // Message utilisateur : variables uniquement (le système est en cache)
+  const userPrompt = `OFFRE D'EMPLOI :
 ${offerText.slice(0, 2000)}
 
 PROFIL DU CANDIDAT :
 ${cvSummary}
 
-MOTS-CLÉS EXTRAITS DE L'OFFRE : ${allKeywords.join(', ')}
+MOTS-CLÉS À ANALYSER : ${allKeywords.join(', ')}`;
 
-TÂCHE :
-Pour chaque mot-clé listé, indique s'il est :
-- PRESENT : couvert par le profil (même sens, même concept, même compétence — peu importe si la formulation diffère)
-- SEMANTIQUE : couvert sémantiquement mais avec un vocabulaire différent (ex: "gérer" → "management", "développer" → "développement")
-- ABSENT : vraiment absent du profil
-
-Réponds UNIQUEMENT en JSON valide, sans markdown, sans commentaires :
-{
-  "present": ["mot1", "mot2"],
-  "semantic": { "mot3": "raison courte", "mot4": "raison courte" },
-  "absent": ["mot5", "mot6"],
-  "conseil": "1 phrase de conseil personnalisé pour améliorer la correspondance"
-}`;
-
-  const body = {
-    model: 'claude-haiku-4-5',
+  // Appel Edge Function — auth JWT + quota check + log usage automatiques.
+  // La QuotaError éventuelle remonte telle quelle pour que l'UI ouvre la modal upgrade.
+  const data = await callClaude({
+    action:     'smart_match',
+    model:      'claude-haiku-4-5',
     max_tokens: 600,
-    messages: [{ role: 'user', content: prompt }],
-  };
-
-  const headers = {
-    'Content-Type': 'application/json',
-    'anthropic-version': '2023-06-01',
-  };
-  if (apiKey?.trim()) headers['x-api-key'] = apiKey.trim();
-
-  const res = await fetch(ANTHROPIC_URL, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(body),
+    system:     SEMANTIC_SYSTEM,
+    messages:   [{ role: 'user', content: userPrompt }],
+    metadata:   {
+      keywordCount: allKeywords.length,
+      offerLength:  offerText.length,
+      localScore:   local.score,
+    },
   });
 
-  if (!res.ok) {
-    const err = await res.text().catch(() => '');
-    throw new Error(`api_error:${res.status}:${err.slice(0, 200)}`);
-  }
-
-  const data = await res.json();
-  const raw  = data.content?.[0]?.text || '';
+  const raw = data.content?.[0]?.text || '';
 
   // Parser le JSON de la réponse
   let parsed;

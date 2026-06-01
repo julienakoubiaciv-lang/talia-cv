@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Settings, X, Lock, Eye, EyeOff, Check, KeyRound } from 'lucide-react';
 import { useSettings } from '@/hooks/useSettings.jsx';
+import { useEditorLayout } from '@/hooks/useEditorLayout';
 
 const NAVY = '#1B4F8A';
 const ORANGE = '#F4A421';
@@ -30,6 +31,7 @@ const PIN_RE = /^\d{4,6}$/;
 
 export default function SettingsPanel() {
   const { apiKey, hasPin, verifyPin, savePin, saveApiKey } = useSettings();
+  const { layout, setLayout } = useEditorLayout();
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState('status'); // status | createPin | enterPin | editing
   const [pin, setPin] = useState('');
@@ -141,6 +143,76 @@ export default function SettingsPanel() {
           </div>
 
           <div style={{ padding: 20 }}>
+            {/* ───────────── APPARENCE ÉDITEUR ───────────── */}
+            <div style={{ fontSize: 13, fontWeight: 700, color: INK, marginBottom: 4 }}>Apparence de l'éditeur</div>
+            <div style={{ fontSize: 11.5, color: MUTE, marginBottom: 12, lineHeight: 1.45 }}>
+              Choisis ton style d'édition. Tu peux changer à tout moment.
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 24 }}>
+              <button
+                onClick={() => setLayout('atelier')}
+                style={{
+                  background: layout === 'atelier' ? '#EEF2FF' : '#fff',
+                  border: `1.5px solid ${layout === 'atelier' ? NAVY : RULE}`,
+                  borderRadius: 10, padding: 10, cursor: 'pointer',
+                  textAlign: 'left', fontFamily: 'inherit',
+                  position: 'relative', transition: 'all .15s',
+                }}
+              >
+                {layout === 'atelier' && (
+                  <span style={{
+                    position: 'absolute', top: 8, right: 8, background: NAVY,
+                    color: '#fff', fontSize: 9, fontWeight: 700,
+                    padding: '2px 6px', borderRadius: 99,
+                  }}>ACTIF</span>
+                )}
+                {/* Mini preview Atelier (3 colonnes) */}
+                <div style={{
+                  display: 'grid', gridTemplateColumns: '30% 40% 30%',
+                  gap: 2, marginBottom: 8, height: 36, background: '#F4F6FA', borderRadius: 4, padding: 3,
+                }}>
+                  <div style={{ background: '#fff', borderRadius: 2 }} />
+                  <div style={{ background: '#E6EAF1', borderRadius: 2 }} />
+                  <div style={{ background: '#fff', borderRadius: 2 }} />
+                </div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: INK, marginBottom: 2 }}>Nouveau · Atelier</div>
+                <div style={{ fontSize: 10.5, color: MUTE, lineHeight: 1.4 }}>
+                  3 colonnes, breadcrumb d'étapes, design en panneau dédié
+                </div>
+              </button>
+              <button
+                onClick={() => setLayout('classique')}
+                style={{
+                  background: layout === 'classique' ? '#EEF2FF' : '#fff',
+                  border: `1.5px solid ${layout === 'classique' ? NAVY : RULE}`,
+                  borderRadius: 10, padding: 10, cursor: 'pointer',
+                  textAlign: 'left', fontFamily: 'inherit',
+                  position: 'relative', transition: 'all .15s',
+                }}
+              >
+                {layout === 'classique' && (
+                  <span style={{
+                    position: 'absolute', top: 8, right: 8, background: NAVY,
+                    color: '#fff', fontSize: 9, fontWeight: 700,
+                    padding: '2px 6px', borderRadius: 99,
+                  }}>ACTIF</span>
+                )}
+                {/* Mini preview Classique (2 colonnes) */}
+                <div style={{
+                  display: 'grid', gridTemplateColumns: '45% 55%',
+                  gap: 2, marginBottom: 8, height: 36, background: '#F4F6FA', borderRadius: 4, padding: 3,
+                }}>
+                  <div style={{ background: '#fff', borderRadius: 2 }} />
+                  <div style={{ background: '#E6EAF1', borderRadius: 2 }} />
+                </div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: INK, marginBottom: 2 }}>Classique</div>
+                <div style={{ fontSize: 10.5, color: MUTE, lineHeight: 1.4 }}>
+                  L'ancien éditeur, 2 panneaux, toutes les options visibles
+                </div>
+              </button>
+            </div>
+
+            {/* ───────────── CLÉ API ANTHROPIC (legacy) ───────────── */}
             <div style={{ fontSize: 13, fontWeight: 700, color: INK, marginBottom: 4 }}>Clé API Anthropic</div>
 
             {/* Indicateur clé serveur */}

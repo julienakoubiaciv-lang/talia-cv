@@ -12,7 +12,15 @@ import {
 import { uploadMedia } from '@/lib/mediaUpload';
 import { getProfiles, buildProfileContext } from '@/lib/profileData';
 import { useTheme } from '@/hooks/useTheme';
-import { useSettings } from '@/hooks/useSettings.jsx';
+import { useAuth } from '@/hooks/useAuth.jsx';
+import { useRole } from '@/hooks/useRole';
+import { usePlan } from '@/hooks/usePlan';
+import { useUpgradeModal } from '@/components/UpgradeModal.jsx';
+import { QuotaError } from '@/lib/claudeClient';
+import { injectWatermark, shouldWatermark } from '@/lib/watermark';
+import { track } from '@/lib/monitoring';
+// cvToDocx (350 kB) chargé en dynamique uniquement au clic sur "DOCX"
+// → évite de bloater le chunk Editor au boot.
 import { useFocusMode } from '@/hooks/useFocusMode';
 import { useSectionOrder } from '@/hooks/useSectionOrder';
 import { useCRMBridge, clearCurrentCandidate } from '@/hooks/useCRMBridge.jsx';
@@ -52,7 +60,12 @@ export default function Editor() {
   const [croppedPhoto, setCroppedPhoto, croppedPhotoRef] = useStateRef('');
   const [logoDataURL, setLogoDataURL, logoDataURLRef] = useStateRef('');
   const [candidateName, setCandidateName] = useState('');
-  const { apiKey } = useSettings();
+  // Migration V0 : la clé Anthropic est serveur-side (Edge Function claude-proxy).
+  // L'utilisateur doit être connecté pour utiliser les actions IA.
+  const { user }       = useAuth();
+  const { isStaff }    = useRole();
+  const { tier }       = usePlan();
+  const { open: openUpgrade } = useUpgradeModal();
   const { embedded: crmEmbedded, candidate: crmCandidate, notifySaved: crmNotifySaved } = useCRMBridge();
   const { push: crmTokenPush } = useCRMToken();
 
@@ -238,12 +251,30 @@ export default function Editor() {
       const hist = getHistorySync();
       const entry = hist.find(h => String(h.id) === String(routeId));
       if (entry) {
+        // Extraire la photo & logo depuis entry.html (cas dev local sans Supabase)
+        // OU depuis entry.photoUrl/logoUrl (cas prod avec Supabase Storage)
+        let recoveredPhoto = entry.photoUrl || '';
+        let recoveredLogo  = entry.logoUrl  || '';
+        if (entry.html) {
+          try {
+            const parser = new DOMParser();
+            const dom    = parser.parseFromString(entry.html, 'text/html');
+            if (!recoveredPhoto) {
+              const photoImg = dom.querySelector('.block-photo img');
+              if (photoImg?.src) recoveredPhoto = photoImg.src;
+            }
+            if (!recoveredLogo) {
+              const logoImg = dom.querySelector('.logo-zone img');
+              if (logoImg?.src) recoveredLogo = logoImg.src;
+            }
+          } catch {/* ignore */}
+        }
         s = {
           generatedHTML: entry.html,
           cvData:        entry.data,
           palette:       PALETTES[0],
-          croppedPhoto:  '',
-          logoDataURL:   '',
+          croppedPhoto:  recoveredPhoto,
+          logoDataURL:   recoveredLogo,
           name:          entry.name,
           apiKey:        '',
           templateId:    'classic',
@@ -714,11 +745,12 @@ export default function Editor() {
     const canvas = cropperRef.current.getCroppedCanvas({ width: 600, height: 600 });
     const dataURL = canvas.toDataURL('image/jpeg', 0.98);
     setCroppedPhoto(dataURL);
-    // inject into iframe
+    // inject into iframe — applique le même CSS que injectMedia (width:100% + height:auto)
+    // pour éviter le débordement (l'image croppée fait 600×600 par défaut).
     const doc = iframeRef.current?.contentDocument;
     if (doc) {
       const zone = doc.querySelector('.block-photo');
-      if (zone) zone.innerHTML = `<div class="block-photo-inner"><img src="${dataURL}" /></div>`;
+      if (zone) zone.innerHTML = `<div class="block-photo-inner"><img src="${dataURL}" style="width:100%;height:auto;object-fit:cover;display:block;" /></div>`;
     }
     setPhotoMode(false);
     setPhotoDraft('');
@@ -1046,7 +1078,8 @@ export default function Editor() {
   const [aiLoading, setAiLoading] = useState(false);
 
   const regenSection = useCallback(async (section) => {
-    if (!apiKey || !cvData) { showToast('Clé API manquante', 'error'); return; }
+    if (!user)   { showToast('Connecte-toi pour utiliser l\'IA', 'error'); return; }
+    if (!cvData) { showToast('Aucun CV chargé', 'error'); return; }
     setAiSection(section); setAiLoading(true);
     try {
       const name  = [cvData.prenom, cvData.nom].filter(Boolean).join(' ') || 'le candidat';
@@ -1089,7 +1122,8 @@ Retourne UNIQUEMENT : {"competences": {"techniques": [], "comportementales": [],
         model:      'claude-sonnet-4-5', // sonnet : meilleur ratio qualité/vitesse pour la regen
         max_tokens: section === 'experiences' ? 2000 : 800,
         messages:   [{ role: 'user', content: prompt }],
-      }, apiKey);
+        metadata:   { section, regenType: 'single' },
+      }, 'generate_cv');
 
       const match = text.match(/\{[\s\S]*\}/);
       if (match) {
@@ -1100,13 +1134,20 @@ Retourne UNIQUEMENT : {"competences": {"techniques": [], "comportementales": [],
       } else {
         throw new Error('Réponse inattendue du modèle');
       }
-    } catch (err) { showToast('Erreur IA : ' + err.message, 'error'); }
+    } catch (err) {
+      if (err instanceof QuotaError) {
+        openUpgrade({ action: 'generate_cv', used: err.used, limit: err.limit, tier: err.tier });
+      } else {
+        showToast('Erreur IA : ' + err.message, 'error');
+      }
+    }
     finally { setAiLoading(false); setAiSection(''); }
-  }, [apiKey, cvData, showToast]);
+  }, [user, cvData, activeProfile, showToast]);
 
   /* ── Régénérer toutes les sections clés (accroche + expériences + compétences) ── */
   const regenAll = useCallback(async () => {
-    if (!apiKey || !cvData) { showToast('Clé API manquante', 'error'); return; }
+    if (!user)   { showToast('Connecte-toi pour utiliser l\'IA', 'error'); return; }
+    if (!cvData) { showToast('Aucun CV chargé', 'error'); return; }
     setAiLoading(true);
     const sections = ['accroche', 'experiences', 'competences'];
     for (const section of sections) {
@@ -1149,7 +1190,8 @@ Retourne UNIQUEMENT : {"competences": {"techniques": [], "comportementales": [],
           model: 'claude-sonnet-4-5',
           max_tokens: section === 'experiences' ? 2000 : 800,
           messages: [{ role: 'user', content: prompts[section] }],
-        }, apiKey);
+          metadata: { section, regenType: 'all' },
+        }, 'generate_cv');
 
         const match = text.match(/\{[\s\S]*\}/);
         if (match) {
@@ -1158,12 +1200,16 @@ Retourne UNIQUEMENT : {"competences": {"techniques": [], "comportementales": [],
           setEdFields(prev => ({ ...prev, ...patch }));
         }
       } catch (err) {
+        if (err instanceof QuotaError) {
+          showToast(`Quota atteint (${err.used}/${err.limit}). Passe au plan supérieur.`, 'error', 6000);
+          break; // inutile de poursuivre les autres sections
+        }
         showToast(`Erreur sur ${section} : ${err.message}`, 'error');
       }
     }
     setAiLoading(false); setAiSection('');
     showToast('CV régénéré avec le profil ✓', 'success');
-  }, [apiKey, cvData, activeProfile, showToast]);
+  }, [user, cvData, activeProfile, showToast]);
 
   /* ── Reformuler une mission individuelle (3 variantes) ─────────────────── */
   const [reformOpen, setReformOpen] = useState(null); // { expIdx, missionIdx, variants, loading }
@@ -1176,8 +1222,8 @@ Retourne UNIQUEMENT : {"competences": {"techniques": [], "comportementales": [],
 
     setReformOpen({ expIdx, missionIdx, variants: [], loading: true });
 
-    // Mode démo sans clé API : variantes pré-construites
-    if (!apiKey) {
+    // Mode démo si non connecté : variantes pré-construites localement
+    if (!user) {
       await new Promise(r => setTimeout(r, 600));
       const verbs = ['Piloter', 'Coordonner', 'Optimiser'];
       const variants = verbs.map(v => {
@@ -1204,19 +1250,24 @@ Mission : "${mission}"
 
 Retourne UNIQUEMENT un tableau JSON de 3 strings : ["variante 1", "variante 2", "variante 3"]`;
       const text = await callAnthropicAPI({
-        model:      'claude-haiku-3-5', // haiku : rapide et suffisant pour reformuler
+        model:      'claude-haiku-4-5', // haiku 4.5 : rapide et suffisant pour reformuler
         max_tokens: 300,
         messages:   [{ role: 'user', content: prompt }],
-      }, apiKey);
+        metadata:   { context: exp.poste, type: 'reformulation' },
+      }, 'generate_cv');
       const match = text.match(/\[[\s\S]*\]/);
       const variants = match ? JSON.parse(match[0]).slice(0, 3) : [];
       if (variants.length === 0) throw new Error('Aucune variante générée');
       setReformOpen({ expIdx, missionIdx, variants, loading: false });
     } catch (err) {
-      showToast('Erreur reformulation : ' + err.message, 'error');
+      if (err instanceof QuotaError) {
+        openUpgrade({ action: 'generate_cv', used: err.used, limit: err.limit, tier: err.tier });
+      } else {
+        showToast('Erreur reformulation : ' + err.message, 'error');
+      }
       setReformOpen(null);
     }
-  }, [edFields, apiKey, showToast]);
+  }, [edFields, user, cvData, activeProfile, showToast]);
 
   const applyReformulation = useCallback((variant) => {
     if (!reformOpen) return;
@@ -1240,8 +1291,8 @@ Retourne UNIQUEMENT un tableau JSON de 3 strings : ["variante 1", "variante 2", 
       showToast('Sélectionne un fichier PDF valide', 'error');
       return;
     }
-    if (!apiKey) {
-      showToast('Clé API Anthropic requise pour l\'import PDF (Paramètres)', 'error');
+    if (!user) {
+      showToast('Connecte-toi pour importer un PDF', 'error');
       return;
     }
     setPdfImportLoading(true);
@@ -1254,10 +1305,13 @@ Retourne UNIQUEMENT un tableau JSON de 3 strings : ["variante 1", "variante 2", 
         reader.readAsDataURL(file);
       });
 
+      // TODO: migrer /api/parse-pdf vers une Edge Function dédiée parse-pdf-proxy
+      // pour bénéficier des quotas serveur. Pour V0 on garde le call existant
+      // mais sans envoyer de clé côté client (le serveur lit env ANTHROPIC_API_KEY).
       const res = await fetch('/api/parse-pdf', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ pdf: base64, apiKey }),
+        body:    JSON.stringify({ pdf: base64 }),
       });
 
       if (!res.ok) {
@@ -1280,7 +1334,7 @@ Retourne UNIQUEMENT un tableau JSON de 3 strings : ["variante 1", "variante 2", 
       setPdfImportLoading(false);
       if (pdfImportRef.current) pdfImportRef.current.value = '';
     }
-  }, [apiKey, showToast]);
+  }, [user, showToast]);
 
   /* ── download PDF (Puppeteer serveur) ──────────────────────────────────── */
   const downloadPDF = useCallback(async () => {
@@ -1288,9 +1342,13 @@ Retourne UNIQUEMENT un tableau JSON de 3 strings : ["variante 1", "variante 2", 
     if (!doc) return;
     setDlLoading(true);
     try {
-      const html     = '<!DOCTYPE html>' + doc.documentElement.outerHTML;
+      let html       = '<!DOCTYPE html>' + doc.documentElement.outerHTML;
       const name     = candidateName || 'Talia';
       const filename = `CV_${name}.pdf`;
+
+      // Watermark Free → applique uniquement si tier=free ET pas owner/admin
+      const applyWatermark = shouldWatermark({ tier, isStaff });
+      html = injectWatermark(html, applyWatermark);
 
       const res = await fetch('/api/pdf', {
         method:  'POST',
@@ -1314,14 +1372,24 @@ Retourne UNIQUEMENT un tableau JSON de 3 strings : ["variante 1", "variante 2", 
       URL.revokeObjectURL(url);
       showToast('PDF téléchargé ✓', 'success');
     } catch (err) {
-      console.error('[downloadPDF]', err);
-      showToast('Erreur PDF — impression navigateur en secours', 'error');
-      iframeRef.current?.contentWindow?.print();
+      // Fix #3 : au lieu de window.print(), on utilise un fallback client-side
+      // (html2canvas + jsPDF) → vrai download de PDF même si /api/pdf KO.
+      console.warn('[downloadPDF] API échouée, fallback client-side:', err.message);
+      try {
+        const name     = candidateName || 'Talia';
+        const filename = `CV_${name}.pdf`;
+        const { renderPdfFromIframe } = await import('@/lib/pdfClient');
+        await renderPdfFromIframe(iframeRef.current, filename);
+        showToast('PDF téléchargé ✓ (rendu client)', 'success');
+      } catch (fallbackErr) {
+        console.error('[downloadPDF] fallback échoué:', fallbackErr);
+        showToast('Erreur PDF : ' + (fallbackErr.message || err.message), 'error');
+      }
     } finally {
       setDlLoading(false);
       setDlMenuOpen(false);
     }
-  }, [candidateName, showToast]);
+  }, [candidateName, showToast, tier, isStaff]);
 
   /* ── download PNG ──────────────────────────────────────────────────────── */
   const downloadPNG = useCallback(async () => {
@@ -1352,6 +1420,54 @@ Retourne UNIQUEMENT un tableau JSON de 3 strings : ["variante 1", "variante 2", 
     } catch (err) { console.error(err); showToast('Erreur export PNG', 'error'); }
     finally { setDlLoading(false); setDlMenuOpen(false); }
   }, [candidateName, showToast]);
+
+  /* ── download DOCX (Personal+ uniquement, owner bypass) ────────────────── */
+  const downloadDOCX = useCallback(async () => {
+    if (!cvData) { showToast('Aucun CV chargé', 'error'); return; }
+
+    // Gating : DOCX réservé Personal/Business (sauf owner/admin)
+    if (!isStaff && tier === 'free') {
+      openUpgrade({
+        action: 'generate_cv',  // proxy : pas de quota DOCX dédié, on signale tier insuffisant
+        used:   0,
+        limit:  0,
+        tier:   'free',
+      });
+      setDlMenuOpen(false);
+      return;
+    }
+
+    setDlLoading(true);
+    try {
+      // Lazy-load la lib docx (350 kB) uniquement maintenant
+      const { generateDocxBlob } = await import('@/lib/cvToDocx');
+
+      const accent = selectedPalRef.current?.c || '#1539B7';
+      // Utilise edFields si dispo (édition en cours), sinon cvData brut
+      const data = edFields || cvData;
+      const blob = await generateDocxBlob(data, { accentColor: accent });
+
+      const name     = candidateName || 'Talia';
+      const filename = `CV_${name}.docx`;
+      const url      = URL.createObjectURL(blob);
+      const a        = document.createElement('a');
+      a.href     = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      track('cv_exported', { format: 'docx', tier });
+      showToast('DOCX téléchargé ✓', 'success');
+    } catch (err) {
+      console.error('[downloadDOCX]', err);
+      showToast('Erreur export DOCX : ' + err.message, 'error');
+    } finally {
+      setDlLoading(false);
+      setDlMenuOpen(false);
+    }
+  }, [cvData, edFields, candidateName, isStaff, tier, openUpgrade, showToast]);
 
   /* ── zoom ──────────────────────────────────────────────────────────────── */
   const scaledW = Math.ceil(CV_W * zoom);
@@ -1581,8 +1697,10 @@ Retourne UNIQUEMENT un tableau JSON de 3 strings : ["variante 1", "variante 2", 
         ::-webkit-scrollbar-thumb { background: #ECEDF1; border-radius: 4px; }
       `}</style>
 
-      {/* ── Top bar ─────────────────────────────────────────────────────────── */}
-      <header style={{ background:'#fff', height:56, display:'flex', alignItems:'center', padding:'0 20px', gap:10, flexShrink:0, borderBottom:`1px solid ${C.rule}` }}>
+      {/* ── Top bar : 2 lignes pour éviter la surcharge ─────────────────────── */}
+      <header style={{ background:'#fff', display:'flex', flexDirection:'column', flexShrink:0, borderBottom:`1px solid ${C.rule}` }}>
+        {/* ── Ligne 1 : Navigation & contexte ─────────────────────────────── */}
+        <div style={{ height:48, display:'flex', alignItems:'center', padding:'0 20px', gap:10, borderBottom:`1px solid ${C.rule}` }}>
         {/* Logo */}
         <button onClick={() => navigate('/')} style={{ background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center', gap:9, flexShrink:0 }}>
           <div style={{ width:30, height:30, borderRadius:8, background:C.ink, display:'flex', alignItems:'center', justifyContent:'center', color:'#fff' }}>
@@ -1737,7 +1855,10 @@ Retourne UNIQUEMENT un tableau JSON de 3 strings : ["variante 1", "variante 2", 
             CRM · {crmCandidate.prenom || ''} {crmCandidate.nom || ''}
           </div>
         )}
+        </div>
 
+        {/* ── Ligne 2 : Outils d'édition & actions ────────────────────────── */}
+        <div style={{ height:52, display:'flex', alignItems:'center', padding:'0 20px', gap:10 }}>
         <div style={{ flex:1 }} />
 
         {/* Tools */}
@@ -1887,6 +2008,24 @@ Retourne UNIQUEMENT un tableau JSON de 3 strings : ["variante 1", "variante 2", 
                 <button onClick={downloadPNG} style={{ display:'flex', alignItems:'center', gap:8, width:'100%', padding:'10px 14px', border:'none', background:'none', cursor:'pointer', fontSize:13, color:C.ink, fontWeight:600, fontFamily:"'Manrope',sans-serif", borderTop:`1px solid ${C.rule}` }}>
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> PNG
                 </button>
+                <button
+                  onClick={downloadDOCX}
+                  style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8, width:'100%', padding:'10px 14px', border:'none', background:'none', cursor:'pointer', fontSize:13, color:C.ink, fontWeight:600, fontFamily:"'Manrope',sans-serif", borderTop:`1px solid ${C.rule}` }}
+                  title={!isStaff && tier === 'free' ? 'Export DOCX réservé Personnel et Business' : 'Document Word éditable, compatible ATS'}
+                >
+                  <span style={{ display:'flex', alignItems:'center', gap:8 }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                      <polyline points="14 2 14 8 20 8"/>
+                      <line x1="9" y1="13" x2="15" y2="13"/>
+                      <line x1="9" y1="17" x2="15" y2="17"/>
+                    </svg>
+                    DOCX
+                  </span>
+                  {!isStaff && tier === 'free' && (
+                    <span style={{ fontSize: 10, padding: '2px 7px', background: '#FEF3C7', color: '#92400E', borderRadius: 99, fontWeight: 700 }}>PRO</span>
+                  )}
+                </button>
               </div>
             )}
           </div>
@@ -1896,6 +2035,7 @@ Retourne UNIQUEMENT un tableau JSON de 3 strings : ["variante 1", "variante 2", 
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             Nouveau
           </button>
+        </div>
         </div>
       </header>
 

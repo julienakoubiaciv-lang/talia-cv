@@ -9,6 +9,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import { supabase, supabaseReady } from '@/lib/supabase';
 import { setCurrentUserId } from '@/lib/currentUser';
 import { getDeviceId } from '@/lib/deviceId';
+import { identifyUser, resetUser, track } from '@/lib/monitoring';
 
 const AuthContext = createContext(null);
 
@@ -39,6 +40,7 @@ export function AuthProvider({ children }) {
       const u = session?.user ?? null;
       setUser(u);
       setCurrentUserId(u?.id ?? null);
+      if (u) identifyUser(u);
       setLoading(false);
     });
 
@@ -50,7 +52,13 @@ export function AuthProvider({ children }) {
 
       // Migration au premier sign-in
       if (event === 'SIGNED_IN' && u) {
+        identifyUser(u);
+        track('login', { method: 'supabase' });
         migrateAnonymousCVs(u.id).catch(() => {});
+      }
+      if (event === 'SIGNED_OUT') {
+        track('signout');
+        resetUser();
       }
     });
 

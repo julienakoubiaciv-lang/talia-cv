@@ -1,11 +1,15 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { analyzeMatch, analyzeMatchSemantic } from '@/lib/smartMatcher';
+import { QuotaError } from '@/lib/claudeClient';
+import { track, captureError } from '@/lib/monitoring';
 import { useTheme } from '@/hooks/useTheme';
-import { useSettings } from '@/hooks/useSettings';
+import { useAuth } from '@/hooks/useAuth';
+import { useUpgradeModal } from '@/components/UpgradeModal.jsx';
 
 export function SmartMatcher({ cvData }) {
   const { t } = useTheme();
-  const { apiKey } = useSettings();
+  const { user } = useAuth();
+  const { open: openUpgrade } = useUpgradeModal();
 
   const [offerText,   setOfferText]   = useState('');
   const [expanded,    setExpanded]    = useState(true);
@@ -26,27 +30,44 @@ export function SmartMatcher({ cvData }) {
     setAiError('');
   }, []);
 
-  // Appel Claude pour analyse sémantique
+  // Appel Claude pour analyse sémantique (via Edge Function claude-proxy)
   const handleAiAnalysis = useCallback(async () => {
     setAiLoading(true);
     setAiError('');
     setAiResult(null);
     try {
-      const result = await analyzeMatchSemantic(offerText, cvData, apiKey);
+      const result = await analyzeMatchSemantic(offerText, cvData);
       setAiResult(result);
+      track('smart_match_used', {
+        score:          result.score,
+        total:          result.total,
+        semanticCount:  Object.keys(result.semantic || {}).length,
+        missingCount:   (result.missing || []).length,
+      });
     } catch (err) {
-      const msg = err.message || '';
-      if (msg === 'no_key') {
-        setAiError("Renseigne une clé API dans les paramètres pour activer l’analyse IA.");
-      } else if (msg.startsWith('api_error')) {
-        setAiError('Erreur API — vérifie ta clé Anthropic.');
+      if (err instanceof QuotaError) {
+        track('quota_exceeded', {
+          action: 'smart_match',
+          tier:   err.tier,
+          used:   err.used,
+          limit:  err.limit,
+        });
+        openUpgrade({
+          action: 'smart_match',
+          used:   err.used,
+          limit:  err.limit,
+          tier:   err.tier,
+        });
+      } else if (err.status === 401) {
+        setAiError("Connecte-toi pour activer l'analyse sémantique.");
       } else {
+        captureError(err, { context: 'smart_match' });
         setAiError('Analyse impossible. Réessaie dans un instant.');
       }
     } finally {
       setAiLoading(false);
     }
-  }, [offerText, cvData, apiKey]);
+  }, [offerText, cvData, openUpgrade]);
 
   // Le résultat affiché : IA si disponible, sinon local
   const result = aiResult || local;
@@ -57,10 +78,9 @@ export function SmartMatcher({ cvData }) {
     : result.score > 0   ? t.error
     : t.textMuted;
 
-  // Clé API disponible (perso ou serveur)
-  const hasServerKey = typeof import.meta !== 'undefined'
-    && import.meta.env?.VITE_API_HOSTED === 'true';
-  const canUseAI = (apiKey?.trim().length > 0) || hasServerKey;
+  // L'IA est disponible dès que l'utilisateur est connecté
+  // (les quotas sont gérés côté serveur via check_quota).
+  const canUseAI = Boolean(user);
 
   return (
     <div style={{
@@ -161,7 +181,7 @@ export function SmartMatcher({ cvData }) {
                 </button>
               ) : (
                 <span style={{ fontSize: 10, color: t.textMuted, fontStyle: 'italic' }}>
-                  Analyse IA disponible avec une clé API dans les paramètres
+                  Connecte-toi pour activer l'analyse sémantique IA
                 </span>
               )}
               {aiResult && !aiLoading && (

@@ -10,6 +10,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { usePlan } from '@/hooks/usePlan';
 import { supabase, supabaseReady } from '@/lib/supabase';
+import { track, captureError } from '@/lib/monitoring';
 
 /* ─── Config Stripe (prix IDs à remplir dans .env.local) ───────────────── */
 const PRICE_IDS = {
@@ -221,6 +222,11 @@ export default function Pricing() {
   const handleSubscribe = async (plan) => {
     if (plan.ctaDisabled || plan.id === 'free') return;
 
+    track('upgrade_clicked', {
+      targetTier: plan.id,
+      contactSales: !!plan.contactSales,
+    });
+
     if (plan.contactSales) {
       // Business → email commercial
       window.location.href = 'mailto:hello@talia.fr?subject=Plan Business TaliaCV';
@@ -261,6 +267,7 @@ export default function Pricing() {
 
       window.location.href = data.url;
     } catch (err) {
+      captureError(err, { context: 'stripe_checkout', tier: plan.id });
       setError(err.message);
     } finally {
       setLoading(null);

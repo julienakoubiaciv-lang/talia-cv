@@ -8,10 +8,11 @@
 
 import React from 'react';
 import { ageLabel } from './shared/cvHelpers.js';
+import { SECTOR_CONTENT_SECTIONS, getSectorSectionsCSS } from './shared/sectorSections.jsx';
 
 // ─── CSS (exporté — injecté dans <head> par cvData.js) ───────────────────────
 export function getMinimalCSS({ c, sbBg, sbTitleColor, sbTextColor }) {
-  return `
+  return getSectorSectionsCSS({ accent: c }) + `
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Manrope:wght@300;400;500;600;700&display=swap');
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Manrope',sans-serif;background:#fff;color:#1a1a1a;}
@@ -219,6 +220,8 @@ const CONTENT_SECTIONS = {
   experiences:  ExperiencesSection,
   formations:   FormationsSection,
   competences:  CompetencesSection,
+  // Sections sectorielles
+  ...SECTOR_CONTENT_SECTIONS,
 };
 
 // ─── COMPOSANT PRINCIPAL ─────────────────────────────────────────────────────

@@ -158,7 +158,7 @@ function ConfirmModal({ name, onConfirm, onCancel }) {
 }
 
 /* ─── Preview Modal ──────────────────────────────────────────────────────── */
-function PreviewModal({ item, onModify, onClose }) {
+function PreviewModal({ item, onModify, onDownload, downloading, onClose }) {
   const isMobile = useIsMobile();
   if (!item) return null;
   const stars = 4;
@@ -189,8 +189,20 @@ function PreviewModal({ item, onModify, onClose }) {
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
             {!isMobile && (
-              <button onClick={() => { onModify(item); onClose(); }} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 18px', border: `1px solid ${C.rule}`, borderRadius: 10, background: '#fff', fontSize: 13, fontWeight: 600, color: C.ink, cursor: 'pointer' }}>
-                <IconDownload s={13} /> Télécharger PDF
+              <button
+                onClick={() => onDownload?.(item)}
+                disabled={downloading}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 7, padding: '9px 18px',
+                  border: `1px solid ${C.rule}`, borderRadius: 10, background: '#fff',
+                  fontSize: 13, fontWeight: 600, color: C.ink,
+                  cursor: downloading ? 'wait' : 'pointer',
+                  opacity: downloading ? 0.7 : 1,
+                }}
+              >
+                {downloading
+                  ? <><span style={{ width:11, height:11, border:'1.5px solid rgba(11,16,32,.2)', borderTopColor:C.ink, borderRadius:'50%', animation:'spin .7s linear infinite', display:'inline-block' }} /> Génération…</>
+                  : <><IconDownload s={13} /> Télécharger PDF</>}
               </button>
             )}
             <button onClick={() => { onModify(item); onClose(); }} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: isMobile ? '8px 14px' : '9px 18px', border: 'none', borderRadius: 10, background: C.bluePrimary, fontSize: 13, fontWeight: 600, color: '#fff', cursor: 'pointer' }}>
@@ -580,6 +592,68 @@ export default function Home() {
     saveEditorState({ generatedHTML: item.html, cvData: item.data || null, palette: PALETTES[0], croppedPhoto: '', logoDataURL: '', name: item.name });
     navigate('/editor/' + item.id);
   }, [navigate]);
+
+  // Fix #2 : téléchargement direct PDF depuis Home (sans passer par l'éditeur)
+  const [downloadingId, setDownloadingId] = useState(null);
+  const handleDownload = useCallback(async (item) => {
+    if (!item?.html) return;
+    setDownloadingId(item.id);
+    try {
+      // Injecter photo/logo dans le HTML si présents en URL Storage
+      let html = item.html;
+      if (item.photoUrl || item.logoUrl) {
+        try {
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, 'text/html');
+          if (item.photoUrl) {
+            const el = doc.querySelector('.block-photo');
+            if (el) el.innerHTML = `<div class="block-photo-inner"><img src="${item.photoUrl}" style="width:100%;height:auto;object-fit:cover;display:block;" /></div>`;
+          }
+          if (item.logoUrl) {
+            const el = doc.querySelector('.logo-zone');
+            if (el) el.innerHTML = `<img src="${item.logoUrl}" style="max-width:80%;max-height:40px;object-fit:contain;display:block;margin:auto;" />`;
+          }
+          html = '<!DOCTYPE html>' + doc.documentElement.outerHTML;
+        } catch {/* ignore — on retombe sur le html brut */}
+      }
+
+      const filename = `CV_${item.name || 'Talia'}.pdf`;
+      let downloaded = false;
+
+      // 1. Tente l'API Vercel/Puppeteer (rendu fidèle)
+      try {
+        const res = await fetch('/api/pdf', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ html, filename }),
+        });
+        if (res.ok) {
+          const blob = await res.blob();
+          const url  = URL.createObjectURL(blob);
+          const a    = document.createElement('a');
+          a.href     = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          downloaded = true;
+        }
+      } catch {/* on tente le fallback */}
+
+      // 2. Fallback client-side (html2canvas + jsPDF)
+      if (!downloaded) {
+        const { renderPdfFromHtml } = await import('@/lib/pdfClient');
+        await renderPdfFromHtml(html, filename);
+      }
+    } catch (err) {
+      console.error('[handleDownload]', err);
+      alert("Impossible de télécharger le PDF. Ouverture dans l'éditeur…");
+      handleModify(item);
+    } finally {
+      setDownloadingId(null);
+    }
+  }, [handleModify]);
 
   const handleDeleteConfirm = useCallback(async () => {
     if (!deleteTarget) return;
@@ -1021,7 +1095,13 @@ export default function Home() {
         })}
       </main>
 
-      <PreviewModal item={viewCV} onModify={handleModify} onClose={() => setViewCV(null)} />
+      <PreviewModal
+        item={viewCV}
+        onModify={handleModify}
+        onDownload={handleDownload}
+        downloading={downloadingId === viewCV?.id}
+        onClose={() => setViewCV(null)}
+      />
       {deleteTarget && <ConfirmModal name={deleteTarget.name} onConfirm={handleDeleteConfirm} onCancel={() => setDeleteTarget(null)} />}
       {tourOpen && <OnboardingTour onClose={closeTour} onAction={(a) => { if (a==='done') navigate('/generate'); }} />}
     </div>

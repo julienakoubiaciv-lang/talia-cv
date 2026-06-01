@@ -7,9 +7,11 @@ import {
 import { adaptPoste, renderCVFromData } from '@/lib/cvTemplates';
 import { saveHistory } from '@/lib/historySync';
 import { getProfiles, buildProfileContext } from '@/lib/profileData';
-import { useSettings } from '@/hooks/useSettings.jsx';
+import { useAuth } from '@/hooks/useAuth.jsx';
 import { usePlan } from '@/hooks/usePlan';
 import { PlanGate } from '@/components/PlanGate';
+import { callClaude, QuotaError } from '@/lib/claudeClient';
+import { useUpgradeModal } from '@/components/UpgradeModal.jsx';
 
 // ─── Colors ──────────────────────────────────────────────────────────────────
 const C = {
@@ -62,15 +64,8 @@ function Toast({ toasts, remove }) {
 }
 
 // ─── API ─────────────────────────────────────────────────────────────────────
-// Toujours passer par le proxy — voir api/anthropic.js
-const ANTHROPIC_URL = '/api/anthropic';
-async function callAPI(body, apiKey) {
-  const headers = { 'Content-Type':'application/json', 'anthropic-version':'2023-06-01' };
-  if (apiKey) headers['x-api-key'] = apiKey;
-  const res = await fetch(ANTHROPIC_URL, { method:'POST', headers, body:JSON.stringify(body) });
-  if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.error?.message || 'Erreur API (HTTP '+res.status+')'); }
-  return res.json();
-}
+// Migration V0 : tous les appels passent par l'Edge Function claude-proxy.
+// Auth JWT + quota serveur + log usage automatiques. Voir src/lib/claudeClient.js
 
 // ─── Mock ─────────────────────────────────────────────────────────────────────
 function buildMock({ formation, formationVal, poste, genre, dateVal }, fileName) {
@@ -431,7 +426,9 @@ export default function Bulk() {
   const { toasts, show: showToast, remove: removeToast } = useToast();
   const { canBulk, nextPlan } = usePlan();
 
-  const { apiKey } = useSettings();
+  // Migration V0 : Anthropic via Edge Function. L'utilisateur doit être connecté.
+  const { user } = useAuth();
+  const { open: openUpgrade } = useUpgradeModal();
   const [sessionMode, setSessionMode] = useState('build'); // 'build' | 'review'
   const [bulkId]                  = useState(() => 'bulk-' + Date.now());
   const [profiles] = useState(() => getProfiles());
@@ -564,8 +561,8 @@ export default function Bulk() {
       ];
     }
 
-    // Mode démo
-    if (!apiKey.trim()) {
+    // Mode démo si non connecté
+    if (!user) {
       await new Promise(r => setTimeout(r, 500));
       updateJob(group.uid, job.uid, { progress:50 });
       await new Promise(r => setTimeout(r, 400));
@@ -575,9 +572,21 @@ export default function Bulk() {
       return { generatedHTML, candidateName, cvData, genre: jobGenre };
     }
 
-    // API réelle
+    // API réelle via Edge Function claude-proxy (auth + quota + caching automatiques)
     updateJob(group.uid, job.uid, { progress:20 });
-    const data1 = await callAPI({ model:'claude-sonnet-4-20250514', max_tokens:4000, system:extractPrompt, messages:[{ role:'user', content:userContent }] }, apiKey);
+    const data1 = await callClaude({
+      action:     'generate_cv',
+      model:      'claude-sonnet-4-5',
+      max_tokens: 4000,
+      system:     extractPrompt,
+      messages:   [{ role:'user', content: userContent }],
+      metadata:   {
+        bulkId,
+        groupLabel: group.label,
+        formation:  group.formationVal,
+        fileType:   job.fileType,
+      },
+    });
     let jsonStr = data1.content.map(b => b.text||'').join('').trim().replace(/^```json?\s*/,'').replace(/```\s*$/,'').trim();
     let cvData;
     try { cvData = JSON.parse(jsonStr); }
@@ -594,7 +603,7 @@ export default function Bulk() {
     const generatedHTML = renderCVFromData(cvData, PALETTES[0]);
     const candidateName = [(cvData.prenom||''),(cvData.nom||'')].filter(Boolean).join(' ') || job.name;
     return { generatedHTML, candidateName, cvData, genre: jobGenre };
-  }, [apiKey, updateJob]);
+  }, [user, bulkId, profiles, updateJob]);
 
   // ── Générer un seul CV (retry en mode review — défini APRÈS generateOne) ──
   const generateSingle = useCallback(async (gUid, jUid) => {
@@ -607,8 +616,11 @@ export default function Bulk() {
       updateJob(gUid, jUid, { status:'done', progress:100, ...result });
       showToast(`${result.candidateName} — CV généré ✓`, 'success');
     } catch (err) {
-      updateJob(gUid, jUid, { status:'error', error:err.message, progress:0 });
-      showToast(`Erreur — ${job.name} : ${err.message}`, 'error');
+      const msg = err instanceof QuotaError
+        ? `Quota atteint (${err.used}/${err.limit})`
+        : err.message;
+      updateJob(gUid, jUid, { status:'error', error: msg, progress:0 });
+      showToast(`Erreur — ${job.name} : ${msg}`, 'error');
     }
   }, [groups, generateOne, updateJob, showToast]);
 
@@ -634,9 +646,24 @@ export default function Bulk() {
           totalSuccess++;
           await new Promise(r => setTimeout(r, 200));
         } catch (err) {
-          updateJob(group.uid, job.uid, { status:'error', error:err.message, progress:0 });
-          showToast(`Erreur — ${job.name} : ${err.message}`, 'error');
+          const msg = err instanceof QuotaError
+            ? `Quota atteint (${err.used}/${err.limit})`
+            : err.message;
+          updateJob(group.uid, job.uid, { status:'error', error: msg, progress:0 });
+          showToast(`Erreur — ${job.name} : ${msg}`, 'error');
           totalError++;
+
+          // Quota dépassé : inutile de poursuivre les autres jobs → modal upgrade
+          if (err instanceof QuotaError) {
+            isRunningRef.current = false;
+            openUpgrade({
+              action: 'generate_cv',
+              used:   err.used,
+              limit:  err.limit,
+              tier:   err.tier,
+            });
+            break;
+          }
         }
       }
     }
@@ -716,10 +743,10 @@ export default function Bulk() {
               {totalProc>0   && <span style={{ fontSize:11, fontWeight:700, color:C.bluePrimary, background:C.blueSoft, padding:'2px 10px', borderRadius:99 }}>⟳ {totalProc}</span>}
             </div>
           )}
-          {/* Statut clé API → ⚙️ Paramètres */}
+          {/* Statut connexion */}
           <div style={{ display:'flex', alignItems:'center', gap:7, padding:'7px 12px', border:'1px solid '+C.rule, borderRadius:10, background:C.surface }}>
-            <span style={{ fontSize:12, color: apiKey ? C.ink : C.mute }}>{apiKey ? 'Clé configurée' : 'Mode démo — ⚙️'}</span>
-            {apiKey && <span style={{ width:7, height:7, borderRadius:'50%', background:C.green }} />}
+            <span style={{ fontSize:12, color: user ? C.ink : C.mute }}>{user ? 'Connecté' : 'Mode démo — connecte-toi'}</span>
+            {user && <span style={{ width:7, height:7, borderRadius:'50%', background:C.green }} />}
           </div>
         </div>
       </div>
@@ -790,7 +817,7 @@ export default function Bulk() {
                 </button>
               )}
 
-              {!apiKey && (
+              {!user && (
                 <div style={{ fontSize:11, color:'#92400e', background:C.orangeSoft, border:'1px solid '+C.orangeBorder, padding:'6px 12px', borderRadius:8 }}>
                   Mode démo
                 </div>

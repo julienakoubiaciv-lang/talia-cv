@@ -10,12 +10,19 @@
 
 import React from 'react';
 import { ageLabel } from './shared/cvHelpers.js';
+import {
+  ProjetsSection,
+  KpisSection,
+  PortfolioSection,
+  CampagnesSection,
+  getSectorSectionsCSS,
+} from './shared/sectorSections.jsx';
 
 // ─── CSS ─────────────────────────────────────────────────────────────────────
 export function getImpactCSS({ c, d, sbBg }) {
   // couleur d'accent très légère pour les fonds de pills
   const cAlpha = `${c}18`;
-  return `
+  return getSectorSectionsCSS({ accent: c }) + `
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:#fff;color:#1a1a1a;}
@@ -276,10 +283,21 @@ export default function TemplateImpact({
   const prenom = d.prenom || '';
   const nom    = d.nom    || '';
 
+  // Wrapper pour donner le bon style aux sections sectorielles
+  // (le titleClass d'Impact n'est pas .section-title mais inclus dans .section-block)
+  const SectorWrap = ({ children }) => (
+    <div className="section-block">{children}</div>
+  );
+
   const MAIN_SECTIONS = {
     experiences:        <Experiences key="exp" data={d} />,
     formations:         <Formations  key="form" data={d} />,
     lettreMotivation:   <LettreMotivation key="ldm" data={d} />,
+    // Sections sectorielles — wrappées pour cohérence avec le style Impact
+    projets:   <SectorWrap key="proj"><ProjetsSection   data={d} /></SectorWrap>,
+    kpis:      <SectorWrap key="kpi" ><KpisSection      data={d} /></SectorWrap>,
+    portfolio: <SectorWrap key="port"><PortfolioSection data={d} /></SectorWrap>,
+    campagnes: <SectorWrap key="camp"><CampagnesSection data={d} /></SectorWrap>,
   };
 
   const SIDEBAR_SECTIONS = {

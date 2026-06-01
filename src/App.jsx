@@ -3,22 +3,27 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from './hooks/useTheme.jsx';
 import { SettingsProvider } from './hooks/useSettings.jsx';
 import { AuthProvider } from './hooks/useAuth.jsx';
+import { UpgradeModalProvider } from './components/UpgradeModal.jsx';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
 
 // SettingsPanel chargé en lazy : il n'est jamais visible au premier rendu
 // (s'ouvre uniquement sur clic icône ⚙) → hors du bundle initial
 const SettingsPanel = lazy(() => import('./components/SettingsPanel.jsx'));
+const AdminFAB      = lazy(() => import('./components/AdminFAB.jsx'));
 
 // Chargement paresseux des pages — chaque route crée son propre chunk JS
 const Home          = lazy(() => import('./pages/Home.jsx'));
 const Generate      = lazy(() => import('./pages/Generate.jsx'));
-const Editor        = lazy(() => import('./pages/Editor.jsx'));
+// EditorRouter dispatch vers EditorAtelier (nouveau) ou Editor classique
+// selon le choix utilisateur dans Settings (useEditorLayout).
+const Editor        = lazy(() => import('./pages/EditorRouter.jsx'));
 const Bulk          = lazy(() => import('./pages/Bulk.jsx'));
 const History       = lazy(() => import('./pages/History.jsx'));
 const Profiles      = lazy(() => import('./pages/Profiles.jsx'));
 const ProfileWizard = lazy(() => import('./pages/ProfileWizard.jsx'));
 const Auth          = lazy(() => import('./pages/Auth.jsx'));
 const Pricing       = lazy(() => import('./pages/Pricing.jsx'));
+const Admin         = lazy(() => import('./pages/Admin.jsx'));
 
 // Spinner minimal affiché pendant le chargement d'un chunk
 function PageLoader() {
@@ -43,27 +48,34 @@ export default function App() {
       <SettingsProvider>
         <BrowserRouter>
           <AuthProvider>
-            <ErrorBoundary>
-              <Suspense fallback={<PageLoader />}>
-                <Routes>
-                  <Route path="/"            element={<Home />} />
-                  <Route path="/auth"        element={<Auth />} />
-                  <Route path="/generate"    element={<Generate />} />
-                  <Route path="/bulk"        element={<Bulk />} />
-                  <Route path="/editor"      element={<Editor />} />
-                  <Route path="/editor/:id"  element={<Editor />} />
-                  <Route path="/history"            element={<History />} />
-                  <Route path="/profils"            element={<Profiles />} />
-                  <Route path="/profils/nouveau"    element={<ProfileWizard />} />
-                  <Route path="/profils/:id/editer" element={<ProfileWizard />} />
-                  <Route path="/pricing"            element={<Pricing />} />
-                </Routes>
+            <UpgradeModalProvider>
+              <ErrorBoundary>
+                <Suspense fallback={<PageLoader />}>
+                  <Routes>
+                    <Route path="/"            element={<Home />} />
+                    <Route path="/auth"        element={<Auth />} />
+                    <Route path="/generate"    element={<Generate />} />
+                    <Route path="/bulk"        element={<Bulk />} />
+                    <Route path="/editor"      element={<Editor />} />
+                    <Route path="/editor/:id"  element={<Editor />} />
+                    <Route path="/history"            element={<History />} />
+                    <Route path="/profils"            element={<Profiles />} />
+                    <Route path="/profils/nouveau"    element={<ProfileWizard />} />
+                    <Route path="/profils/:id/editer" element={<ProfileWizard />} />
+                    <Route path="/pricing"            element={<Pricing />} />
+                    <Route path="/admin"              element={<Admin />} />
+                  </Routes>
+                </Suspense>
+              </ErrorBoundary>
+              {/* SettingsPanel lazy — se charge au premier clic ⚙, jamais avant */}
+              <Suspense fallback={null}>
+                <SettingsPanel />
               </Suspense>
-            </ErrorBoundary>
-            {/* SettingsPanel lazy — se charge au premier clic ⚙, jamais avant */}
-            <Suspense fallback={null}>
-              <SettingsPanel />
-            </Suspense>
+              {/* AdminFAB lazy — visible uniquement pour owner/admin */}
+              <Suspense fallback={null}>
+                <AdminFAB />
+              </Suspense>
+            </UpgradeModalProvider>
           </AuthProvider>
         </BrowserRouter>
       </SettingsProvider>

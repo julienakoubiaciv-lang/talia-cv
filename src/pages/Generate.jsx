@@ -8,8 +8,14 @@ import { adaptPoste, renderCVFromData, escH } from '@/lib/cvTemplates';
 import { saveHistory } from '@/lib/historySync';
 import { getProfiles, buildProfileContext } from '@/lib/profileData';
 import { useSettings } from '@/hooks/useSettings.jsx';
+import { useAuth } from '@/hooks/useAuth.jsx';
 import { useCRMBridge } from '@/hooks/useCRMBridge.jsx';
 import { useCRMToken } from '@/hooks/useCRMToken';
+import { callClaude, QuotaError } from '@/lib/claudeClient';
+import { track, captureError } from '@/lib/monitoring';
+import { getSector, buildSectorPromptHook, buildSectorJsonExtension, SECTOR_GENERAL } from '@/lib/cvSectors';
+import { SectorPicker } from '@/components/SectorPicker';
+import { useUpgradeModal } from '@/components/UpgradeModal.jsx';
 
 // ─── Color tokens ───────────────────────────────────────────────────────────────
 const C = {
@@ -69,28 +75,10 @@ function useToast() {
 }
 
 // ─── API Anthropic ─────────────────────────────────────────────────────────────
-// Toujours passer par le proxy Vercel — la clé n'est jamais exposée côté client.
-// En dev : Vite proxifie /api/anthropic → https://api.anthropic.com/v1/messages
-// En prod : Vercel serverless function lit process.env.ANTHROPIC_API_KEY
-const ANTHROPIC_URL = '/api/anthropic';
-
-async function callAnthropicAPI(body, apiKey) {
-  const headers = {
-    'Content-Type': 'application/json',
-    'anthropic-version': '2023-06-01',
-  };
-  // La clé perso de l'utilisateur (optionnelle) est transmise au proxy,
-  // qui lui donne priorité sur la clé serveur.
-  if (apiKey) headers['x-api-key'] = apiKey;
-  const res = await fetch(ANTHROPIC_URL, {
-    method: 'POST', headers, body: JSON.stringify(body),
-  });
-  if (!res.ok) {
-    const e = await res.json().catch(() => ({}));
-    throw Object.assign(new Error(e.error?.message || 'Erreur API (HTTP ' + res.status + ')'), { status: res.status });
-  }
-  return res.json();
-}
+// Migration V0 : la clé Anthropic n'est plus jamais côté client.
+// Tous les appels passent par l'Edge Function Supabase claude-proxy
+// (auth JWT obligatoire + quotas serveur + prompt caching + logging usage).
+// Voir : src/lib/claudeClient.js
 
 // ─── Mock CV (test sans clé API) ───────────────────────────────────────────────
 function buildMockCvData({ formation, formationVal, poste, genre, comp, dateVal }) {
@@ -624,8 +612,16 @@ export default function Home() {
   const navigate = useNavigate();
   const { toasts, show: showToast, remove: removeToast } = useToast();
 
-  // Clé API : centralisée et protégée par PIN (voir ⚙️ Paramètres)
-  const { apiKey } = useSettings();
+  // Migration V0 : la clé Anthropic est désormais serveur-side (Edge Function).
+  // On garde useSettings pour d'autres paramètres éventuels.
+  useSettings();
+
+  // Auth : nécessaire pour appeler claude-proxy.
+  // Si non-connecté → mode démo (mock) déclenché automatiquement.
+  const { user } = useAuth();
+
+  // Modal upgrade : ouverte quand un quota est dépassé
+  const { open: openUpgrade } = useUpgradeModal();
 
   // Bridge CRM (postMessage talia-saas ↔ talia-cv)
   const { embedded, candidate: crmCandidate } = useCRMBridge();
@@ -655,6 +651,11 @@ export default function Home() {
   const [posteVal,     setPosteVal]     = useState('');
   const [selectedTech, setSelectedTech] = useState([]);
   const [selectedSoft, setSelectedSoft] = useState([]);
+
+  // Secteur du CV (Généraliste / Tech / Commercial / Création / Marketing)
+  // Influence l'ordre des sections + active des sections spécialisées
+  // (projets, kpis, portfolio, campagnes) + oriente le prompt IA.
+  const [sectorId, setSectorId] = useState(SECTOR_GENERAL);
 
   // Upload state
   const [uploadedFile,   setUploadedFile]   = useState(null);
@@ -840,7 +841,7 @@ STRUCTURE JSON EXACTE :
   "competences": {"techniques":[],"comportementales":[],"outils":[]},
   "langues": [{"langue":"","niveau":""}],
   "centresInteret": [],
-  "lettreMotivation": "Si AUCUNE expérience, 3 paragraphes séparés \\n\\n. Sinon vide."${hasAnnonce ? ',\n  "matchAnalysis": {"matched":[],"missing":[],"score":0,"adaptations":"","formationFit":""}' : ''}
+  "lettreMotivation": "Si AUCUNE expérience, 3 paragraphes séparés \\n\\n. Sinon vide."${hasAnnonce ? ',\n  "matchAnalysis": {"matched":[],"missing":[],"score":0,"adaptations":"","formationFit":""}' : ''}${buildSectorJsonExtension(sectorId)}
 }
 
 RÈGLES :
@@ -851,7 +852,7 @@ RÈGLES :
 - Formation Talia EN PREMIER dans formations avec isTalia:true
 - Si date de naissance fournie dans les paramètres, l'utiliser
 - Le poste doit être adapté au genre si précisé
-- Répondre UNIQUEMENT avec le JSON${annonceRules}`;
+- Répondre UNIQUEMENT avec le JSON${annonceRules}${buildSectorPromptHook(sectorId)}`;
 
     let userContent;
     const textComp = cvText.trim().length > 5 ? `\n\nInfos complémentaires :\n${cvText}` : '';
@@ -871,36 +872,45 @@ RÈGLES :
       userContent = `Extrais toutes les données de ce CV :\n${cvText.slice(0, 7000)}${contextInfo}`;
     }
 
-    // ── Mode démo : pas de clé perso ET pas de clé serveur → génération locale ──
-    const hasServerKey = import.meta.env.VITE_API_HOSTED === 'true';
-    if (!apiKey.trim() && !hasServerKey) {
+    // ── Mode démo : utilisateur non connecté → génération locale fictive ──
+    // Une fois connecté, l'utilisateur passe par claude-proxy (avec quotas et caching).
+    if (!user) {
       setGenStage(0); setGenProgress(25); setGenProgressText('Extraction (mode démo)…');
       await new Promise(r => setTimeout(r, 500));
       setGenStage(1); setGenProgress(55); setGenProgressText('Enrichissement…');
       await new Promise(r => setTimeout(r, 400));
       const cvData = buildMockCvData({ formation, formationVal, poste, genre, comp, dateVal });
+      cvData.sector = sectorId;
       setGenStage(2); setGenProgress(85); setGenProgressText('Mise en page…');
       await new Promise(r => setTimeout(r, 300));
-      const generatedHTML = renderCVFromData(cvData, PALETTES[0]);
+      const sectorCfg = getSector(sectorId);
+      const generatedHTML = renderCVFromData(cvData, PALETTES[0], sectorCfg.sectionOrder, sectorCfg.templateHint, sectorCfg.sidebarOrder);
       const name = 'Prénom NOM (démo)';
       saveHistory(name, generatedHTML, cvData, formation.l, selectedProfile
         ? { profileId: String(selectedProfile.id), profileName: selectedProfile.nom }
         : {});
-      saveEditorState({ generatedHTML, cvData, palette: PALETTES[0], croppedPhoto: '', logoDataURL: '', name });
+      saveEditorState({ generatedHTML, cvData, palette: PALETTES[0], croppedPhoto: '', logoDataURL: '', name, templateId: sectorCfg.templateHint });
       setGenStage(3); setGenProgress(100); setGenProgressText('CV démo prêt !');
-      showToast("CV de démonstration généré — remplace les données fictives dans l'éditeur", 'info', 5000);
+      showToast("Mode démo — connecte-toi pour générer un vrai CV à partir de tes infos", 'info', 5000);
       setTimeout(() => { setGenerating(false); setGenProgress(0); setGenStage(0); navigate('/editor'); }, 900);
       return;
     }
 
     try {
       setGenStage(0); setGenProgress(25); setGenProgressText('Extraction des données du CV…');
-      const data1 = await callAnthropicAPI({
-        model: 'claude-sonnet-4-20250514',
+      const data1 = await callClaude({
+        action:     'generate_cv',
+        model:      'claude-sonnet-4-5',
         max_tokens: 4000,
-        system: extractPrompt,
-        messages: [{ role: 'user', content: userContent }],
-      }, apiKey);
+        system:     extractPrompt,
+        messages:   [{ role: 'user', content: userContent }],
+        metadata:   {
+          formation: formationVal,
+          poste:     posteVal || null,
+          hasAnnonce,
+          profileId: selectedProfile?.id || null,
+        },
+      });
 
       let jsonStr = data1.content.map(b => b.text || '').join('').trim();
       jsonStr = jsonStr.replace(/^```json?\s*/, '').replace(/```\s*$/, '').trim();
@@ -939,8 +949,17 @@ RÈGLES :
         comp.soft.forEach(c => { if (!ex.has(c.toLowerCase())) cvData.competences.comportementales.push(c); });
       }
 
+      // Marquer le secteur dans cvData pour qu'il soit conservé entre Generate ↔ Editor
+      cvData.sector = sectorId;
+      const sectorCfg = getSector(sectorId);
+
       setGenStage(2); setGenProgress(85); setGenProgressText('Mise en page du CV…');
-      const generatedHTML = renderCVFromData(cvData, PALETTES[0]);
+      const generatedHTML = renderCVFromData(
+        cvData, PALETTES[0],
+        sectorCfg.sectionOrder,
+        sectorCfg.templateHint,
+        sectorCfg.sidebarOrder,
+      );
       const name = [(cvData.prenom || ''), (cvData.nom || '')].filter(Boolean).join(' ') || 'Candidat';
 
       saveHistory(name, generatedHTML, cvData, formation.l, selectedProfile
@@ -955,11 +974,22 @@ RÈGLES :
         croppedPhoto: '',
         logoDataURL: '',
         name,
+        templateId: sectorCfg.templateHint,
       };
       saveEditorState(editorState);
 
       setGenStage(3); setGenProgress(100); setGenProgressText('CV généré !');
       showToast(name + ' — CV généré', 'success');
+
+      // 📊 Track event produit
+      track('cv_generated', {
+        formation:  formationVal,
+        poste:      posteVal || null,
+        sector:     sectorId,
+        hasAnnonce,
+        hasProfile: !!selectedProfile,
+        source:     uploadedFile ? uploadedFile.type : 'text',
+      });
 
       setTimeout(() => {
         setGenerating(false);
@@ -969,6 +999,27 @@ RÈGLES :
       }, 900);
 
     } catch (e) {
+      // Quota dépassé → modal upgrade contextuelle
+      if (e instanceof QuotaError) {
+        track('quota_exceeded', {
+          action: 'generate_cv',
+          tier:   e.tier,
+          used:   e.used,
+          limit:  e.limit,
+        });
+        setGenerating(false);
+        setGenProgress(0);
+        setGenError('');
+        openUpgrade({
+          action: 'generate_cv',
+          used:   e.used,
+          limit:  e.limit,
+          tier:   e.tier,
+        });
+        return;
+      }
+      // Autres erreurs (réseau, Anthropic down, JSON invalide…)
+      captureError(e, { context: 'generate_cv', formation: formationVal });
       setGenError('Erreur : ' + e.message);
       showToast('Erreur : ' + e.message, 'error');
       setGenerating(false);
@@ -1358,6 +1409,14 @@ RÈGLES :
             onChange={handleAnnonceInput}
           />
 
+          {/* ── PICKER SECTEUR : réorganise les sections + active des sections spécialisées ── */}
+          <div style={{
+            background: '#fff', borderRadius: 16, padding: 22,
+            border: '1.5px solid ' + C.rule, marginBottom: 16,
+          }}>
+            <SectorPicker value={sectorId} onChange={setSectorId} />
+          </div>
+
           {/* ── BOUTON GÉNÉRER ────────────────────────────────────────── */}
           <div ref={card3Ref} style={{ marginBottom: 16 }}>
             <button
@@ -1388,7 +1447,7 @@ RÈGLES :
               }
               {generating
                 ? (genProgressText || 'Génération en cours…')
-                : apiKey.trim() ? 'Générer mon CV Talia' : 'Tester sans clé (données fictives)'}
+                : user ? 'Générer mon CV Talia' : 'Tester en démo (connecte-toi pour générer)'}
             </button>
 
             {/* Progress bar */}

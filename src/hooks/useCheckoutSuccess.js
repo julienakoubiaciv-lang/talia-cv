@@ -20,6 +20,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase, supabaseReady } from '@/lib/supabase';
 import { isAuthenticated, getCurrentUserId } from '@/lib/currentUser';
 import { PLANS } from '@/lib/planConfig';
+import { track } from '@/lib/monitoring';
 
 const POLL_INTERVAL = 3000;  // ms entre chaque poll
 const MAX_WAIT      = 30000; // 30s max d'attente
@@ -58,6 +59,7 @@ export function useCheckoutSuccess({ onActivated } = {}) {
       stopPolling();
       setActivatedTier(data.tier);
       setCheckoutState('activated');
+      track('checkout_completed', { tier: data.tier, source: 'stripe' });
       onActivated?.(data.tier);
       return;
     }

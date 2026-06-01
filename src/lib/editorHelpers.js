@@ -60,28 +60,35 @@ export function setByPath(obj, path, value) {
   cur[keys[keys.length - 1]] = value;
 }
 
-// ── Appel API Anthropic ───────────────────────────────────────────────────────
+// ── Appel API Anthropic via Edge Function claude-proxy ───────────────────────
+//
+// Migration V0 : plus aucune clé Anthropic côté client.
+// callAnthropicAPI() est désormais un thin wrapper autour de callClaude()
+// pour minimiser les changements dans Editor.jsx.
+//
+// Signature :
+//   await callAnthropicAPI(
+//     { model, max_tokens, system?, messages, metadata? },
+//     action   // 'generate_cv' | 'smart_match' | 'coach' | ...
+//   )
+// Retourne directement le texte (pas l'objet complet).
+
+import { callClaude } from '@/lib/claudeClient';
 
 /**
- * Toujours passer par le proxy /api/anthropic :
- *   - dev  : Vite proxifie → api.anthropic.com/v1/messages
- *   - prod : Vercel serverless function (clé dans process.env)
- * La clé n'est JAMAIS exposée dans le bundle client en prod.
+ * @param {object} body              - { model, max_tokens, system?, messages, metadata? }
+ * @param {string} [action='generate_cv'] - action loguée + quota check
+ * @returns {Promise<string>} texte de la première content block
+ * @throws {QuotaError|ClaudeProxyError}
  */
-const ANTHROPIC_URL = '/api/anthropic';
-
-export async function callAnthropicAPI(body, apiKey) {
-  const headers = {
-    'Content-Type':      'application/json',
-    'anthropic-version': '2023-06-01',
-  };
-  // Clé perso optionnelle — prioritaire sur la clé serveur
-  if (apiKey) headers['x-api-key'] = apiKey;
-
-  const r = await fetch(ANTHROPIC_URL, {
-    method: 'POST', headers, body: JSON.stringify(body),
+export async function callAnthropicAPI(body, action = 'generate_cv') {
+  const response = await callClaude({
+    action,
+    model:      body.model,
+    max_tokens: body.max_tokens,
+    system:     body.system,
+    messages:   body.messages,
+    metadata:   body.metadata,
   });
-  if (!r.ok) { const t = await r.text(); throw new Error(t); }
-  const j = await r.json();
-  return j.content?.[0]?.text || '';
+  return response.content?.[0]?.text || '';
 }

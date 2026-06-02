@@ -1,40 +1,38 @@
 /**
- * crmToken.js — Lien persistant entre TaliaCV et un compte CRM Talia.
+ * crmToken.js — Connecteur CV : lien entre le générateur (TaliaCV) et le CRM Altio.
  *
- * Flux :
- *   1. CRM génère une URL : https://cv.talia.fr/?crm_token=TOKEN&org_id=ID&org_name=NAME
- *   2. TaliaCV détecte les params au chargement, stocke le token, nettoie l'URL.
- *   3. Toutes les sauvegardes de CV incluent le token (push CRM possible hors iframe).
- *   4. L'utilisateur peut délier depuis l'interface.
+ * MODÈLE (décidé 2026-06-01) : comptes séparés, PAS de SSO.
+ *   1. Dans le CRM (Paramètres → Connecteur CV), le conseiller génère une
+ *      CLÉ DE CONNEXION personnelle (format altio_xxxxx).
+ *   2. Il la colle UNE fois ici (Paramètres → Connexion CRM).
+ *   3. Chaque sauvegarde de CV peut être poussée vers le CRM via l'Edge
+ *      Function `import-cv`, authentifiée par le header `x-altio-key`.
+ *   4. Le CV arrive dans la boîte de réception « CV reçus » du CRM (à valider).
  *
- * Sécurité :
- *   - Le token est opaque côté client (le CRM valide en backend).
- *   - On n'envoie jamais de données sensibles sans token.
- *   - Délier = supprimer le token du localStorage.
+ * Sécurité : la clé est opaque côté client (le CRM la valide par hash).
+ * Délier = supprimer la clé du localStorage.
  */
 
-const LS_KEY = 'talia_crm_link';
+const LS_KEY = 'altio_crm_key';
+// Edge Function du CRM (projet zxiroikfhrwsyzgqflzb). Surchargeable via env.
+const IMPORT_CV_URL = import.meta.env.VITE_CRM_IMPORT_CV_URL
+  || 'https://zxiroikfhrwsyzgqflzb.supabase.co/functions/v1/import-cv';
 
-/** @typedef {{ token: string, orgId: string, orgName: string, linkedAt: string }} CRMLink */
+/** @typedef {{ key: string, linkedAt: string }} CRMLink */
 
 /** Retourne le lien CRM actuel ou null. */
 export function getCRMLink() {
   try {
     const raw = localStorage.getItem(LS_KEY);
-    return raw ? /** @type {CRMLink} */ (JSON.parse(raw)) : null;
+    return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
   }
 }
 
-/** Stocke un lien CRM. */
-export function setCRMLink(token, orgId, orgName) {
-  const link = {
-    token,
-    orgId:    orgId    || 'unknown',
-    orgName:  orgName  || 'CRM',
-    linkedAt: new Date().toISOString(),
-  };
+/** Stocke une clé de connexion CRM. */
+export function setCRMLink(key) {
+  const link = { key: String(key || '').trim(), linkedAt: new Date().toISOString() };
   localStorage.setItem(LS_KEY, JSON.stringify(link));
   return link;
 }
@@ -44,72 +42,63 @@ export function removeCRMLink() {
   localStorage.removeItem(LS_KEY);
 }
 
-/** True si un token valide est stocké. */
+/** True si une clé est stockée. */
 export function isCRMLinked() {
   const link = getCRMLink();
-  return Boolean(link?.token);
+  return Boolean(link?.key);
 }
 
 /**
- * Détecte et consomme les paramètres CRM dans l'URL courante.
- * Si trouvés, stocke le lien et nettoie l'URL (sans reload).
- * @returns {CRMLink|null} le lien créé, ou null si aucun param trouvé.
+ * Compat : ancien flux ?crm_token= dans l'URL. Conservé pour ne pas casser
+ * Home.jsx, mais le nouveau modèle est la saisie manuelle de la clé.
+ * Si un param ?altio_key= (ou ?crm_token=) est présent, on le consomme.
+ * @returns {CRMLink|null}
  */
 export function consumeCRMTokenFromURL() {
   if (typeof window === 'undefined') return null;
   const params = new URLSearchParams(window.location.search);
-  const token   = params.get('crm_token');
-  const orgId   = params.get('org_id');
-  const orgName = params.get('org_name');
-  if (!token) return null;
-
-  const link = setCRMLink(token, orgId || '', orgName || 'CRM');
-
-  // Nettoyer l'URL — évite que le token reste visible dans l'historique
+  const key = params.get('altio_key') || params.get('crm_token');
+  if (!key) return null;
+  const link = setCRMLink(key);
+  params.delete('altio_key');
   params.delete('crm_token');
   params.delete('org_id');
   params.delete('org_name');
   const cleanSearch = params.toString() ? '?' + params.toString() : '';
-  const cleanURL = window.location.pathname + cleanSearch + window.location.hash;
-  window.history.replaceState({}, '', cleanURL);
-
+  window.history.replaceState({}, '', window.location.pathname + cleanSearch + window.location.hash);
   return link;
 }
 
 /**
- * Pousse un CV vers l'API CRM (mode standalone, pas iframe).
- * No-op silencieux si pas de token ou si fetch échoue.
+ * Pousse un CV vers le CRM (Edge Function import-cv).
+ * No-op silencieux si pas de clé.
  *
- * @param {{ name: string, cvData: object|null, html: string }} payload
- * @returns {Promise<boolean>} true si succès
+ * @param {{ name?: string, cvData?: object|null, html?: string }} payload
+ * @returns {Promise<{ ok: boolean, duplicate?: boolean, error?: string }>}
  */
 export async function pushCVtoCRM(payload) {
   const link = getCRMLink();
-  if (!link?.token) return false;
-
-  // Endpoint CRM — ajuste selon l'infrastructure réelle
-  const endpoint = import.meta.env.VITE_CRM_WEBHOOK_URL
-    || 'https://app.talia.fr/api/cv-ingest';
+  if (!link?.key) return { ok: false, error: 'not_linked' };
 
   try {
-    const res = await fetch(endpoint, {
+    const res = await fetch(IMPORT_CV_URL, {
       method: 'POST',
       headers: {
-        'Content-Type':  'application/json',
-        'Authorization': `Bearer ${link.token}`,
-        'X-Org-Id':      link.orgId,
+        'Content-Type': 'application/json',
+        'x-altio-key':  link.key,
       },
       body: JSON.stringify({
-        org_id:   link.orgId,
-        name:     payload.name   || '',
-        cv_data:  payload.cvData || null,
-        html:     payload.html   || '',
-        sent_at:  new Date().toISOString(),
+        name:    payload.name   || '',
+        email:   payload.cvData?.email || '',
+        cv_data: payload.cvData || null,
+        cv_html: payload.html   || '',
       }),
     });
-    return res.ok;
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) return { ok: false, error: data.error || ('HTTP ' + res.status) };
+    return { ok: true, duplicate: !!data.duplicate };
   } catch (err) {
     console.warn('[crmToken] pushCVtoCRM error:', err.message);
-    return false;
+    return { ok: false, error: err.message };
   }
 }

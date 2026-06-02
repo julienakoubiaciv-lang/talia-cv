@@ -40,15 +40,20 @@ describe('cible 30 questions / thème (tronc commun, étoffé par lots)', () => 
   }
 });
 
-describe('secteur Commerce — parcours pilote', () => {
-  it('expose les 4 couches (comportemental, technique, situation, actu)', () => {
-    const groups = listGroups('commerce').map((g) => g.id).sort();
-    expect(groups).toEqual(['actu', 'comportemental', 'situation', 'technique']);
+describe('secteurs métier — 4 couches complètes', () => {
+  const metiers = listSectors().filter((s) => s.id !== 'general').map((s) => s.id);
+
+  it('au moins commerce, admin et rh sont présents', () => {
+    expect(metiers).toEqual(expect.arrayContaining(['commerce', 'admin', 'rh']));
   });
 
-  it('chaque couche a au moins une question', () => {
-    for (const g of listGroups('commerce')) expect(g.count).toBeGreaterThan(0);
-  });
+  for (const sec of ['commerce', 'admin', 'rh']) {
+    it(`le secteur "${sec}" expose les 4 couches non vides`, () => {
+      const groups = listGroups(sec);
+      expect(groups.map((g) => g.id).sort()).toEqual(['actu', 'comportemental', 'situation', 'technique']);
+      for (const g of groups) expect(g.count).toBeGreaterThan(0);
+    });
+  }
 });
 
 describe('listSectors / listGroups', () => {

@@ -12,6 +12,8 @@
 import presentationQuestions from './interview/presentation.js';
 import motivationQuestions   from './interview/motivation.js';
 import commerceQuestions     from './interview/commerce.js';
+import adminQuestions        from './interview/admin.js';
+import rhQuestions           from './interview/rh.js';
 import { CATEGORIES, SECTORS, TYPES } from './interviewCategories.js';
 
 // Re-export pour compat : les modules qui importaient ces métadonnées depuis
@@ -240,6 +242,8 @@ const GENERAL_QUESTIONS = [
 export const QUESTIONS = [
   ...GENERAL_QUESTIONS,
   ...commerceQuestions,
+  ...adminQuestions,
+  ...rhQuestions,
 ];
 
 /**

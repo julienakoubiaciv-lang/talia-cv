@@ -11,8 +11,8 @@
  */
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { listCategories, buildSession, CATEGORIES } from '@/lib/interviewBank';
-import { getBest, saveResult, getOverallCompletion, getThemesPlayed } from '@/lib/interviewProgress';
+import { listSectors, listGroups, buildSession, groupOf, metaOf, groupMeta } from '@/lib/interviewBank';
+import { getBest, saveResult, getOverallCompletion } from '@/lib/interviewProgress';
 import { track } from '@/lib/monitoring';
 // Mascotte (loup) retirée temporairement — sera rebranchée plus tard (asset Rive).
 
@@ -53,8 +53,9 @@ export default function Interview() {
   const [session, setSession] = useState([]);
   const [idx, setIdx]       = useState(0);
   const [picked, setPicked] = useState(null);    // null = en attente · -1 = temps écoulé · 0..n = choix
-  const [answers, setAnswers] = useState([]);    // { id, category, correct }
-  const [lastCat, setLastCat] = useState('all');
+  const [answers, setAnswers] = useState([]);    // { id, group, correct }
+  const [sector, setSector]   = useState('general');
+  const [lastGroup, setLastGroup] = useState('all');
 
   const [hearts, setHearts] = useState(START_HEARTS);
   const [streak, setStreak] = useState(0);
@@ -64,17 +65,20 @@ export default function Interview() {
   const [mood, setMood]     = useState('idle');
   const [msg, setMsg]       = useState(null);
 
-  const cats = useMemo(() => listCategories(), []);
+  const sectors = useMemo(() => listSectors(), []);
 
-  function start(category) {
-    const s = buildSession({ category, size: SESSION_SIZE });
+  // Clé de progression : 'group' pour le tronc commun, 'secteur:group' sinon.
+  const progKey = (sec, grp) => (sec === 'general' ? grp : `${sec}:${grp}`);
+
+  function start(group) {
+    const s = buildSession({ sector, group, size: SESSION_SIZE });
     setSession(s); setIdx(0); setPicked(null); setAnswers([]);
-    setLastCat(category);
+    setLastGroup(group);
     setHearts(START_HEARTS); setStreak(0); setDead(false);
     setTimeLeft(CHRONO_SECONDS);
     setMood('idle'); setMsg(null);
     setPhase('play');
-    track('interview_session_start', { category, size: s.length, mode });
+    track('interview_session_start', { sector, group, size: s.length, mode });
   }
 
   function answer(optIdx) {
@@ -82,7 +86,7 @@ export default function Interview() {
     const q = session[idx];
     const correct = optIdx >= 0 && !!q.options[optIdx].correct;
     setPicked(optIdx);
-    setAnswers((a) => [...a, { id: q.id, category: q.category, correct }]);
+    setAnswers((a) => [...a, { id: q.id, group: groupOf(q), correct }]);
 
     if (correct) {
       const ns = streak + 1;
@@ -111,9 +115,9 @@ export default function Interview() {
     } else {
       const score = answers.filter((a) => a.correct).length;
       const pct = Math.round((score / session.length) * 100);
-      saveResult(lastCat, pct);
+      saveResult(progKey(sector, lastGroup), pct);
       setPhase('result');
-      track('interview_session_done', { score, total: session.length, category: lastCat, mode, dead });
+      track('interview_session_done', { score, total: session.length, sector, group: lastGroup, mode, dead });
     }
   }
 
@@ -126,13 +130,19 @@ export default function Interview() {
   }, [phase, mode, picked, timeLeft]);
 
   if (phase === 'intro') {
-    return <Intro cats={cats} mode={mode} setMode={setMode} onStart={start} onHome={() => navigate('/')} />;
+    return (
+      <Intro
+        sectors={sectors} sector={sector} setSector={setSector}
+        mode={mode} setMode={setMode} progKey={progKey}
+        onStart={start} onHome={() => navigate('/')}
+      />
+    );
   }
   if (phase === 'result') {
     return (
       <Result
-        answers={answers} total={session.length} mode={mode} dead={dead}
-        onReplaySame={() => start(lastCat)}
+        answers={answers} total={session.length} mode={mode} dead={dead} sector={sector}
+        onReplaySame={() => start(lastGroup)}
         onReplay={() => setPhase('intro')}
         onHome={() => navigate('/')}
         onUpsell={() => navigate('/pricing')}
@@ -142,7 +152,7 @@ export default function Interview() {
 
   // ── PHASE JEU ──────────────────────────────────────────────────────────────
   const q = session[idx];
-  const cat = CATEGORIES[q.category];
+  const cat = metaOf(q);
   const correctIdx = q.options.findIndex((o) => o.correct);
   const answered = picked !== null;
   const progress = ((idx + (answered ? 1 : 0)) / session.length) * 100;
@@ -254,9 +264,10 @@ export default function Interview() {
 }
 
 // ── ÉCRAN INTRO ───────────────────────────────────────────────────────────────
-function Intro({ cats, mode, setMode, onStart, onHome }) {
+function Intro({ sectors, sector, setSector, mode, setMode, progKey, onStart, onHome }) {
   const overall = getOverallCompletion();
-  const played = getThemesPlayed();
+  const groups = listGroups(sector);
+  const isSectorView = sector !== 'general';
   return (
     <div style={S.shell}>
       <div style={S.introWrap}>
@@ -264,21 +275,31 @@ function Intro({ cats, mode, setMode, onStart, onHome }) {
         <div style={S.heroIcon}>🎤</div>
         <h1 style={S.h1}>Simulateur d'entretien</h1>
         <p style={S.lead}>
-          Des mises en situation réelles, feedback immédiat. Choisis ton mode et entraîne-toi.
+          Choisis ton secteur, ton mode, et entraîne-toi sur des cas réels avec un feedback immédiat.
         </p>
 
         {overall > 0 && (
           <div style={S.overall}>
-            <span style={{ fontSize: 13, color: C.ink2, fontWeight: 600 }}>
-              Progression globale
-              <span style={{ color: C.mute, fontWeight: 500 }}> · {played}/{cats.length} thèmes</span>
-            </span>
+            <span style={{ fontSize: 13, color: C.ink2, fontWeight: 600 }}>Progression (tronc commun)</span>
             <div style={S.overallBar}><div style={{ ...S.overallFill, width: `${overall}%` }} /></div>
             <span style={{ fontSize: 13, fontWeight: 800, color: C.blue }}>{overall}%</span>
           </div>
         )}
 
-        {/* Sélecteur de mode */}
+        {/* Sélecteur de SECTEUR */}
+        <div style={S.sectorRow}>
+          {sectors.map((s) => {
+            const active = sector === s.id;
+            return (
+              <button key={s.id} onClick={() => setSector(s.id)}
+                style={{ ...S.sectorChip, ...(active ? { borderColor: s.color, background: s.color + '14', color: s.color } : {}) }}>
+                <span style={{ fontSize: 15 }}>{s.emoji}</span> {s.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Sélecteur de MODE */}
         <div style={S.modeRow}>
           {Object.entries(MODES).map(([id, m]) => {
             const active = mode === id;
@@ -297,16 +318,20 @@ function Intro({ cats, mode, setMode, onStart, onHome }) {
           ▶ Session mixte — {SESSION_SIZE} questions
         </button>
 
-        <div style={S.orRow}><span style={S.orLine} /><span style={S.orText}>ou choisis un thème</span><span style={S.orLine} /></div>
+        <div style={S.orRow}>
+          <span style={S.orLine} />
+          <span style={S.orText}>{isSectorView ? 'ou choisis une couche' : 'ou choisis un thème'}</span>
+          <span style={S.orLine} />
+        </div>
 
         <div style={S.catGrid}>
-          {cats.map((c) => {
-            const best = getBest(c.id);
+          {groups.map((g) => {
+            const best = getBest(progKey(sector, g.id));
             return (
-              <button key={c.id} style={S.catCard} onClick={() => onStart(c.id)}>
-                <span style={{ fontSize: 26 }}>{c.emoji}</span>
-                <span style={S.catName}>{c.label}</span>
-                <span style={S.catCount}>{c.count} question{c.count > 1 ? 's' : ''}</span>
+              <button key={g.id} style={S.catCard} onClick={() => onStart(g.id)}>
+                <span style={{ fontSize: 26 }}>{g.emoji}</span>
+                <span style={S.catName}>{g.label}</span>
+                <span style={S.catCount}>{g.count} question{g.count > 1 ? 's' : ''}</span>
                 {best > 0 && (
                   <span style={{ ...S.bestBadge, color: best >= 80 ? C.green : C.ink2 }}>
                     {best >= 80 ? '★ ' : ''}Record {best}%
@@ -322,7 +347,7 @@ function Intro({ cats, mode, setMode, onStart, onHome }) {
 }
 
 // ── ÉCRAN RÉSULTATS ─────────────────────────────────────────────────────────
-function Result({ answers, total, mode, dead, onReplaySame, onReplay, onHome, onUpsell }) {
+function Result({ answers, total, mode, dead, sector, onReplaySame, onReplay, onHome, onUpsell }) {
   const score = answers.filter((a) => a.correct).length;
   const answered = answers.length;
   const pct = Math.round((score / total) * 100);
@@ -333,8 +358,8 @@ function Result({ answers, total, mode, dead, onReplaySame, onReplay, onHome, on
 
   const byCat = {};
   answers.forEach((a) => {
-    byCat[a.category] = byCat[a.category] || { ok: 0, n: 0 };
-    byCat[a.category].n++; if (a.correct) byCat[a.category].ok++;
+    byCat[a.group] = byCat[a.group] || { ok: 0, n: 0 };
+    byCat[a.group].n++; if (a.correct) byCat[a.group].ok++;
   });
 
   let verdict, vColor, vEmoji;
@@ -363,12 +388,12 @@ function Result({ answers, total, mode, dead, onReplaySame, onReplay, onHome, on
 
         {/* Bilan par thème */}
         <div style={S.catResults}>
-          {Object.entries(byCat).map(([cid, r]) => {
-            const cat = CATEGORIES[cid];
+          {Object.entries(byCat).map(([gid, r]) => {
+            const meta = groupMeta(sector, gid) || { emoji: '•', label: gid };
             return (
-              <div key={cid} style={S.catResultRow}>
-                <span style={{ fontSize: 16 }}>{cat.emoji}</span>
-                <span style={{ flex: 1, fontSize: 13, color: C.ink2 }}>{cat.label}</span>
+              <div key={gid} style={S.catResultRow}>
+                <span style={{ fontSize: 16 }}>{meta.emoji}</span>
+                <span style={{ flex: 1, fontSize: 13, color: C.ink2 }}>{meta.label}</span>
                 <span style={{ fontSize: 13, fontWeight: 700, color: r.ok === r.n ? C.green : C.ink }}>{r.ok}/{r.n}</span>
               </div>
             );
@@ -410,6 +435,9 @@ const S = {
 
   bigStart: { width: '100%', maxWidth: 420, background: C.blue, color: '#fff', border: 'none', borderRadius: 14, padding: '15px 20px', fontSize: 16, fontWeight: 700, cursor: 'pointer', fontFamily: FONT, boxShadow: '0 8px 24px rgba(21,57,183,.25)' },
   ghostBtn: { background: '#fff', color: C.ink2, border: `1px solid ${C.line}`, borderRadius: 12, padding: '12px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: FONT },
+
+  sectorRow: { display: 'flex', gap: 7, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 16 },
+  sectorChip: { display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${C.line}`, borderRadius: 99, padding: '7px 13px', fontSize: 12.5, fontWeight: 700, color: C.ink2, cursor: 'pointer', fontFamily: FONT, transition: 'all .12s' },
 
   modeRow: { display: 'flex', gap: 8, justifyContent: 'center', marginBottom: 8 },
   modeCard: { flex: 1, maxWidth: 130, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, background: '#fff', border: `1.5px solid ${C.line}`, borderRadius: 12, padding: '12px 8px', cursor: 'pointer', fontFamily: FONT, color: C.ink, transition: 'all .12s' },

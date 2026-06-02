@@ -11,11 +11,12 @@
  */
 import presentationQuestions from './interview/presentation.js';
 import motivationQuestions   from './interview/motivation.js';
-import { CATEGORIES } from './interviewCategories.js';
+import commerceQuestions     from './interview/commerce.js';
+import { CATEGORIES, SECTORS, TYPES } from './interviewCategories.js';
 
-// Re-export pour compat : les modules qui importaient CATEGORIES depuis
+// Re-export pour compat : les modules qui importaient ces métadonnées depuis
 // interviewBank continuent de fonctionner.
-export { CATEGORIES };
+export { CATEGORIES, SECTORS, TYPES };
 
 // Thèmes encore en cours d'étoffement (seront déplacés vers ./interview/ par lots).
 const PENDING_QUESTIONS = [
@@ -229,18 +230,34 @@ const PENDING_QUESTIONS = [
   },
 ];
 
-export const QUESTIONS = [
+// Tronc commun comportemental → secteur 'general' (rubrique = thème comportemental).
+const GENERAL_QUESTIONS = [
   ...presentationQuestions,
   ...motivationQuestions,
   ...PENDING_QUESTIONS,
+].map((q) => ({ sector: 'general', ...q }));
+
+export const QUESTIONS = [
+  ...GENERAL_QUESTIONS,
+  ...commerceQuestions,
 ];
 
-/** Toutes les catégories présentes dans la banque, avec leur nb de questions. */
-export function listCategories() {
-  return Object.entries(CATEGORIES).map(([id, meta]) => ({
-    id, ...meta,
-    count: QUESTIONS.filter((q) => q.category === id).length,
-  })).filter((c) => c.count > 0);
+/**
+ * Rubrique d'une question : pour 'general' = thème comportemental (q.category) ;
+ * pour un secteur métier = type de question (q.type).
+ */
+export function groupOf(q) {
+  return q.sector === 'general' ? q.category : q.type;
+}
+
+/** Métadonnées d'affichage (label/emoji/color) d'une question selon sa rubrique. */
+export function metaOf(q) {
+  return q.sector === 'general' ? CATEGORIES[q.category] : TYPES[q.type];
+}
+
+/** Métadonnées d'une rubrique à partir de son id + secteur. */
+export function groupMeta(sector, groupId) {
+  return sector === 'general' ? CATEGORIES[groupId] : TYPES[groupId];
 }
 
 /** Mélange (Fisher-Yates) sans muter l'entrée. */
@@ -253,15 +270,40 @@ export function shuffle(arr) {
   return a;
 }
 
+/** Secteurs disponibles (avec nb de questions). */
+export function listSectors() {
+  return Object.entries(SECTORS).map(([id, meta]) => ({
+    id, ...meta,
+    count: QUESTIONS.filter((q) => q.sector === id).length,
+  })).filter((s) => s.count > 0);
+}
+
+/** Rubriques d'un secteur (thèmes pour 'general', types sinon), avec compteurs. */
+export function listGroups(sector) {
+  const pool = QUESTIONS.filter((q) => q.sector === sector);
+  const map = sector === 'general' ? CATEGORIES : TYPES;
+  return Object.entries(map).map(([id, meta]) => ({
+    id, ...meta,
+    count: pool.filter((q) => groupOf(q) === id).length,
+  })).filter((g) => g.count > 0);
+}
+
+/** Compat : thèmes comportementaux du tronc commun. */
+export function listCategories() {
+  return listGroups('general');
+}
+
 /**
  * Construit une session de jeu.
  * @param {object} [opts]
- * @param {string} [opts.category] - filtre sur une catégorie ('all' = mix)
- * @param {number} [opts.size]     - nombre de questions (défaut 8)
+ * @param {string} [opts.sector] - secteur ('general' par défaut)
+ * @param {string} [opts.group]  - rubrique ('all' = mix du secteur)
+ * @param {number} [opts.size]   - nombre de questions (défaut 8)
  * @returns {Array} questions, options mélangées, prêtes à jouer
  */
-export function buildSession({ category = 'all', size = 8 } = {}) {
-  let pool = category === 'all' ? QUESTIONS : QUESTIONS.filter((q) => q.category === category);
+export function buildSession({ sector = 'general', group = 'all', size = 8 } = {}) {
+  let pool = QUESTIONS.filter((q) => q.sector === sector);
+  if (group !== 'all') pool = pool.filter((q) => groupOf(q) === group);
   pool = shuffle(pool).slice(0, size);
   // Mélange aussi l'ordre des options pour éviter la mémorisation de position.
   return pool.map((q) => ({ ...q, options: shuffle(q.options) }));

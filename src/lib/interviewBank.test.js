@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { QUESTIONS, listCategories, buildSession, CATEGORIES } from './interviewBank.js';
+import {
+  QUESTIONS, listCategories, listSectors, listGroups, buildSession,
+  groupOf, CATEGORIES, SECTORS, TYPES,
+} from './interviewBank.js';
 
 describe('interviewBank — intégrité de la banque', () => {
   it('chaque question a exactement une bonne réponse', () => {
@@ -9,9 +12,12 @@ describe('interviewBank — intégrité de la banque', () => {
     }
   });
 
-  it('chaque question référence une catégorie connue + a explication et tip', () => {
+  it('chaque question a un secteur connu, une rubrique valide, explication, tip, ≥3 options', () => {
     for (const q of QUESTIONS) {
-      expect(CATEGORIES[q.category], `catégorie de ${q.id}`).toBeTruthy();
+      expect(SECTORS[q.sector], `secteur de ${q.id}`).toBeTruthy();
+      const g = groupOf(q);
+      const validGroup = q.sector === 'general' ? CATEGORIES[g] : TYPES[g];
+      expect(validGroup, `rubrique de ${q.id}`).toBeTruthy();
       expect(q.explanation.length, q.id).toBeGreaterThan(10);
       expect(q.tip.length, q.id).toBeGreaterThan(3);
       expect(q.options.length, q.id).toBeGreaterThanOrEqual(3);
@@ -24,47 +30,65 @@ describe('interviewBank — intégrité de la banque', () => {
   });
 });
 
-describe('cible 30 questions / thème (étoffé par lots)', () => {
-  // Thèmes déjà complétés à 30 — à compléter au fur et à mesure des lots.
+describe('cible 30 questions / thème (tronc commun, étoffé par lots)', () => {
   const DONE = ['presentation', 'motivation'];
   for (const cat of DONE) {
     it(`le thème "${cat}" a au moins 30 questions`, () => {
-      const n = QUESTIONS.filter((q) => q.category === cat).length;
+      const n = QUESTIONS.filter((q) => q.sector === 'general' && q.category === cat).length;
       expect(n).toBeGreaterThanOrEqual(30);
     });
   }
 });
 
-describe('listCategories', () => {
-  it('ne retourne que des catégories non vides avec un compteur correct', () => {
-    for (const c of listCategories()) {
-      expect(c.count).toBeGreaterThan(0);
-      expect(c.count).toBe(QUESTIONS.filter((q) => q.category === c.id).length);
-    }
+describe('secteur Commerce — parcours pilote', () => {
+  it('expose les 4 couches (comportemental, technique, situation, actu)', () => {
+    const groups = listGroups('commerce').map((g) => g.id).sort();
+    expect(groups).toEqual(['actu', 'comportemental', 'situation', 'technique']);
+  });
+
+  it('chaque couche a au moins une question', () => {
+    for (const g of listGroups('commerce')) expect(g.count).toBeGreaterThan(0);
+  });
+});
+
+describe('listSectors / listGroups', () => {
+  it('listSectors retourne general + commerce avec compteurs', () => {
+    const ids = listSectors().map((s) => s.id);
+    expect(ids).toContain('general');
+    expect(ids).toContain('commerce');
+  });
+
+  it('listCategories (compat) = rubriques du secteur general', () => {
+    expect(listCategories()).toEqual(listGroups('general'));
   });
 });
 
 describe('buildSession', () => {
   it('limite la session à la taille demandée', () => {
-    const s = buildSession({ category: 'all', size: 5 });
+    const s = buildSession({ sector: 'general', group: 'all', size: 5 });
     expect(s.length).toBe(5);
   });
 
-  it('filtre par catégorie', () => {
-    const s = buildSession({ category: 'salaire', size: 50 });
+  it('filtre par rubrique dans le tronc commun', () => {
+    const s = buildSession({ sector: 'general', group: 'salaire', size: 50 });
     expect(s.length).toBeGreaterThan(0);
     expect(s.every((q) => q.category === 'salaire')).toBe(true);
   });
 
-  it('préserve une bonne réponse après mélange des options', () => {
-    const s = buildSession({ category: 'all', size: 8 });
-    for (const q of s) {
-      expect(q.options.filter((o) => o.correct).length).toBe(1);
-    }
+  it('filtre par type dans un secteur métier', () => {
+    const s = buildSession({ sector: 'commerce', group: 'technique', size: 50 });
+    expect(s.length).toBeGreaterThan(0);
+    expect(s.every((q) => q.sector === 'commerce' && q.type === 'technique')).toBe(true);
   });
 
-  it('ne dépasse pas le pool disponible', () => {
-    const s = buildSession({ category: 'all', size: 999 });
-    expect(s.length).toBe(QUESTIONS.length);
+  it('préserve une bonne réponse après mélange des options', () => {
+    const s = buildSession({ sector: 'commerce', group: 'all', size: 8 });
+    for (const q of s) expect(q.options.filter((o) => o.correct).length).toBe(1);
+  });
+
+  it('ne dépasse pas le pool du secteur', () => {
+    const total = QUESTIONS.filter((q) => q.sector === 'commerce').length;
+    const s = buildSession({ sector: 'commerce', group: 'all', size: 999 });
+    expect(s.length).toBe(total);
   });
 });

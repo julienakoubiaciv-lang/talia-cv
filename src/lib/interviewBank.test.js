@@ -43,11 +43,11 @@ describe('cible 30 questions / thème (tronc commun, étoffé par lots)', () => 
 describe('secteurs métier — 4 couches complètes', () => {
   const metiers = listSectors().filter((s) => s.id !== 'general').map((s) => s.id);
 
-  it('au moins commerce, admin et rh sont présents', () => {
-    expect(metiers).toEqual(expect.arrayContaining(['commerce', 'admin', 'rh']));
+  it('les 5 secteurs métier sont présents', () => {
+    expect(metiers).toEqual(expect.arrayContaining(['commerce', 'admin', 'rh', 'marketing', 'finance']));
   });
 
-  for (const sec of ['commerce', 'admin', 'rh']) {
+  for (const sec of ['commerce', 'admin', 'rh', 'marketing', 'finance']) {
     it(`le secteur "${sec}" expose les 4 couches non vides`, () => {
       const groups = listGroups(sec);
       expect(groups.map((g) => g.id).sort()).toEqual(['actu', 'comportemental', 'situation', 'technique']);

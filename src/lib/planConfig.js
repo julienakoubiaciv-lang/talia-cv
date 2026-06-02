@@ -20,7 +20,7 @@ export const PLANS = {
     id:                 'free',
     label:              'Gratuit',
     emoji:              '🌱',
-    maxCVs:             5,
+    maxCVs:             2,
     maxProfiles:        1,
     maxBulkPerSession:  0,       // 0 = bulk désactivé
     bulkEnabled:        false,

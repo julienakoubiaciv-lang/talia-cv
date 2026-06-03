@@ -65,7 +65,7 @@ describe('secteurs métier — 4 couches complètes', () => {
   }
 
   // Secteurs dont les 4 couches sont étoffées à 20 (complétés par lots).
-  const SECTORS_DONE = ['commerce', 'admin', 'rh'];
+  const SECTORS_DONE = ['commerce', 'admin', 'rh', 'marketing'];
   for (const sec of SECTORS_DONE) {
     it(`le secteur "${sec}" a 20+ questions par couche`, () => {
       for (const g of listGroups(sec)) {

@@ -10,6 +10,7 @@ import { usePlan } from '@/hooks/usePlan';
 import { PlanBanner } from '@/components/PlanGate';
 import { CheckoutSuccessBanner } from '@/components/CheckoutSuccessBanner.jsx';
 import { useCheckoutSuccess } from '@/hooks/useCheckoutSuccess';
+import { getOverallCompletion } from '@/lib/interviewProgress';
 
 /* ─── Design tokens ─────────────────────────────────────────────────────── */
 const C = {
@@ -514,7 +515,10 @@ export default function Home() {
   const isMobile = useIsMobile();
   const { crmLink, isLinked: isCRMLinked, linkFromURL, link: linkCRM, unlink: unlinkCRM } = useCRMToken();
   const [crmKeyInput, setCrmKeyInput] = useState('');
-  const { isFree, canCV, remainingCVs, canBulk, nextPlan, upgrade } = usePlan();
+  const { isFree, plan, canCV, remainingCVs, canBulk, nextPlan, upgrade } = usePlan();
+
+  // Taux de complétion global du simulateur d'entretien (localStorage)
+  const interviewPct = getOverallCompletion();
 
   // ── Retour paiement Stripe (?checkout=success) ──────────────────────────
   const { checkoutState, activatedTier, dismiss: dismissCheckout } = useCheckoutSuccess({
@@ -731,7 +735,7 @@ export default function Home() {
           <IconPlus s={12} /> {isMobile ? 'Nouveau' : 'Nouveau CV'}
           {isFree && cvList.length > 0 && remainingCVs(cvList.length) !== Infinity && (
             <span style={{ fontSize: 10, background: 'rgba(255,255,255,0.25)', padding: '1px 5px', borderRadius: 99 }}>
-              {remainingCVs(cvList.length)}/{5}
+              {remainingCVs(cvList.length)}/{plan.maxCVs}
             </span>
           )}
         </button>
@@ -816,6 +820,45 @@ export default function Home() {
           )}
         </div>
 
+        {/* Bannière Simulateur d'entretien — accroche vers le jeu */}
+        <div
+          onClick={() => navigate('/entretien')}
+          style={{
+            display: 'flex', alignItems: 'center', gap: isMobile ? 12 : 18,
+            padding: isMobile ? '14px 16px' : '18px 24px',
+            background: 'linear-gradient(100deg, #0B1638 0%, #1C2D6B 100%)',
+            borderRadius: 16, marginBottom: isMobile ? 20 : 28, cursor: 'pointer',
+            color: '#fff', boxShadow: '0 10px 30px rgba(11,22,56,.18)',
+            transition: 'transform .15s', animation: 'fadeIn .6s ease both',
+          }}
+          onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+          onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}>
+          <div style={{ fontSize: isMobile ? 30 : 38, flexShrink: 0 }}>🎤</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: isMobile ? 15 : 17, fontWeight: 800, letterSpacing: '-0.3px', marginBottom: 2 }}>
+              Simulateur d'entretien
+            </div>
+            <div style={{ fontSize: isMobile ? 12 : 13.5, color: '#B9C2DA', lineHeight: 1.45 }}>
+              Des mises en situation réelles, feedback immédiat. Entraîne-toi avant le jour J.
+            </div>
+            {interviewPct > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+                <div style={{ flex: 1, maxWidth: 180, height: 6, background: 'rgba(255,255,255,0.18)', borderRadius: 99, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${interviewPct}%`, background: '#6E8BFF', borderRadius: 99 }} />
+                </div>
+                <span style={{ fontSize: 11.5, fontWeight: 700, color: '#fff' }}>{interviewPct}% maîtrisé</span>
+              </div>
+            )}
+          </div>
+          <div style={{
+            flexShrink: 0, padding: isMobile ? '8px 14px' : '10px 18px',
+            background: '#fff', color: C.ink, borderRadius: 99,
+            fontSize: isMobile ? 12.5 : 13.5, fontWeight: 700, whiteSpace: 'nowrap',
+          }}>
+            {isMobile ? '▶ Jouer' : '▶ S\'entraîner'}
+          </div>
+        </div>
+
         {/* Stats */}
         {cvList.length > 0 && (
           <div style={{ display: 'flex', gap: 14, marginBottom: 48, flexWrap: 'wrap' }}>
@@ -874,21 +917,21 @@ export default function Home() {
         )}
 
         {/* Bannière limite CVs (plan Free) */}
-        {isFree && cvList.length >= 4 && !canCV(cvList.length) && (
+        {isFree && !canCV(cvList.length) && (
           <div style={{ marginBottom: 24 }}>
             <PlanBanner
               variant="limit"
-              message={`Limite atteinte — le plan Gratuit permet 5 CV. Passez au plan Personnel pour créer des CV sans limite.`}
+              message={`Limite atteinte — le plan Gratuit permet ${plan.maxCVs} CV. Passez au plan Personnel pour créer des CV sans limite.`}
               next={nextPlan || 'Personnel'}
               onUpgrade={() => navigate('/pricing')}
             />
           </div>
         )}
-        {isFree && cvList.length >= 3 && cvList.length < 5 && (
+        {isFree && canCV(cvList.length) && remainingCVs(cvList.length) !== Infinity && remainingCVs(cvList.length) <= 1 && (
           <div style={{ marginBottom: 24 }}>
             <PlanBanner
               variant="warning"
-              message={`Il vous reste ${remainingCVs(cvList.length)} CV${remainingCVs(cvList.length) > 1 ? 's' : ''} sur votre plan Gratuit (${cvList.length}/5).`}
+              message={`Il vous reste ${remainingCVs(cvList.length)} CV${remainingCVs(cvList.length) > 1 ? 's' : ''} sur votre plan Gratuit (${cvList.length}/${plan.maxCVs}).`}
               next={nextPlan || 'Personnel'}
               onUpgrade={() => navigate('/pricing')}
             />

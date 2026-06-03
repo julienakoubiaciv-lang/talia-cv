@@ -34,6 +34,7 @@ import { usePlan } from '@/hooks/usePlan';
 import { useEditorLayout } from '@/hooks/useEditorLayout';
 import { injectWatermark, shouldWatermark } from '@/lib/watermark';
 import { track } from '@/lib/monitoring';
+import CVFeedbackPanel from '@/components/CVFeedbackPanel.jsx';
 
 // ─── Tokens visuels du design ──────────────────────────────────────────────
 const TOK = {
@@ -435,6 +436,7 @@ export default function EditorAtelier() {
           palette={selectedPal}
           onPaletteChange={(pal) => { setSelectedPal(pal); setIsDirty(true); }}
           canUsePremiumTemplate={!!(isStaff || tier !== 'free')}
+          cvData={edFields}
         />
       </div>
 
@@ -1102,7 +1104,7 @@ function TaskChip({ pts, label, time }) {
 // ═══════════════════════════════════════════════════════════════════════════
 //                            COLONNE DROITE (DESIGN)
 // ═══════════════════════════════════════════════════════════════════════════
-function DesignPanel({ templateId, onTemplateChange, palette, onPaletteChange, canUsePremiumTemplate }) {
+function DesignPanel({ templateId, onTemplateChange, palette, onPaletteChange, canUsePremiumTemplate, cvData }) {
   const templates = [
     { id: 'classic',  name: 'Classique',  bg: '#0e2a44',  premium: false },
     { id: 'minimal',  name: 'Minimaliste',bg: '#1B3A2D',  premium: false },
@@ -1131,6 +1133,9 @@ function DesignPanel({ templateId, onTemplateChange, palette, onPaletteChange, c
         padding: '14px 18px 18px', overflowY: 'auto',
         display: 'grid', gap: 18, alignContent: 'start',
       }}>
+        {/* Avis recruteur IA — driver d'upgrade (action 'coach', verrouillé Free) */}
+        <CVFeedbackPanel cvData={cvData} />
+
         {/* Templates */}
         <DesignBlock title="Template">
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>

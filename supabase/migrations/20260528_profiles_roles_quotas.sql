@@ -139,7 +139,7 @@ create table if not exists quota_limits (
 
 insert into quota_limits (tier, cv_per_month, smart_match_per_month, coach_per_month, multilingual_per_month, photo_per_month)
 values
-  ('free',     3,    0,   0,  0,  0),
+  ('free',     2,    0,   0,  0,  0),
   ('personal', 50,   30,  4,  0,  0),
   ('business', 9999, 999, 99, 99, 5)
 on conflict (tier) do update set

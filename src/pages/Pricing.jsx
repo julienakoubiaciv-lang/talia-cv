@@ -290,7 +290,7 @@ export default function Pricing() {
         </button>
         <div style={{ flex: 1 }} />
         <div style={{ fontSize: 15, fontWeight: 700, color: C.ink }}>
-          Talia<span style={{ color: C.blue }}>CV</span> — Tarifs
+          Altio <span style={{ color: C.blue }}>CV</span> — Tarifs
         </div>
       </header>
 

@@ -40,6 +40,7 @@ const SESSION_SIZE = 8;
 const START_HEARTS  = 3;
 const CHRONO_SECONDS = 15;
 const COMBO_BONUS = 20; // XP bonus à partir d'une série de 3
+const PASS_MARK = 12;   // note minimale (/20) pour valider la session
 
 const MODES = {
   training: { label: 'Entraînement', emoji: '📚', desc: 'Sans pression — feedback détaillé pour apprendre.' },
@@ -528,6 +529,8 @@ function Result({ answers, total, mode, dead, sector, xp, hearts, dailyStreak, i
   const score = answers.filter((a) => a.correct).length;
   const answered = answers.length;
   const pct = total ? Math.round((score / total) * 100) : 0;
+  const note = total ? Math.round((score / total) * 20) : 0;
+  const passed = !dead && note >= PASS_MARK;
   const showHearts = mode === 'survival';
 
   // Meilleure série de bonnes réponses
@@ -542,15 +545,22 @@ function Result({ answers, total, mode, dead, sector, xp, hearts, dailyStreak, i
 
   let verdict, vColor, vEmoji;
   if (dead)            { verdict = `Entretien échoué ! Tu as tenu ${answered} question${answered > 1 ? 's' : ''}.`; vColor = C.red; vEmoji = '💥'; }
-  else if (pct >= 80)  { verdict = 'Excellent — tu es prêt à convaincre !'; vColor = C.green; vEmoji = '🏆'; }
-  else if (pct >= 50)  { verdict = 'Bien — quelques réflexes à affiner.';   vColor = C.amber; vEmoji = '👍'; }
-  else                 { verdict = 'À travailler — révise les bonnes pratiques.'; vColor = C.red; vEmoji = '💪'; }
+  else if (note >= 16) { verdict = 'Excellent — tu es prêt à convaincre !'; vColor = C.green; vEmoji = '🏆'; }
+  else if (passed)     { verdict = 'Validé — de bons réflexes, continue comme ça !'; vColor = C.green; vEmoji = '👍'; }
+  else                 { verdict = `Pas encore validé — il faut au moins ${PASS_MARK}/20.`; vColor = C.red; vEmoji = '💪'; }
 
   return (
     <div style={S.shell}>
       <div style={S.introWrap}>
         <div style={S.heroIcon}>{vEmoji}</div>
-        <h1 style={S.h1}>{score} / {total}</h1>
+        <div style={S.noteBig}>
+          <span style={{ color: vColor }}>{note}</span>
+          <span style={S.noteOutOf}>/20</span>
+        </div>
+        <div style={S.resultSub}>{score}/{total} bonnes réponses</div>
+        <div style={{ ...S.validBadge, background: passed ? C.greenSoft : C.redSoft, color: passed ? C.green : C.red }}>
+          {passed ? '✅ Test validé' : `❌ Non validé · ${PASS_MARK}/20 requis`}
+        </div>
         <div style={{ ...S.resultVerdict, color: vColor }}>{verdict}</div>
 
         <div style={S.scoreBarOuter}>
@@ -598,7 +608,12 @@ function Result({ answers, total, mode, dead, sector, xp, hearts, dailyStreak, i
         </div>
 
         <div style={S.resultBtns}>
-          <button style={S.bigStart} onClick={onReplaySame}>↻ Rejouer{isDemo ? ' la démo' : ''}</button>
+          <button
+            style={passed ? S.bigStart : { ...S.bigStart, background: C.red, boxShadow: 'none' }}
+            onClick={onReplaySame}
+          >
+            ↻ {passed ? `Rejouer${isDemo ? ' la démo' : ''}` : 'Recommencer le test'}
+          </button>
           <button style={S.ghostBtn} onClick={onReplay}>Changer de mode / thème</button>
           <button style={S.ghostBtn} onClick={onHome}>Retour à l'accueil</button>
         </div>
@@ -740,6 +755,10 @@ const S = {
 
   nextBtn: { width: '100%', marginTop: 16, background: C.ink, color: '#fff', border: 'none', borderRadius: 13, padding: '14px', fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: FONT },
 
+  noteBig: { display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 2, margin: '6px 0 2px', fontSize: 58, fontWeight: 800, letterSpacing: -2, lineHeight: 1 },
+  noteOutOf: { fontSize: 22, fontWeight: 700, color: C.mute, marginLeft: 2 },
+  resultSub: { fontSize: 14, color: C.ink2, fontWeight: 600, marginBottom: 10 },
+  validBadge: { display: 'inline-block', fontSize: 13, fontWeight: 800, padding: '6px 14px', borderRadius: 99, marginBottom: 12 },
   resultVerdict: { fontSize: 15.5, fontWeight: 700, marginBottom: 18 },
   scoreBarOuter: { height: 12, background: '#E3E8F2', borderRadius: 99, overflow: 'hidden', maxWidth: 420, margin: '0 auto 20px' },
   scoreBarInner: { height: '100%', borderRadius: 99, transition: 'width .6s ease' },

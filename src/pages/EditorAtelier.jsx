@@ -495,7 +495,7 @@ function Topbar({
             fontWeight: 700, fontSize: 12, letterSpacing: -0.2,
           }}>T</div>
           <div style={{ fontWeight: 600, fontSize: 13.5, letterSpacing: -0.2, color: TOK.ink }}>
-            Talia<span style={{ color: TOK.mute, fontWeight: 500 }}>CV</span>
+            Altio <span style={{ color: TOK.mute, fontWeight: 500 }}>CV</span>
           </div>
         </button>
         {candidateName && (

@@ -707,7 +707,7 @@ export default function Home() {
           </div>
           {!isMobile && (
             <span style={{ fontSize: 17, fontWeight: 700, color: C.ink, letterSpacing: '-0.2px' }}>
-              Talia<span style={{ color: C.bluePrimary }}>CV</span>
+              Altio <span style={{ color: C.bluePrimary }}>CV</span>
             </span>
           )}
         </div>

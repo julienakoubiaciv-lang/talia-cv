@@ -1080,7 +1080,7 @@ RÈGLES :
               <path d="M8 2L14 5.5V10.5L8 14L2 10.5V5.5L8 2Z" fill="white" fillOpacity="0.9"/>
             </svg>
           </div>
-          <span style={{ fontSize: 14, fontWeight: 800, color: C.ink, letterSpacing: '-0.3px' }}>TaliaCV</span>
+          <span style={{ fontSize: 14, fontWeight: 800, color: C.ink, letterSpacing: '-0.3px' }}>Altio CV</span>
         </div>
 
         {/* Breadcrumb center */}

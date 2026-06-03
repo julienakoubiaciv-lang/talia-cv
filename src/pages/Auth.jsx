@@ -154,7 +154,7 @@ export default function Auth() {
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 24, marginBottom: 12, boxShadow: '0 4px 16px rgba(21,57,183,0.25)',
           }}>📄</div>
-          <div style={{ fontSize: 20, fontWeight: 800, color: C.ink }}>TaliaCV</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: C.ink }}>Altio CV</div>
           <div style={{ fontSize: 13, color: C.mute, marginTop: 2 }}>
             {tab === 'connexion' ? 'Connecte-toi à ton compte' : 'Crée ton compte gratuitement'}
           </div>

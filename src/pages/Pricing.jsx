@@ -1,5 +1,5 @@
 /**
- * Pricing — Page de tarifs TaliaCV
+ * Pricing — Page de tarifs Altio CV
  *
  * Affiche les 3 plans : Gratuit / Personnel / Business
  * Déclenche Stripe Checkout via la Edge Function create-checkout.
@@ -229,7 +229,7 @@ export default function Pricing() {
 
     if (plan.contactSales) {
       // Business → email commercial
-      window.location.href = 'mailto:hello@talia.fr?subject=Plan Business TaliaCV';
+      window.location.href = 'mailto:hello@talia.fr?subject=Plan Business Altio CV';
       return;
     }
 

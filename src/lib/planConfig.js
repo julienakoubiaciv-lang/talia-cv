@@ -1,5 +1,5 @@
 /**
- * planConfig.js — Définition des plans et feature flags TaliaCV
+ * planConfig.js — Définition des plans et feature flags Altio CV
  *
  * Hiérarchie : free < personal < business
  *

@@ -714,7 +714,7 @@ export default function Bulk() {
           <div style={{ width:34, height:34, background:C.ink, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center' }}>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2L14 5.5V10.5L8 14L2 10.5V5.5L8 2Z" fill="white" fillOpacity=".9"/></svg>
           </div>
-          <span style={{ fontSize:14, fontWeight:800, color:C.ink, letterSpacing:'-0.3px' }}>TaliaCV</span>
+          <span style={{ fontSize:14, fontWeight:800, color:C.ink, letterSpacing:'-0.3px' }}>Altio CV</span>
         </div>
 
         <div style={{ flex:1, display:'flex', justifyContent:'center', alignItems:'center', gap:10 }}>

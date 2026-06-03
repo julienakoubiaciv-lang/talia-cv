@@ -1,9 +1,9 @@
 /**
- * crmToken.js — Lien persistant entre TaliaCV et un compte CRM Talia.
+ * crmToken.js — Lien persistant entre Altio CV et un compte CRM Talia.
  *
  * Flux :
  *   1. CRM génère une URL : https://cv.talia.fr/?crm_token=TOKEN&org_id=ID&org_name=NAME
- *   2. TaliaCV détecte les params au chargement, stocke le token, nettoie l'URL.
+ *   2. Altio CV détecte les params au chargement, stocke le token, nettoie l'URL.
  *   3. Toutes les sauvegardes de CV incluent le token (push CRM possible hors iframe).
  *   4. L'utilisateur peut délier depuis l'interface.
  *

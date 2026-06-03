@@ -401,9 +401,9 @@ export async function generateDocxBlob(cvData = {}, options = {}) {
   }
 
   const doc = new Document({
-    creator: 'TaliaCV',
+    creator: 'Altio CV',
     title:   `CV ${cvData.prenom || ''} ${cvData.nom || ''}`.trim(),
-    description: 'CV généré avec TaliaCV',
+    description: 'CV généré avec Altio CV',
     styles: {
       default: {
         document: { run: { font: FONT, size: 20 } },

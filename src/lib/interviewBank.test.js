@@ -63,6 +63,16 @@ describe('secteurs métier — 4 couches complètes', () => {
       for (const g of groups) expect(g.count).toBeGreaterThan(0);
     });
   }
+
+  // Secteurs dont les 4 couches sont étoffées à 20 (complétés par lots).
+  const SECTORS_DONE = ['commerce'];
+  for (const sec of SECTORS_DONE) {
+    it(`le secteur "${sec}" a 20+ questions par couche`, () => {
+      for (const g of listGroups(sec)) {
+        expect(g.count, `${sec}/${g.id}`).toBeGreaterThanOrEqual(20);
+      }
+    });
+  }
 });
 
 describe('listSectors / listGroups', () => {

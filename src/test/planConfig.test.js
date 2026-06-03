@@ -30,8 +30,8 @@ describe('PLANS', () => {
     expect(Object.keys(PLANS)).toEqual(['free', 'personal', 'business']);
   });
 
-  it('free a maxCVs = 5', () => {
-    expect(PLANS.free.maxCVs).toBe(5);
+  it('free a maxCVs = 2', () => {
+    expect(PLANS.free.maxCVs).toBe(2);
   });
 
   it('personal a maxCVs = Infinity', () => {
@@ -148,13 +148,13 @@ describe('canDo', () => {
 // ── canCreateCV ───────────────────────────────────────────────────────────────
 
 describe('canCreateCV', () => {
-  it('free: autorisé si count < 5', () => {
+  it('free: autorisé si count < 2', () => {
     expect(canCreateCV(0)).toBe(true);
-    expect(canCreateCV(4)).toBe(true);
+    expect(canCreateCV(1)).toBe(true);
   });
 
-  it('free: bloqué si count >= 5', () => {
-    expect(canCreateCV(5)).toBe(false);
+  it('free: bloqué si count >= 2', () => {
+    expect(canCreateCV(2)).toBe(false);
     expect(canCreateCV(10)).toBe(false);
   });
 
@@ -219,10 +219,10 @@ describe('canUseTemplate', () => {
 // ── remainingCVs ──────────────────────────────────────────────────────────────
 
 describe('remainingCVs', () => {
-  it('free: 5 - count', () => {
-    expect(remainingCVs(0)).toBe(5);
-    expect(remainingCVs(3)).toBe(2);
-    expect(remainingCVs(5)).toBe(0);
+  it('free: 2 - count', () => {
+    expect(remainingCVs(0)).toBe(2);
+    expect(remainingCVs(1)).toBe(1);
+    expect(remainingCVs(2)).toBe(0);
     expect(remainingCVs(7)).toBe(0); // pas de négatif
   });
 

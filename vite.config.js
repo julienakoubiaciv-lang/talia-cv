@@ -56,6 +56,9 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/test/setup.js'],
+    // Tests unitaires uniquement (sous src/). Les specs Playwright (e2e/) tournent
+    // via `npm run test:e2e`, pas via vitest.
+    include: ['src/**/*.{test,spec}.{js,jsx}'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],

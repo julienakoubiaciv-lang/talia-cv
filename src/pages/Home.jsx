@@ -819,6 +819,37 @@ export default function Home() {
           )}
         </div>
 
+        {/* Bannière Parcours — colonne vertébrale gamifiée vers l'emploi */}
+        <div
+          onClick={() => navigate('/parcours')}
+          style={{
+            display: 'flex', alignItems: 'center', gap: isMobile ? 12 : 18,
+            padding: isMobile ? '14px 16px' : '18px 24px',
+            background: 'linear-gradient(110deg, #1539B7 0%, #2ED3A8 160%)',
+            borderRadius: 16, marginBottom: isMobile ? 12 : 16, cursor: 'pointer',
+            color: '#fff', boxShadow: '0 10px 30px rgba(21,57,183,.22)',
+            transition: 'transform .15s', animation: 'fadeIn .6s ease both',
+          }}
+          onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+          onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}>
+          <div style={{ fontSize: isMobile ? 30 : 38, flexShrink: 0 }}>🧗</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: isMobile ? 15 : 17, fontWeight: 800, letterSpacing: '-0.3px', marginBottom: 2 }}>
+              Ton chemin vers l'emploi
+            </div>
+            <div style={{ fontSize: isMobile ? 12 : 13.5, color: 'rgba(255,255,255,0.85)', lineHeight: 1.45 }}>
+              Suis ta progression : CV, métier, entretien. Gagne de l'XP et débloque des badges.
+            </div>
+          </div>
+          <div style={{
+            flexShrink: 0, padding: isMobile ? '8px 14px' : '10px 18px',
+            background: '#fff', color: C.bluePrimary, borderRadius: 99,
+            fontSize: isMobile ? 12.5 : 13.5, fontWeight: 700, whiteSpace: 'nowrap',
+          }}>
+            {isMobile ? 'Voir' : '🧗 Mon parcours'}
+          </div>
+        </div>
+
         {/* Bannière Simulateur d'entretien — accroche vers le jeu */}
         <div
           onClick={() => navigate('/entretien')}

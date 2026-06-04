@@ -16,6 +16,7 @@ import { useNavigate } from 'react-router-dom';
 import { listJobsBySector, getJob, detectTargetJob } from '@/lib/jobIntel';
 import { shuffle } from '@/lib/interviewBank';
 import { addXp, getTotalXp } from '@/lib/interviewProgress';
+import { saveJobResult } from '@/lib/jobsProgress';
 import { track } from '@/lib/monitoring';
 
 const FONT = "'Manrope', system-ui, sans-serif";
@@ -98,7 +99,12 @@ export default function Jobs() {
   }
   if (phase === 'play' && job) {
     return <Game job={job} onQuit={() => setPhase('fiche')}
-      onDone={(res) => { setResult(res); setPhase('done'); }} />;
+      onDone={(res) => {
+        setResult(res);
+        const note = res.total ? Math.round((res.score / res.total) * 20) : 0;
+        saveJobResult(job.v, note);
+        setPhase('done');
+      }} />;
   }
   if (phase === 'done' && job) {
     return (

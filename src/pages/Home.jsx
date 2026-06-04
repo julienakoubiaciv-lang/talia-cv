@@ -712,17 +712,7 @@ export default function Home() {
           )}
         </div>
 
-        {/* Centre — masqué sur mobile */}
-        {!isMobile && (
-          <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 18px', background: C.surface, border: `1px solid ${C.rule}`, borderRadius: 99, fontSize: 13.5, fontWeight: 600, color: C.ink }}>
-              <IconGrid s={14} />
-              Tableau de bord
-            </div>
-          </div>
-        )}
-
-        <div style={{ flex: isMobile ? 1 : 'none' }} />
+        <div style={{ flex: 1 }} />
 
         {/* Nouveau CV — bloqué si limite plan atteinte */}
         <button
@@ -808,16 +798,6 @@ export default function Home() {
 
       {/* ── Main content ─────────────────────────────────────────────────── */}
       <main style={{ maxWidth: 1180, margin: '0 auto', padding: isMobile ? '24px 16px 60px' : '56px 64px 80px' }}>
-
-        {/* Hero */}
-        <div style={{ marginBottom: isMobile ? 28 : 48, animation: 'fadeIn 0.8s ease both' }}>
-          <h1 style={{ fontSize: isMobile ? 36 : 64, fontWeight: 700, color: C.ink, letterSpacing: isMobile ? '-0.8px' : '-2px', lineHeight: 1.05, marginBottom: 8 }}>Mes CV</h1>
-          {!isMobile && (
-            <p style={{ fontSize: 16.5, color: C.ink2, fontWeight: 400, lineHeight: 1.55 }}>
-              Créez et gérez vos CV professionnels avec un design premium.
-            </p>
-          )}
-        </div>
 
         {/* Bannière Parcours — colonne vertébrale gamifiée vers l'emploi */}
         <div
@@ -949,6 +929,16 @@ export default function Home() {
           }}>
             {isMobile ? 'Rédiger' : '✉️ Rédiger'}
           </div>
+        </div>
+
+        {/* Hero — titre de la liste des CV (placé sous les modules) */}
+        <div style={{ margin: isMobile ? '8px 0 28px' : '16px 0 48px', animation: 'fadeIn 0.8s ease both' }}>
+          <h1 style={{ fontSize: isMobile ? 36 : 64, fontWeight: 700, color: C.ink, letterSpacing: isMobile ? '-0.8px' : '-2px', lineHeight: 1.05, marginBottom: 8 }}>Mes CV</h1>
+          {!isMobile && (
+            <p style={{ fontSize: 16.5, color: C.ink2, fontWeight: 400, lineHeight: 1.55 }}>
+              Créez et gérez vos CV professionnels avec un design premium.
+            </p>
+          )}
         </div>
 
         {/* Stats */}

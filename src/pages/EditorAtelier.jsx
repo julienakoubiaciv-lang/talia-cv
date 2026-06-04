@@ -377,13 +377,11 @@ export default function EditorAtelier() {
     <div style={{
       width: '100%', minHeight: '100vh', background: TOK.shellBg,
       fontFamily: FONT, color: TOK.ink,
-      display: 'grid', gridTemplateRows: '48px 1fr',
+      display: 'grid', gridTemplateRows: '48px auto 1fr',
     }}>
       {/* ──────────────────────── TOPBAR ──────────────────────── */}
       <Topbar
         candidateName={candidateName}
-        currentStep={currentStep}
-        onStepChange={setCurrentStep}
         isDirty={isDirty}
         lastSavedAt={lastSavedAt}
         onSave={handleSave}
@@ -393,6 +391,9 @@ export default function EditorAtelier() {
         onHome={() => navigate('/')}
         onHistory={() => navigate('/history')}
       />
+
+      {/* ──────────────── FIL DES ÉTAPES (sous la topbar) ──────────────── */}
+      <StepsBar currentStep={currentStep} onStepChange={setCurrentStep} />
 
       {/* ──────────────────────── BODY (3 colonnes) ──────────────────────── */}
       <div style={{
@@ -469,8 +470,50 @@ export default function EditorAtelier() {
 // ═══════════════════════════════════════════════════════════════════════════
 //                               TOPBAR
 // ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════
+//                       FIL DES ÉTAPES (sous la topbar)
+// ═══════════════════════════════════════════════════════════════════════════
+function StepsBar({ currentStep, onStepChange }) {
+  return (
+    <div style={{
+      display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 4,
+      background: '#fff', borderBottom: `1px solid ${TOK.line}`,
+      padding: '8px 14px', overflowX: 'auto',
+    }}>
+      {STEPS.map((s, i) => {
+        const active = currentStep === s.id;
+        return (
+          <button
+            key={s.id}
+            onClick={() => onStepChange(s.id)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '6px 12px', borderRadius: 99,
+              background: active ? TOK.wash2 : 'transparent',
+              border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+              fontSize: 12.5, color: active ? TOK.ink : TOK.inkSoft,
+              fontWeight: active ? 600 : 500,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <span style={{
+              width: 17, height: 17, borderRadius: 99,
+              display: 'grid', placeItems: 'center',
+              background: active ? TOK.ink : 'transparent',
+              color: active ? '#fff' : TOK.mute,
+              border: active ? 'none' : `1px solid ${TOK.line}`,
+              fontSize: 10, fontWeight: 600,
+            }}>{i + 1}</span>
+            {s.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function Topbar({
-  candidateName, currentStep, onStepChange,
+  candidateName,
   isDirty, lastSavedAt,
   onSave, onDownload, dlLoading,
   onSwitchClassic, onHome, onHistory,
@@ -478,7 +521,7 @@ function Topbar({
   return (
     <div style={{
       display: 'grid',
-      gridTemplateColumns: '260px 1fr auto',
+      gridTemplateColumns: '1fr auto',
       alignItems: 'center',
       background: '#fff',
       borderBottom: `1px solid ${TOK.line}`,
@@ -506,38 +549,6 @@ function Topbar({
             </div>
           </>
         )}
-      </div>
-
-      {/* Breadcrumb étapes */}
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 4, overflow: 'auto' }}>
-        {STEPS.map((s, i) => {
-          const active = currentStep === s.id;
-          return (
-            <button
-              key={s.id}
-              onClick={() => onStepChange(s.id)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 6,
-                padding: '5px 10px', borderRadius: 99,
-                background: active ? TOK.wash2 : 'transparent',
-                border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-                fontSize: 12, color: active ? TOK.ink : TOK.inkSoft,
-                fontWeight: active ? 600 : 500,
-                whiteSpace: 'nowrap',
-              }}
-            >
-              <span style={{
-                width: 16, height: 16, borderRadius: 99,
-                display: 'grid', placeItems: 'center',
-                background: active ? TOK.ink : 'transparent',
-                color: active ? '#fff' : TOK.mute,
-                border: active ? 'none' : `1px solid ${TOK.line}`,
-                fontSize: 10, fontWeight: 600,
-              }}>{i + 1}</span>
-              {s.label}
-            </button>
-          );
-        })}
       </div>
 
       {/* Actions */}

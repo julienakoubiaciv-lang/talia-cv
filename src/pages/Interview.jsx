@@ -25,6 +25,10 @@ import {
   getBest, saveResult, getOverallCompletion,
   addXp, getTotalXp, bumpDailyStreak, getDailyStreak,
 } from '@/lib/interviewProgress';
+import { generateInterviewSession } from '@/lib/interviewAI';
+import { QuotaError } from '@/lib/claudeClient';
+import { getHist } from '@/lib/cvData';
+import { usePlan } from '@/hooks/usePlan';
 import { track } from '@/lib/monitoring';
 // Mascotte (loup) retirée temporairement — sera rebranchée plus tard (asset Rive).
 
@@ -58,7 +62,8 @@ const PICK_TRANSLATOR = -2;
 
 export default function Interview() {
   const navigate = useNavigate();
-  const [phase, setPhase]   = useState('intro'); // intro | play | result
+  const { isFree } = usePlan();
+  const [phase, setPhase]   = useState('intro'); // intro | ai | play | result
   const [mode, setMode]     = useState('training');
   const [session, setSession] = useState([]);
   const [idx, setIdx]       = useState(0);
@@ -68,6 +73,9 @@ export default function Interview() {
   const [sector, setSector]   = useState('general');
   const [lastGroup, setLastGroup] = useState('all');
   const [isDemo, setIsDemo]   = useState(false);
+  const [isAI, setIsAI]       = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError]     = useState(null);
 
   const [hearts, setHearts] = useState(START_HEARTS);
   const [streak, setStreak] = useState(0);
@@ -92,7 +100,7 @@ export default function Interview() {
 
   function start(group) {
     const s = buildSession({ sector, group, size: SESSION_SIZE });
-    setSession(s); setLastGroup(group); setIsDemo(false);
+    setSession(s); setLastGroup(group); setIsDemo(false); setIsAI(false);
     resetRun();
     setPhase('play');
     track('interview_session_start', { sector, group, size: s.length, mode });
@@ -101,11 +109,33 @@ export default function Interview() {
   /** Parcours guidé « Ton 1er entretien » — 3 étapes, en mode Survie (3 vies). */
   function startDemo() {
     const s = buildDemoSession();
-    setSession(s); setLastGroup('demo'); setIsDemo(true);
+    setSession(s); setLastGroup('demo'); setIsDemo(true); setIsAI(false);
     setMode('survival');
     resetRun();
     setPhase('play');
     track('interview_session_start', { sector: 'commerce', group: 'demo', size: s.length, mode: 'survival', demo: true });
+  }
+
+  /** Session personnalisée (PRO) : génère des questions via Claude depuis le CV + l'offre. */
+  async function runAISession({ cvData, offerText }) {
+    setAiLoading(true); setAiError(null);
+    try {
+      const s = await generateInterviewSession({ cvData, offerText, count: SESSION_SIZE });
+      setSession(s); setLastGroup('ai'); setIsDemo(false); setIsAI(true);
+      setSector('general'); setMode('training');
+      resetRun();
+      setPhase('play');
+      track('interview_session_start', { sector: 'general', group: 'ai', size: s.length, mode: 'training', ai: true });
+    } catch (err) {
+      if (err instanceof QuotaError) {
+        setAiError({ type: 'quota', message: 'Tu as atteint ton quota de sessions IA. Reviens plus tard ou passe à un plan supérieur.' });
+      } else {
+        setAiError({ type: 'error', message: err?.message || 'La génération a échoué. Réessaie dans un instant.' });
+      }
+      track('interview_ai_error', { message: err?.message, quota: err instanceof QuotaError });
+    } finally {
+      setAiLoading(false);
+    }
   }
 
   /** Résout une réponse (commune QCM / Boss / Traducteur) : score, vies, XP, série. */
@@ -150,12 +180,12 @@ export default function Interview() {
     } else {
       const score = answers.filter((a) => a.correct).length;
       const pct = Math.round((score / session.length) * 100);
-      if (!isDemo) saveResult(progKey(sector, lastGroup), pct);
+      if (!isDemo && !isAI) saveResult(progKey(sector, lastGroup), pct);
       addXp(xp);
       const dayStreak = bumpDailyStreak();
       setDailyStreak(dayStreak);
       setPhase('result');
-      track('interview_session_done', { score, total: session.length, sector, group: lastGroup, mode, dead, xp, demo: isDemo });
+      track('interview_session_done', { score, total: session.length, sector, group: lastGroup, mode, dead, xp, demo: isDemo, ai: isAI });
     }
   }
 
@@ -172,7 +202,19 @@ export default function Interview() {
       <Intro
         sectors={sectors} sector={sector} setSector={setSector}
         mode={mode} setMode={setMode} progKey={progKey}
-        onStart={start} onStartDemo={startDemo} onHome={() => navigate('/')}
+        onStart={start} onStartDemo={startDemo}
+        onAISession={() => { setAiError(null); setPhase('ai'); }}
+        onHome={() => navigate('/')}
+      />
+    );
+  }
+  if (phase === 'ai') {
+    return (
+      <AISetup
+        isFree={isFree} loading={aiLoading} error={aiError}
+        onGenerate={runAISession}
+        onUpsell={() => navigate('/pricing')}
+        onBack={() => setPhase('intro')}
       />
     );
   }
@@ -180,11 +222,11 @@ export default function Interview() {
     return (
       <Result
         answers={answers} total={session.length} mode={mode} dead={dead} sector={sector}
-        xp={xp} hearts={hearts} dailyStreak={dailyStreak} isDemo={isDemo}
-        onReplaySame={() => (isDemo ? startDemo() : start(lastGroup))}
+        xp={xp} hearts={hearts} dailyStreak={dailyStreak} isDemo={isDemo} isAI={isAI}
+        onReplaySame={() => (isDemo ? startDemo() : isAI ? setPhase('ai') : start(lastGroup))}
         onReplay={() => setPhase('intro')}
         onHome={() => navigate('/')}
-        onUpsell={() => navigate('/pricing')}
+        onUpsell={() => (isFree ? navigate('/pricing') : setPhase('ai'))}
       />
     );
   }
@@ -402,7 +444,7 @@ function Translator({ q, answered, wasCorrect, onSubmit }) {
 }
 
 // ── ÉCRAN INTRO ───────────────────────────────────────────────────────────────
-function Intro({ sectors, sector, setSector, mode, setMode, progKey, onStart, onStartDemo, onHome }) {
+function Intro({ sectors, sector, setSector, mode, setMode, progKey, onStart, onStartDemo, onAISession, onHome }) {
   const overall = getOverallCompletion();
   const totalXp = getTotalXp();
   const dayStreak = getDailyStreak();
@@ -458,6 +500,16 @@ function Intro({ sectors, sector, setSector, mode, setMode, progKey, onStart, on
             <span style={S.demoSub}>3 étapes : l'arrivée · le Traducteur Pro · le test du stylo</span>
           </div>
           <span style={S.demoArrow}>→</span>
+        </button>
+
+        {/* Session personnalisée IA (PRO) */}
+        <button style={S.aiCta} onClick={onAISession}>
+          <span style={S.aiBadge}>PRO ✨</span>
+          <div style={S.demoTextWrap}>
+            <span style={S.aiTitle}>Session personnalisée par IA</span>
+            <span style={S.aiSub}>Des questions générées depuis ton CV et l'offre visée</span>
+          </div>
+          <span style={S.aiArrow}>→</span>
         </button>
 
         {/* Secteur */}
@@ -524,8 +576,94 @@ function Intro({ sectors, sector, setSector, mode, setMode, progKey, onStart, on
   );
 }
 
+// ── ÉCRAN CONFIG SESSION IA (PRO) ────────────────────────────────────────────
+function AISetup({ isFree, loading, error, onGenerate, onUpsell, onBack }) {
+  const hist = useMemo(() => { try { return getHist(); } catch { return []; } }, []);
+  const latest = hist[0] || null;
+  const cvData = latest?.data || null;
+  const [offer, setOffer] = useState('');
+  const canGenerate = !!cvData && !loading;
+
+  return (
+    <div style={S.shell}>
+      <div style={S.introWrapL}>
+        <div style={S.introTop}>
+          <button style={S.backBtn} onClick={onBack}>← Retour</button>
+          <span style={S.brandTag}>ALTIO · Session IA</span>
+        </div>
+
+        <div style={S.introHeader}>
+          <span style={S.eyebrow}>Personnalisé · PRO ✨</span>
+          <h1 style={S.h1b}>Ta session sur-mesure</h1>
+          <p style={S.leadb}>
+            L'IA génère des questions d'entretien à partir de ton CV et de l'offre visée :
+            les questions probables pour CE poste, avec corrigés et pièges à éviter.
+          </p>
+        </div>
+
+        {isFree ? (
+          <div style={S.upsell}>
+            <div style={S.upsellBadge}>PRO</div>
+            <div style={S.upsellTitle}>🔓 Réservé aux plans Personnel & Business</div>
+            <div style={S.upsellText}>
+              Les sessions personnalisées par IA s'appuient sur ton propre CV.
+              Passe à une offre supérieure pour t'entraîner sur TON entretien.
+            </div>
+            <button style={S.upsellBtn} onClick={onUpsell}>Voir les offres</button>
+          </div>
+        ) : (
+          <>
+            <div style={S.aiBlock}>
+              <div style={S.aiBlockLabel}>CV UTILISÉ</div>
+              {cvData ? (
+                <div style={S.aiCvRow}>
+                  <span style={{ fontSize: 20 }}>📄</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={S.aiCvName}>{latest.name || 'Mon CV'}</div>
+                    <div style={S.aiCvMeta}>Dernier CV généré{latest.date ? ` · ${latest.date}` : ''}</div>
+                  </div>
+                </div>
+              ) : (
+                <div style={S.aiEmpty}>
+                  Aucun CV trouvé. Génère d'abord un CV pour personnaliser ta session.
+                </div>
+              )}
+            </div>
+
+            <div style={S.sectionLabel}>Offre visée (optionnel)</div>
+            <textarea
+              style={S.aiTextarea}
+              placeholder="Colle ici l'offre d'emploi (intitulé du poste, missions, compétences attendues)…"
+              value={offer}
+              onChange={(e) => setOffer(e.target.value)}
+              rows={6}
+              disabled={loading}
+            />
+
+            {error && (
+              <div style={{ ...S.aiError, background: error.type === 'quota' ? C.blueSoft : C.redSoft, color: error.type === 'quota' ? C.blue : C.red }}>
+                <span>{error.type === 'quota' ? '⏳ ' : '⚠️ '}{error.message}</span>
+                {error.type === 'quota' && <button style={S.aiErrorBtn} onClick={onUpsell}>Voir les offres</button>}
+              </div>
+            )}
+
+            <button
+              style={{ ...S.bigStart, opacity: canGenerate ? 1 : 0.6, cursor: canGenerate ? 'pointer' : 'not-allowed' }}
+              onClick={() => canGenerate && onGenerate({ cvData, cvName: latest?.name, offerText: offer })}
+              disabled={!canGenerate}
+            >
+              {loading ? '✨ Génération en cours…' : `✨ Générer ma session (${SESSION_SIZE} questions)`}
+            </button>
+            <p style={S.aiHint}>Plus l'offre est détaillée, plus les questions seront ciblées.</p>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── ÉCRAN RÉSULTATS ─────────────────────────────────────────────────────────
-function Result({ answers, total, mode, dead, sector, xp, hearts, dailyStreak, isDemo, onReplaySame, onReplay, onHome, onUpsell }) {
+function Result({ answers, total, mode, dead, sector, xp, hearts, dailyStreak, isDemo, isAI, onReplaySame, onReplay, onHome, onUpsell }) {
   const score = answers.filter((a) => a.correct).length;
   const answered = answers.length;
   const pct = total ? Math.round((score / total) * 100) : 0;
@@ -612,22 +750,24 @@ function Result({ answers, total, mode, dead, sector, xp, hearts, dailyStreak, i
             style={passed ? S.bigStart : { ...S.bigStart, background: C.red, boxShadow: 'none' }}
             onClick={onReplaySame}
           >
-            ↻ {passed ? `Rejouer${isDemo ? ' la démo' : ''}` : 'Recommencer le test'}
+            ↻ {passed ? `Rejouer${isDemo ? ' la démo' : isAI ? ' (nouvelle session IA)' : ''}` : 'Recommencer le test'}
           </button>
           <button style={S.ghostBtn} onClick={onReplay}>Changer de mode / thème</button>
           <button style={S.ghostBtn} onClick={onHome}>Retour à l'accueil</button>
         </div>
 
-        {/* Upsell IA */}
-        <div style={S.upsell}>
-          <div style={S.upsellBadge}>PRO</div>
-          <div style={S.upsellTitle}>🎯 Entraîne-toi sur TON entretien</div>
-          <div style={S.upsellText}>
-            Génère une session personnalisée à partir de ton CV et de l'offre visée :
-            questions probables pour CE poste, réponses idéales, pièges à éviter.
+        {/* Upsell IA — masqué si la session jouée était déjà personnalisée */}
+        {!isAI && (
+          <div style={S.upsell}>
+            <div style={S.upsellBadge}>PRO</div>
+            <div style={S.upsellTitle}>🎯 Entraîne-toi sur TON entretien</div>
+            <div style={S.upsellText}>
+              Génère une session personnalisée à partir de ton CV et de l'offre visée :
+              questions probables pour CE poste, réponses idéales, pièges à éviter.
+            </div>
+            <button style={S.upsellBtn} onClick={onUpsell}>Lancer une session personnalisée</button>
           </div>
-          <button style={S.upsellBtn} onClick={onUpsell}>Débloquer les sessions personnalisées</button>
-        </div>
+        )}
       </div>
     </div>
   );
@@ -658,6 +798,25 @@ const S = {
   dashDiv: { width: 1, background: C.line, margin: '2px 0' },
 
   sectionLabel: { fontSize: 11.5, fontWeight: 800, letterSpacing: 0.6, textTransform: 'uppercase', color: C.mute, margin: '22px 0 11px' },
+
+  // CTA Session IA (intro)
+  aiCta: { position: 'relative', display: 'flex', alignItems: 'center', gap: 12, width: '100%', textAlign: 'left', background: '#fff', border: `1.5px solid ${C.blue}`, borderRadius: 16, padding: '16px 18px', cursor: 'pointer', fontFamily: FONT, marginBottom: 4, boxShadow: '0 6px 22px rgba(21,57,183,.1)' },
+  aiBadge: { position: 'absolute', top: 14, right: 16, fontSize: 9.5, fontWeight: 800, letterSpacing: 0.6, background: C.blue, color: '#fff', padding: '3px 8px', borderRadius: 6 },
+  aiTitle: { fontSize: 15.5, fontWeight: 800, color: C.ink, paddingRight: 60 },
+  aiSub: { fontSize: 12.5, color: C.ink2, marginTop: 4 },
+  aiArrow: { fontSize: 18, color: C.blue, flexShrink: 0 },
+
+  // Écran AISetup
+  aiBlock: { background: '#fff', border: `1px solid ${C.line}`, borderRadius: 14, padding: '14px 16px', marginBottom: 6 },
+  aiBlockLabel: { fontSize: 10.5, fontWeight: 800, letterSpacing: 0.8, color: C.mute, marginBottom: 8 },
+  aiCvRow: { display: 'flex', alignItems: 'center', gap: 10 },
+  aiCvName: { fontSize: 14.5, fontWeight: 700, color: C.ink },
+  aiCvMeta: { fontSize: 12, color: C.mute, marginTop: 1 },
+  aiEmpty: { fontSize: 13, color: C.ink2, lineHeight: 1.5 },
+  aiTextarea: { width: '100%', boxSizing: 'border-box', border: `1.5px solid ${C.line}`, borderRadius: 12, padding: '12px 14px', fontSize: 14, fontFamily: FONT, color: C.ink, lineHeight: 1.5, resize: 'vertical', marginBottom: 14, outline: 'none' },
+  aiError: { display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'space-between', fontSize: 13, fontWeight: 600, borderRadius: 12, padding: '11px 14px', marginBottom: 12, lineHeight: 1.45 },
+  aiErrorBtn: { flexShrink: 0, background: C.blue, color: '#fff', border: 'none', borderRadius: 9, padding: '7px 12px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: FONT },
+  aiHint: { fontSize: 12, color: C.mute, textAlign: 'center', marginTop: 10 },
 
   heroIcon: { fontSize: 56, marginTop: 24 },
   reaction: { textAlign: 'center', fontSize: 14, fontWeight: 800, padding: '8px 14px', borderRadius: 99, margin: '0 auto 14px', width: 'fit-content' },

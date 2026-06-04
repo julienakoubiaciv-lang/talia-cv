@@ -42,6 +42,9 @@ const TOK = {
   ink:        '#0B1B33',
   inkSoft:    '#4A5B78',
   mute:       '#8390A6',
+  blue:       '#1539B7',
+  blueSoft:   '#EEF2FF',
+  blueRing:   'rgba(21,57,183,.14)',
   line:       '#E6EAF1',
   line2:      '#EFF2F7',
   paper:      '#FFFFFF',
@@ -420,6 +423,7 @@ export default function EditorAtelier() {
       fontFamily: FONT, color: TOK.ink,
       display: 'grid', gridTemplateRows: '48px auto 1fr',
     }}>
+      <style>{`@keyframes stepIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}`}</style>
       {/* ──────────────────────── TOPBAR ──────────────────────── */}
       <Topbar
         candidateName={candidateName}
@@ -542,38 +546,43 @@ export default function EditorAtelier() {
 //                       FIL DES ÉTAPES (sous la topbar)
 // ═══════════════════════════════════════════════════════════════════════════
 function StepsBar({ currentStep, onStepChange }) {
+  const curIdx = STEPS.findIndex(s => s.id === currentStep);
   return (
     <div style={{
-      display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 4,
+      display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2,
       background: '#fff', borderBottom: `1px solid ${TOK.line}`,
-      padding: '8px 14px', overflowX: 'auto',
+      padding: '9px 14px', overflowX: 'auto',
     }}>
       {STEPS.map((s, i) => {
         const active = currentStep === s.id;
+        const done = i < curIdx;
         return (
-          <button
-            key={s.id}
-            onClick={() => onStepChange(s.id)}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 6,
-              padding: '6px 12px', borderRadius: 99,
-              background: active ? TOK.wash2 : 'transparent',
-              border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-              fontSize: 12.5, color: active ? TOK.ink : TOK.inkSoft,
-              fontWeight: active ? 600 : 500,
-              whiteSpace: 'nowrap',
-            }}
-          >
-            <span style={{
-              width: 17, height: 17, borderRadius: 99,
-              display: 'grid', placeItems: 'center',
-              background: active ? TOK.ink : 'transparent',
-              color: active ? '#fff' : TOK.mute,
-              border: active ? 'none' : `1px solid ${TOK.line}`,
-              fontSize: 10, fontWeight: 600,
-            }}>{i + 1}</span>
-            {s.label}
-          </button>
+          <React.Fragment key={s.id}>
+            {i > 0 && <span style={{ width: 14, height: 2, borderRadius: 2, background: done ? TOK.blue : TOK.line, flexShrink: 0 }} />}
+            <button
+              onClick={() => onStepChange(s.id)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 7,
+                padding: '6px 13px', borderRadius: 99,
+                background: active ? TOK.blueSoft : 'transparent',
+                border: active ? `1px solid ${TOK.blue}33` : '1px solid transparent',
+                cursor: 'pointer', fontFamily: 'inherit',
+                fontSize: 12.5, color: active ? TOK.blue : done ? TOK.ink : TOK.inkSoft,
+                fontWeight: active ? 700 : 500,
+                whiteSpace: 'nowrap', transition: 'all .15s',
+              }}
+            >
+              <span style={{
+                width: 18, height: 18, borderRadius: 99,
+                display: 'grid', placeItems: 'center',
+                background: active ? TOK.blue : done ? TOK.green : 'transparent',
+                color: (active || done) ? '#fff' : TOK.mute,
+                border: (active || done) ? 'none' : `1px solid ${TOK.line}`,
+                fontSize: 10, fontWeight: 700,
+              }}>{done ? '✓' : i + 1}</span>
+              {s.label}
+            </button>
+          </React.Fragment>
         );
       })}
     </div>
@@ -601,12 +610,12 @@ function Topbar({
         <button onClick={onHome} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
           <div style={{
             width: 24, height: 24, borderRadius: 6,
-            background: TOK.ink, color: '#fff',
+            background: TOK.blue, color: '#fff',
             display: 'grid', placeItems: 'center',
             fontWeight: 700, fontSize: 12, letterSpacing: -0.2,
-          }}>T</div>
-          <div style={{ fontWeight: 600, fontSize: 13.5, letterSpacing: -0.2, color: TOK.ink }}>
-            Altio <span style={{ color: TOK.mute, fontWeight: 500 }}>CV</span>
+          }}>A</div>
+          <div style={{ fontWeight: 700, fontSize: 13.5, letterSpacing: -0.2, color: TOK.ink }}>
+            Altio <span style={{ color: TOK.blue, fontWeight: 700 }}>CV</span>
           </div>
         </button>
         {candidateName && (
@@ -680,18 +689,23 @@ function EditPanel({ step, fields, onUpdate, onCropPhoto, onPickLogo, photo, log
       overflow: 'hidden',
     }}>
       {/* En-tête */}
-      <div style={{ padding: '18px 22px 14px', borderBottom: `1px solid ${TOK.line2}` }}>
+      <div style={{ padding: '18px 22px 14px', borderBottom: `1px solid ${TOK.line2}`, position: 'relative' }}>
+        <div style={{ position: 'absolute', left: 0, top: 18, bottom: 14, width: 3, borderRadius: 99, background: TOK.blue }} />
         <div style={{
-          fontSize: 10.5, letterSpacing: 0.8, color: TOK.mute,
-          textTransform: 'uppercase', fontWeight: 600,
+          fontSize: 10.5, letterSpacing: 0.8, color: TOK.blue,
+          textTransform: 'uppercase', fontWeight: 700,
         }}>Étape {stepIdx + 1} / {STEPS.length}</div>
         <h2 style={{ margin: '4px 0 0', fontSize: 22, letterSpacing: -0.4, fontWeight: 700, color: TOK.ink }}>
           {stepCfg.label}
         </h2>
+        {/* mini barre de progression des étapes */}
+        <div style={{ marginTop: 12, height: 4, borderRadius: 99, background: TOK.line2, overflow: 'hidden' }}>
+          <div style={{ height: '100%', width: `${((stepIdx + 1) / STEPS.length) * 100}%`, background: TOK.blue, borderRadius: 99, transition: 'width .3s ease' }} />
+        </div>
       </div>
 
-      {/* Contenu scrollable */}
-      <div style={{ padding: '16px 22px 18px', overflowY: 'auto' }}>
+      {/* Contenu scrollable (réanimé à chaque étape) */}
+      <div key={step} style={{ padding: '16px 22px 18px', overflowY: 'auto', animation: 'stepIn .28s ease both' }}>
         {step === 'identite' && (
           <IdentiteStep fields={fields} onUpdate={onUpdate} onCropPhoto={onCropPhoto} onPickLogo={onPickLogo} photo={photo} logo={logo} />
         )}
@@ -794,8 +808,8 @@ function IdentiteStep({ fields, onUpdate, onCropPhoto, onPickLogo, photo, logo }
             transition: 'border-color .15s, box-shadow .15s',
           }}
           onFocus={e => {
-            e.target.style.borderColor = TOK.ink;
-            e.target.style.boxShadow = '0 0 0 3px rgba(11,27,51,.06)';
+            e.target.style.borderColor = TOK.blue;
+            e.target.style.boxShadow = `0 0 0 3px ${TOK.blueRing}`;
           }}
           onBlur={e => {
             e.target.style.borderColor = TOK.line;
@@ -1368,6 +1382,8 @@ function Field({ label, value, onChange, placeholder, type = 'text', fullWidth }
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
         style={inputStyle}
+        onFocus={e => { e.target.style.borderColor = TOK.blue; e.target.style.boxShadow = `0 0 0 3px ${TOK.blueRing}`; }}
+        onBlur={e => { e.target.style.borderColor = TOK.line; e.target.style.boxShadow = 'none'; }}
       />
     </div>
   );
@@ -1379,7 +1395,7 @@ const inputStyle = {
   padding: '9px 11px', fontSize: 13,
   color: TOK.ink, background: '#fff',
   fontFamily: 'inherit', outline: 'none',
-  transition: 'border-color .15s',
+  transition: 'border-color .15s, box-shadow .15s',
 };
 
 const btnGhost = {
@@ -1388,10 +1404,10 @@ const btnGhost = {
   cursor: 'pointer', fontFamily: 'inherit',
 };
 const btnPrimary = {
-  border: 'none', background: TOK.ink, color: '#fff',
-  padding: '7px 14px', borderRadius: 8, fontSize: 12.5, fontWeight: 600,
+  border: 'none', background: TOK.blue, color: '#fff',
+  padding: '7px 14px', borderRadius: 8, fontSize: 12.5, fontWeight: 700,
   cursor: 'pointer', fontFamily: 'inherit',
-  boxShadow: '0 1px 0 rgba(0,0,0,.04)',
+  boxShadow: '0 6px 16px -6px rgba(21,57,183,.5)',
 };
 const zoomBtn = {
   border: 'none', background: 'transparent', color: TOK.ink,

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { JOB_INTEL, getJob, listJobs, listJobsBySector, fixMojibake } from './jobIntel.js';
+import { JOB_INTEL, getJob, listJobs, listJobsBySector, listPostesBySector, fixMojibake } from './jobIntel.js';
 import { FORMATIONS, COMP_TECH, COMP_SOFT } from './cvData.js';
 
 describe('jobIntel — intégrité des fiches métier', () => {
@@ -59,6 +59,23 @@ describe('jobIntel — intégrité des fiches métier', () => {
         expect(bad.test(s), `mojibake dans « ${s} »`).toBe(false);
       }
     }
+  });
+
+  it('listPostesBySector renvoie des postes par secteur, sans mojibake', () => {
+    const map = listPostesBySector();
+    const sectors = Object.keys(map);
+    expect(sectors.length).toBeGreaterThan(0);
+    let total = 0;
+    for (const s of sectors) {
+      expect(Array.isArray(map[s])).toBe(true);
+      expect(map[s].length).toBeGreaterThan(0);
+      for (const p of map[s]) {
+        expect(typeof p).toBe('string');
+        expect(/[ÃÂ]|â€/.test(p), `mojibake dans « ${p} »`).toBe(false);
+      }
+      total += map[s].length;
+    }
+    expect(total).toBeGreaterThanOrEqual(5);
   });
 
   it('listJobsBySector regroupe par secteur', () => {

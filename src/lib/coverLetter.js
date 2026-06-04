@@ -50,11 +50,29 @@ RÈGLES :
 - Réponds UNIQUEMENT par un objet JSON valide, sans texte autour ni Markdown :
   { "subject": "<objet de l'email, sinon chaîne vide>", "paragraphs": ["par.1", "par.2", ...] }
 - "subject" : rempli uniquement pour le format Email, sinon "".
-- Personnalise vraiment à partir du CV et de l'offre (poste, entreprise, compétences clés).
+- Adapte précisément la lettre à la CIBLE fournie :
+  · si une annonce est donnée, reprends ses mots-clés et exigences ;
+  · si une entreprise est nommée, adresse-lui la lettre nommément ;
+  · si seul un TYPE DE POSTE est donné, cible les attentes typiques de ce métier.
+- Personnalise à partir du CV (parcours, compétences) ET de la cible.
 - Pas de clichés creux ("dynamique et motivé", "depuis mon plus jeune âge").
 - Mets en avant 1-2 atouts concrets reliés au besoin du poste.
 - Reste honnête : n'invente aucune expérience absente du CV.
 - Français impeccable, sans fautes. Termine par une formule adaptée au format.`;
+}
+
+/**
+ * Décrit la cible de la lettre pour le prompt (fonction pure, testable).
+ * Combine annonce, entreprise, intitulé et/ou type de poste.
+ */
+export function describeTarget({ offerText = '', company = '', roleTitle = '', targetRole = '' } = {}) {
+  const lines = [];
+  if (String(company).trim())   lines.push(`Entreprise : ${String(company).trim()}`);
+  if (String(roleTitle).trim()) lines.push(`Intitulé du poste : ${String(roleTitle).trim()}`);
+  if (String(targetRole).trim()) lines.push(`Type de poste visé : ${String(targetRole).trim()}`);
+  const offer = String(offerText).trim();
+  if (offer) lines.push(`Annonce :\n${offer.slice(0, 4000)}`);
+  return lines.length ? lines.join('\n') : '(cible non précisée — déduis le poste le plus probable du CV)';
 }
 
 /**
@@ -90,17 +108,20 @@ export function normalizeCoverLetter(raw) {
  * @param {'formel'|'equilibre'|'dynamique'} [opts.tone]
  * @returns {Promise<{subject:string, paragraphs:string[], text:string}>}
  */
-export async function generateCoverLetter({ cvData, offerText = '', format = 'lettre', tone = 'equilibre' }) {
+export async function generateCoverLetter({
+  cvData, offerText = '', company = '', roleTitle = '', targetRole = '',
+  format = 'lettre', tone = 'equilibre',
+}) {
   const cvText = cvDataToText(cvData);
   if (!cvText.trim()) {
     throw new Error('CV vide : génère ou sélectionne d\'abord un CV.');
   }
 
-  const offer = (offerText || '').trim();
+  const target = describeTarget({ offerText, company, roleTitle, targetRole });
   const userContent =
-    `OFFRE / POSTE VISÉ :\n${offer ? offer.slice(0, 4000) : '(non précisée — déduis le poste le plus probable du CV)'}\n\n` +
+    `CIBLE DE LA CANDIDATURE :\n${target}\n\n` +
     `CV DU CANDIDAT :\n${cvText}\n\n` +
-    `Rédige la candidature.`;
+    `Rédige la candidature, adaptée à cette cible.`;
 
   const res = await callClaude({
     action: 'coach',
@@ -108,7 +129,10 @@ export async function generateCoverLetter({ cvData, offerText = '', format = 'le
     max_tokens: 1500,
     system: systemFor(format, tone),
     messages: [{ role: 'user', content: userContent }],
-    metadata: { feature: 'cover_letter', format, tone, hasOffer: !!offer },
+    metadata: {
+      feature: 'cover_letter', format, tone,
+      hasOffer: !!String(offerText).trim(), hasRole: !!String(targetRole).trim(), hasCompany: !!String(company).trim(),
+    },
   });
 
   let text = (res?.content || []).map((b) => b.text || '').join('').trim();

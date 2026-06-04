@@ -161,6 +161,26 @@ export function listJobs() {
   return Object.keys(JOB_INTEL).map(getJob).filter(Boolean);
 }
 
+/**
+ * Liste tous les postes (débouchés) regroupés par secteur, libellés nettoyés.
+ * Source : FORMATIONS (secteur) + POSTES (débouchés) de cvData. Dédupliqué et trié.
+ * Sert à cibler un contenu « par type de poste » (ex. lettre de motivation).
+ * @returns {Object<string, string[]>} { secteur: [poste, ...] }
+ */
+export function listPostesBySector() {
+  const acc = {};
+  for (const f of FORMATIONS) {
+    const sector = fixMojibake(f.f) || 'Autre';
+    (acc[sector] = acc[sector] || new Set());
+    (POSTES[f.v] || []).forEach((p) => acc[sector].add(fixMojibake(p)));
+  }
+  const out = {};
+  Object.keys(acc).sort((a, b) => a.localeCompare(b, 'fr')).forEach((s) => {
+    out[s] = [...acc[s]].sort((a, b) => a.localeCompare(b, 'fr'));
+  });
+  return out;
+}
+
 /** Métiers regroupés par secteur (famille de parcours). */
 export function listJobsBySector() {
   const bySector = {};

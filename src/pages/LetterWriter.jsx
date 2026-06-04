@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   generateCoverLetter, markLetterGenerated, LETTER_FORMATS, LETTER_TONES,
 } from '@/lib/coverLetter';
+import { listPostesBySector } from '@/lib/jobIntel';
 import { QuotaError } from '@/lib/claudeClient';
 import { getHist } from '@/lib/cvData';
 import { usePlan } from '@/hooks/usePlan';
@@ -27,8 +28,13 @@ export default function LetterWriter() {
   const { isFree } = usePlan();
   const latest = useMemo(() => { try { return getHist()[0] || null; } catch { return null; } }, []);
   const cvData = latest?.data || null;
+  const postesBySector = useMemo(() => { try { return listPostesBySector(); } catch { return {}; } }, []);
 
+  const [targetMode, setTargetMode] = useState('annonce'); // 'annonce' | 'poste'
   const [offer, setOffer]   = useState('');
+  const [company, setCompany] = useState('');
+  const [roleTitle, setRoleTitle] = useState('');
+  const [targetRole, setTargetRole] = useState('');
   const [format, setFormat] = useState('lettre');
   const [tone, setTone]     = useState('equilibre');
   const [loading, setLoading] = useState(false);
@@ -38,17 +44,21 @@ export default function LetterWriter() {
   const [copied, setCopied] = useState(false);
 
   const hasResult = !!text;
-  const canGenerate = !!cvData && !loading;
+  const targetReady = targetMode === 'annonce' ? true : !!targetRole;
+  const canGenerate = !!cvData && targetReady && !loading;
 
   async function run() {
     if (!canGenerate) return;
     setLoading(true); setError(null); setCopied(false);
     try {
-      const letter = await generateCoverLetter({ cvData, offerText: offer, format, tone });
+      const payload = targetMode === 'annonce'
+        ? { cvData, offerText: offer, company, roleTitle, format, tone }
+        : { cvData, targetRole, company, format, tone };
+      const letter = await generateCoverLetter(payload);
       setSubject(letter.subject || '');
       setText(letter.text);
       markLetterGenerated();
-      track('cover_letter_generated', { format, tone, hasOffer: !!offer.trim() });
+      track('cover_letter_generated', { format, tone, targetMode, hasOffer: !!offer.trim(), targetRole });
     } catch (err) {
       if (err instanceof QuotaError) {
         setError({ type: 'quota', message: 'Quota de générations atteint. Reviens plus tard ou passe à un plan supérieur.' });
@@ -143,13 +153,56 @@ export default function LetterWriter() {
               ))}
             </div>
 
-            {/* Offre */}
-            <div style={S.sectionLabel}>Offre visée (optionnel)</div>
-            <textarea
-              style={S.textarea} rows={5} value={offer} disabled={loading}
-              onChange={(e) => setOffer(e.target.value)}
-              placeholder="Colle l'offre (poste, entreprise, missions, compétences attendues)…"
+            {/* Ciblage de la lettre */}
+            <div style={S.sectionLabel}>Cibler la lettre</div>
+            <div style={S.choiceRow}>
+              <button onClick={() => setTargetMode('annonce')}
+                style={{ ...S.choice, ...(targetMode === 'annonce' ? S.choiceActive : {}) }}>
+                <span style={{ fontSize: 18 }}>📌</span>
+                <span style={S.choiceLabel}>Annonce précise</span>
+              </button>
+              <button onClick={() => setTargetMode('poste')}
+                style={{ ...S.choice, ...(targetMode === 'poste' ? S.choiceActive : {}) }}>
+                <span style={{ fontSize: 18 }}>🎯</span>
+                <span style={S.choiceLabel}>Type de poste</span>
+              </button>
+            </div>
+
+            <input
+              style={{ ...S.subjectInput, marginTop: 12 }} value={company} disabled={loading}
+              onChange={(e) => setCompany(e.target.value)}
+              placeholder="Entreprise visée (optionnel)"
             />
+
+            {targetMode === 'annonce' ? (
+              <>
+                <input
+                  style={{ ...S.subjectInput, marginTop: 10 }} value={roleTitle} disabled={loading}
+                  onChange={(e) => setRoleTitle(e.target.value)}
+                  placeholder="Intitulé du poste (optionnel)"
+                />
+                <textarea
+                  style={{ ...S.textarea, marginTop: 10 }} rows={5} value={offer} disabled={loading}
+                  onChange={(e) => setOffer(e.target.value)}
+                  placeholder="Colle l'annonce (missions, compétences attendues)…"
+                />
+              </>
+            ) : (
+              <>
+                <select
+                  style={{ ...S.subjectInput, marginTop: 10, appearance: 'auto' }} value={targetRole} disabled={loading}
+                  onChange={(e) => setTargetRole(e.target.value)}
+                >
+                  <option value="">— Choisis un type de poste —</option>
+                  {Object.entries(postesBySector).map(([sector, postes]) => (
+                    <optgroup key={sector} label={sector}>
+                      {postes.map((p) => <option key={p} value={p}>{p}</option>)}
+                    </optgroup>
+                  ))}
+                </select>
+                <p style={S.hint}>La lettre ciblera les attentes typiques de ce métier, à partir de ton CV.</p>
+              </>
+            )}
 
             {error && (
               <div style={{ ...S.err, background: error.type === 'quota' ? C.blueSoft : C.redSoft, color: error.type === 'quota' ? C.blue : C.red }}>

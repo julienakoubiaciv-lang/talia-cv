@@ -1,0 +1,130 @@
+/**
+ * coverLetter — Lettre / mail de motivation personnalisé(e), généré(e) par Claude.
+ *
+ * À partir du CV (+ offre visée), produit une lettre prête à envoyer, dans le
+ * ton et le format choisis (lettre, email, message LinkedIn). Passe par
+ * l'Edge Function claude-proxy via l'action 'coach' (déjà gérée par le quota)
+ * → aucune modification serveur.
+ */
+import { callClaude } from '@/lib/claudeClient';
+import { cvDataToText } from '@/lib/cvFeedback';
+
+export const LETTER_FORMATS = {
+  lettre:   { label: 'Lettre',          emoji: '✉️', hint: '≈ 250-350 mots, structure formelle' },
+  email:    { label: 'Email',           emoji: '📧', hint: 'Court, avec objet, direct' },
+  linkedin: { label: 'Message LinkedIn', emoji: '💬', hint: 'Très court, accroche personnalisée' },
+};
+
+export const LETTER_TONES = {
+  formel:    { label: 'Formel' },
+  equilibre: { label: 'Équilibré' },
+  dynamique: { label: 'Dynamique' },
+};
+
+const LS_COUNT = 'talia_letters_count';
+
+/** Incrémente le compteur de lettres générées (alimente le parcours). */
+export function markLetterGenerated() {
+  try {
+    const n = (parseInt(localStorage.getItem(LS_COUNT) || '0', 10) || 0) + 1;
+    localStorage.setItem(LS_COUNT, String(n));
+    return n;
+  } catch { return 0; }
+}
+
+/** Nombre de lettres générées. */
+export function getLettersCount() {
+  try { return parseInt(localStorage.getItem(LS_COUNT) || '0', 10) || 0; }
+  catch { return 0; }
+}
+
+function systemFor(format, tone) {
+  const fmt = LETTER_FORMATS[format] || LETTER_FORMATS.lettre;
+  const ton = (LETTER_TONES[tone] || LETTER_TONES.equilibre).label;
+  return `Tu es un coach emploi qui rédige une candidature percutante pour un candidat.
+
+FORMAT : ${fmt.label} (${fmt.hint}).
+TON : ${ton}.
+
+RÈGLES :
+- Réponds UNIQUEMENT par un objet JSON valide, sans texte autour ni Markdown :
+  { "subject": "<objet de l'email, sinon chaîne vide>", "paragraphs": ["par.1", "par.2", ...] }
+- "subject" : rempli uniquement pour le format Email, sinon "".
+- Personnalise vraiment à partir du CV et de l'offre (poste, entreprise, compétences clés).
+- Pas de clichés creux ("dynamique et motivé", "depuis mon plus jeune âge").
+- Mets en avant 1-2 atouts concrets reliés au besoin du poste.
+- Reste honnête : n'invente aucune expérience absente du CV.
+- Français impeccable, sans fautes. Termine par une formule adaptée au format.`;
+}
+
+/**
+ * Normalise la sortie de l'IA en { subject, paragraphs, text }.
+ * Tolérante : accepte un objet JSON OU du texte brut.
+ */
+export function normalizeCoverLetter(raw) {
+  let subject = '';
+  let paragraphs = [];
+
+  if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
+    if (typeof raw.subject === 'string') subject = raw.subject.trim();
+    if (Array.isArray(raw.paragraphs)) paragraphs = raw.paragraphs;
+    else if (typeof raw.letter === 'string') paragraphs = raw.letter.split(/\n{2,}/);
+    else if (typeof raw.text === 'string') paragraphs = raw.text.split(/\n{2,}/);
+  } else if (typeof raw === 'string') {
+    paragraphs = raw.split(/\n{2,}/);
+  } else if (Array.isArray(raw)) {
+    paragraphs = raw;
+  }
+
+  paragraphs = paragraphs.map((p) => String(p).trim()).filter(Boolean);
+  const text = paragraphs.join('\n\n');
+  return { subject, paragraphs, text };
+}
+
+/**
+ * Génère une lettre/mail/message de motivation via Claude.
+ * @param {object} opts
+ * @param {object} opts.cvData
+ * @param {string} [opts.offerText]
+ * @param {'lettre'|'email'|'linkedin'} [opts.format]
+ * @param {'formel'|'equilibre'|'dynamique'} [opts.tone]
+ * @returns {Promise<{subject:string, paragraphs:string[], text:string}>}
+ */
+export async function generateCoverLetter({ cvData, offerText = '', format = 'lettre', tone = 'equilibre' }) {
+  const cvText = cvDataToText(cvData);
+  if (!cvText.trim()) {
+    throw new Error('CV vide : génère ou sélectionne d\'abord un CV.');
+  }
+
+  const offer = (offerText || '').trim();
+  const userContent =
+    `OFFRE / POSTE VISÉ :\n${offer ? offer.slice(0, 4000) : '(non précisée — déduis le poste le plus probable du CV)'}\n\n` +
+    `CV DU CANDIDAT :\n${cvText}\n\n` +
+    `Rédige la candidature.`;
+
+  const res = await callClaude({
+    action: 'coach',
+    model: 'claude-haiku-4-5',
+    max_tokens: 1500,
+    system: systemFor(format, tone),
+    messages: [{ role: 'user', content: userContent }],
+    metadata: { feature: 'cover_letter', format, tone, hasOffer: !!offer },
+  });
+
+  let text = (res?.content || []).map((b) => b.text || '').join('').trim();
+  text = text.replace(/^```json?\s*/i, '').replace(/```\s*$/, '').trim();
+
+  let parsed;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    const o = text.indexOf('{'), c = text.lastIndexOf('}');
+    parsed = (o >= 0 && c > o) ? JSON.parse(text.slice(o, c + 1)) : text; // fallback texte brut
+  }
+
+  const letter = normalizeCoverLetter(parsed);
+  if (!letter.text || letter.text.length < 40) {
+    throw new Error('La génération n\'a produit aucune lettre exploitable. Réessaie.');
+  }
+  return letter;
+}

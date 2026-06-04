@@ -13,6 +13,7 @@ import {
   getOverallCompletion, getTotalXp, getDailyStreak, getThemesPlayed, getProgress,
 } from '@/lib/interviewProgress';
 import { getValidatedJobs, getJobsPlayed } from '@/lib/jobsProgress';
+import { getLettersCount } from '@/lib/coverLetter';
 
 const INTERVIEW_PASS_PCT = 60; // 12/20 → un thème est « validé » à 60 %
 
@@ -52,7 +53,7 @@ export function levelForXp(xp = 0) {
 export function computeJourney(s) {
   const {
     cvCount = 0, overall = 0, themesPlayed = 0, validatedThemes = 0,
-    jobsPlayed = 0, jobsValidated = 0, xp = 0, streak = 0,
+    jobsPlayed = 0, jobsValidated = 0, lettersGenerated = 0, xp = 0, streak = 0,
   } = s || {};
 
   const level = levelForXp(xp);
@@ -83,7 +84,9 @@ export function computeJourney(s) {
     },
     {
       id: 'lettre', emoji: '✉️', title: 'Lettre de motivation',
-      desc: 'Bientôt disponible', done: false, locked: true,
+      desc: lettersGenerated > 0 ? `${lettersGenerated} lettre${lettersGenerated > 1 ? 's' : ''} générée${lettersGenerated > 1 ? 's' : ''}`
+        : 'Génère ta lettre / mail de candidature',
+      done: lettersGenerated > 0, cta: '/lettre', ctaLabel: 'Écrire ma lettre',
     },
   ];
 
@@ -95,6 +98,7 @@ export function computeJourney(s) {
     { id: 'metier',      emoji: '🧭', label: 'Métier décrypté',   earned: jobsValidated > 0 },
     { id: 'first-itw',   emoji: '🎤', label: 'Premier entretien', earned: themesPlayed > 0 },
     { id: 'validated',   emoji: '🏆', label: 'Entretien validé',  earned: validatedThemes > 0 },
+    { id: 'lettre',      emoji: '✉️', label: 'Lettre rédigée',    earned: lettersGenerated > 0 },
     { id: 'polyvalent',  emoji: '🧠', label: 'Polyvalent (3 thèmes)', earned: themesPlayed >= 3 },
     { id: 'streak',      emoji: '🔥', label: 'Série de 3 jours',  earned: streak >= 3 },
     { id: 'xp-100',      emoji: '⭐', label: '100 XP',            earned: xp >= 100 },
@@ -123,6 +127,7 @@ export function getJourney() {
     validatedThemes,
     jobsPlayed: getJobsPlayed(),
     jobsValidated: getValidatedJobs().length,
+    lettersGenerated: getLettersCount(),
     xp: getTotalXp(),
     streak: getDailyStreak(),
   });

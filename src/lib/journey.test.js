@@ -34,9 +34,16 @@ describe('computeJourney', () => {
   it('parcours vide : aucune étape validée, aucun badge', () => {
     const j = computeJourney({});
     expect(j.completed).toBe(0);
-    expect(j.totalSteps).toBe(4); // 4 étapes actives (lettre verrouillée exclue)
+    expect(j.totalSteps).toBe(5); // 5 étapes actives (CV, métier, entraînement, validation, lettre)
     expect(j.earnedBadges).toBe(0);
-    expect(j.steps.find((s) => s.id === 'lettre').locked).toBe(true);
+    expect(j.steps.find((s) => s.id === 'lettre').locked).toBeFalsy();
+  });
+
+  it('marque l\'étape lettre quand au moins une lettre est générée', () => {
+    const j = computeJourney({ lettersGenerated: 2 });
+    const lettre = j.steps.find((s) => s.id === 'lettre');
+    expect(lettre.done).toBe(true);
+    expect(j.badges.find((b) => b.id === 'lettre').earned).toBe(true);
   });
 
   it('marque les étapes selon les stats', () => {

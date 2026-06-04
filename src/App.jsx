@@ -27,6 +27,7 @@ const Admin         = lazy(() => import('./pages/Admin.jsx'));
 const Interview     = lazy(() => import('./pages/Interview.jsx'));
 const Jobs          = lazy(() => import('./pages/Jobs.jsx'));
 const Journey       = lazy(() => import('./pages/Journey.jsx'));
+const LetterWriter  = lazy(() => import('./pages/LetterWriter.jsx'));
 
 // Spinner minimal affiché pendant le chargement d'un chunk
 function PageLoader() {
@@ -70,6 +71,7 @@ export default function App() {
                     <Route path="/entretien"          element={<Interview />} />
                     <Route path="/metiers"            element={<Jobs />} />
                     <Route path="/parcours"           element={<Journey />} />
+                    <Route path="/lettre"             element={<LetterWriter />} />
                   </Routes>
                 </Suspense>
               </ErrorBoundary>

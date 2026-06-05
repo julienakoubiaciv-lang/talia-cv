@@ -121,6 +121,28 @@ function computeScore(cvData) {
   return Math.round((score / max) * 100);
 }
 
+// ─── Complétude d'une étape (= toutes les cases essentielles remplies) ──────
+function isStepComplete(stepId, d) {
+  if (!d) return false;
+  switch (stepId) {
+    case 'identite':
+      return !!(d.prenom && d.nom && d.email && d.telephone && d.poste && (d.accroche || '').trim());
+    case 'experiences':
+      return (d.experiences || []).some(e => e && e.poste && e.entreprise);
+    case 'formations':
+      return (d.formations || []).some(f => f && (f.titre || f.isTalia));
+    case 'competences':
+      return ((d.competences?.techniques || []).filter(Boolean).length > 0)
+        || ((d.competences?.comportementales || []).filter(Boolean).length > 0);
+    case 'langues':
+      return (d.langues || []).some(l => l && (typeof l === 'string' ? l.trim() : l.langue));
+    case 'interets':
+      return (d.centresInteret || []).filter(Boolean).length > 0;
+    default:
+      return false;
+  }
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 //                                COMPOSANT
 // ═══════════════════════════════════════════════════════════════════════════
@@ -438,7 +460,7 @@ export default function EditorAtelier() {
       />
 
       {/* ──────────────── FIL DES ÉTAPES (sous la topbar) ──────────────── */}
-      <StepsBar currentStep={currentStep} onStepChange={setCurrentStep} />
+      <StepsBar currentStep={currentStep} onStepChange={setCurrentStep} fields={edFields} />
 
       {/* ──────────────────────── BODY (3 colonnes) ──────────────────────── */}
       <div style={{
@@ -545,8 +567,9 @@ export default function EditorAtelier() {
 // ═══════════════════════════════════════════════════════════════════════════
 //                       FIL DES ÉTAPES (sous la topbar)
 // ═══════════════════════════════════════════════════════════════════════════
-function StepsBar({ currentStep, onStepChange }) {
-  const curIdx = STEPS.findIndex(s => s.id === currentStep);
+function StepsBar({ currentStep, onStepChange, fields }) {
+  // « Validé » = toutes les cases essentielles de l'étape sont remplies (pas la simple navigation)
+  const completeById = Object.fromEntries(STEPS.map(s => [s.id, isStepComplete(s.id, fields)]));
   return (
     <div style={{
       display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2,
@@ -555,12 +578,17 @@ function StepsBar({ currentStep, onStepChange }) {
     }}>
       {STEPS.map((s, i) => {
         const active = currentStep === s.id;
-        const done = i < curIdx;
+        const done = completeById[s.id];
+        const prevDone = i > 0 && completeById[STEPS[i - 1].id];
+        // badge : vert ✓ si rempli ; sinon bleu si actif ; sinon neutre
+        const badgeBg = done ? TOK.green : active ? TOK.blue : 'transparent';
+        const badgeColor = (done || active) ? '#fff' : TOK.mute;
         return (
           <React.Fragment key={s.id}>
-            {i > 0 && <span style={{ width: 14, height: 2, borderRadius: 2, background: done ? TOK.blue : TOK.line, flexShrink: 0 }} />}
+            {i > 0 && <span style={{ width: 14, height: 2, borderRadius: 2, background: prevDone ? TOK.green : TOK.line, flexShrink: 0 }} />}
             <button
               onClick={() => onStepChange(s.id)}
+              title={done ? 'Étape complète' : 'À compléter'}
               style={{
                 display: 'flex', alignItems: 'center', gap: 7,
                 padding: '6px 13px', borderRadius: 99,
@@ -568,16 +596,15 @@ function StepsBar({ currentStep, onStepChange }) {
                 border: active ? `1px solid ${TOK.blue}33` : '1px solid transparent',
                 cursor: 'pointer', fontFamily: 'inherit',
                 fontSize: 12.5, color: active ? TOK.blue : done ? TOK.ink : TOK.inkSoft,
-                fontWeight: active ? 700 : 500,
+                fontWeight: (active || done) ? 700 : 500,
                 whiteSpace: 'nowrap', transition: 'all .15s',
               }}
             >
               <span style={{
                 width: 18, height: 18, borderRadius: 99,
                 display: 'grid', placeItems: 'center',
-                background: active ? TOK.blue : done ? TOK.green : 'transparent',
-                color: (active || done) ? '#fff' : TOK.mute,
-                border: (active || done) ? 'none' : `1px solid ${TOK.line}`,
+                background: badgeBg, color: badgeColor,
+                border: (done || active) ? 'none' : `1px solid ${TOK.line}`,
                 fontSize: 10, fontWeight: 700,
               }}>{done ? '✓' : i + 1}</span>
               {s.label}

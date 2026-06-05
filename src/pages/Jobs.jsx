@@ -18,6 +18,7 @@ import { listJobsBySector, getJob, detectTargetJob } from '@/lib/jobIntel';
 import { shuffle } from '@/lib/interviewBank';
 import { addXp, getTotalXp } from '@/lib/interviewProgress';
 import { saveJobResult } from '@/lib/jobsProgress';
+import SamFeedback from '@/components/game/SamFeedback';
 import { track } from '@/lib/monitoring';
 
 
@@ -330,16 +331,9 @@ function Game({ job, onQuit, onDone }) {
           )}
 
           {answered && (
-            <div style={{ ...S.feedback, background: correct ? C.greenSoft : C.redSoft, borderColor: correct ? C.green : C.red }}>
-              <div style={S.fbHead}>
-                <span style={S.samAvatar}>🐺</span>
-                <span style={S.samName}>Sam</span>
-                <span style={{ ...S.fbVerdict, background: correct ? C.green : C.red }}>
-                  {correct ? rand(PRAISE) : rand(NOPE)}
-                </span>
-              </div>
-              <div style={S.fbText}>{explain}</div>
-            </div>
+            <SamFeedback tone={correct ? 'good' : 'bad'} name="Sam" verdict={correct ? rand(PRAISE) : rand(NOPE)}>
+              {explain}
+            </SamFeedback>
           )}
         </div>
 
@@ -488,12 +482,6 @@ const S = {
   mark: { color: C.green, fontWeight: 800, fontSize: 16 },
   markWrong: { color: C.red, fontWeight: 800, fontSize: 16 },
 
-  feedback: { marginTop: 16, border: '1.5px solid', borderRadius: 12, padding: '13px 15px' },
-  fbHead: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7 },
-  samAvatar: { fontSize: 18, width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff', borderRadius: 99, boxShadow: '0 1px 4px rgba(0,0,0,.1)' },
-  samName: { fontSize: 13, fontWeight: 800, color: C.ink, flex: 1 },
-  fbVerdict: { fontSize: 10.5, fontWeight: 800, color: '#fff', padding: '3px 9px', borderRadius: 99 },
-  fbText: { fontSize: 13.5, color: C.ink2, lineHeight: 1.5 },
   nextBtn: { width: '100%', marginTop: 16, background: C.ink, color: '#fff', border: 'none', borderRadius: 13, padding: '14px', fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: FONT },
 
   // Bilan

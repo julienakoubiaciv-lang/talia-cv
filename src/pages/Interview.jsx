@@ -30,6 +30,7 @@ import { generateInterviewSession } from '@/lib/interviewAI';
 import { QuotaError } from '@/lib/claudeClient';
 import { getHist } from '@/lib/cvData';
 import { usePlan } from '@/hooks/usePlan';
+import SamFeedback from '@/components/game/SamFeedback';
 import { track } from '@/lib/monitoring';
 // Mascotte (loup) retirée temporairement — sera rebranchée plus tard (asset Rive).
 
@@ -338,24 +339,13 @@ export default function Interview() {
 
           {/* Feedback du coach Sam */}
           {answered && (
-            <div style={{
-              ...S.feedback,
-              background: wasCorrect ? C.greenSoft : C.redSoft,
-              borderColor: wasCorrect ? C.green : C.red,
-            }}>
-              <div style={S.fbHead}>
-                <span style={S.samAvatar}>🐺</span>
-                <span style={S.samName}>Sam, ton coach</span>
-                <span style={{
-                  ...S.fbVerdict,
-                  background: wasCorrect ? C.green : C.red,
-                }}>
-                  {picked === PICK_TIMEOUT ? '⏱️ Trop tard' : wasCorrect ? 'Bonne réponse' : 'Pas tout à fait'}
-                </span>
-              </div>
-              <div style={S.fbText}>{q.explanation}</div>
-              <div style={S.fbTip}>💡 {q.tip}</div>
-            </div>
+            <SamFeedback
+              tone={wasCorrect ? 'good' : 'bad'}
+              verdict={picked === PICK_TIMEOUT ? '⏱️ Trop tard' : wasCorrect ? 'Bonne réponse' : 'Pas tout à fait'}
+              tip={q.tip}
+            >
+              {q.explanation}
+            </SamFeedback>
           )}
         </div>
 
@@ -897,13 +887,6 @@ const S = {
   tSubmit: { width: '100%', background: C.blue, color: '#fff', border: 'none', borderRadius: 12, padding: '13px', fontSize: 15, fontWeight: 700, fontFamily: FONT },
 
   // Feedback coach Sam
-  feedback: { marginTop: 16, border: '1.5px solid', borderRadius: 12, padding: '13px 15px', textAlign: 'left' },
-  fbHead: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 },
-  samAvatar: { fontSize: 18, width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff', borderRadius: 99, boxShadow: '0 1px 4px rgba(0,0,0,.1)' },
-  samName: { fontSize: 13, fontWeight: 800, color: C.ink, flex: 1 },
-  fbVerdict: { fontSize: 10.5, fontWeight: 800, color: '#fff', padding: '3px 9px', borderRadius: 99 },
-  fbText: { fontSize: 13.5, color: C.ink2, lineHeight: 1.5 },
-  fbTip: { fontSize: 12.5, color: C.ink, marginTop: 8, fontWeight: 600 },
 
   nextBtn: { width: '100%', marginTop: 16, background: C.ink, color: '#fff', border: 'none', borderRadius: 13, padding: '14px', fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: FONT },
 

@@ -14,6 +14,7 @@ import {
   xpForScore, computeNote, SCORE_META, PASS_MARK,
 } from '@/lib/workCodes';
 import { addXp, getTotalXp } from '@/lib/interviewProgress';
+import SamFeedback from '@/components/game/SamFeedback';
 import { track } from '@/lib/monitoring';
 
 const SESSION_SIZE = 8;
@@ -115,20 +116,16 @@ export default function WorkCodes() {
           </div>
 
           {answered && (
-            <div style={{ ...S.feedback, borderColor: toneColor[scoreTone(chosen.score)], background: toneSoft[scoreTone(chosen.score)] }}>
-              <div style={S.fbHead}>
-                <span style={S.samAvatar}>🐺</span>
-                <span style={S.samName}>Sam, ton coach</span>
-                <span style={{ ...S.fbVerdict, background: toneColor[scoreTone(chosen.score)] }}>
-                  {SCORE_META[chosen.score].label} · +{xpForScore(chosen.score)} XP
-                </span>
-              </div>
-              <div style={S.fbText}>{chosen.feedback}</div>
+            <SamFeedback
+              tone={scoreTone(chosen.score)}
+              verdict={`${SCORE_META[chosen.score].label} · +${xpForScore(chosen.score)} XP`}
+              tip={q.tip}
+            >
+              {chosen.feedback}
               {chosen.score !== 2 && (
                 <div style={S.fbIdeal}>★ Réflexe idéal : {q.options[idealIdx].text}</div>
               )}
-              <div style={S.fbTip}>💡 {q.tip}</div>
-            </div>
+            </SamFeedback>
           )}
         </div>
 
@@ -253,14 +250,7 @@ const S = {
   markGood: { color: C.green, fontWeight: 800, fontSize: 16 },
   markTone: { fontWeight: 800, fontSize: 16 },
 
-  feedback: { marginTop: 16, border: '1.5px solid', borderRadius: 12, padding: '13px 15px', textAlign: 'left' },
-  fbHead: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7 },
-  samAvatar: { fontSize: 18, width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff', borderRadius: 99, boxShadow: '0 1px 4px rgba(0,0,0,.1)' },
-  samName: { fontSize: 13, fontWeight: 800, color: C.ink, flex: 1 },
-  fbVerdict: { fontSize: 10.5, fontWeight: 800, color: '#fff', padding: '3px 9px', borderRadius: 99 },
-  fbText: { fontSize: 13.5, color: C.ink2, lineHeight: 1.5 },
   fbIdeal: { fontSize: 13, color: C.ink, fontWeight: 600, marginTop: 8, background: C.greenSoft, borderRadius: 8, padding: '8px 10px' },
-  fbTip: { fontSize: 12.5, color: C.ink, marginTop: 8, fontWeight: 600 },
   nextBtn: { width: '100%', marginTop: 16, background: C.ink, color: '#fff', border: 'none', borderRadius: 13, padding: '14px', fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: FONT },
 
   noteBig: { display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 2, margin: '6px 0 2px', fontSize: 58, fontWeight: 800, letterSpacing: -2, lineHeight: 1 },

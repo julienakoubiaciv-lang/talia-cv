@@ -900,6 +900,37 @@ export default function Home() {
           </div>
         </div>
 
+        {/* Bannière Codes de l'entreprise (SJT savoir-être) */}
+        <div
+          onClick={() => navigate('/codes')}
+          style={{
+            display: 'flex', alignItems: 'center', gap: isMobile ? 12 : 18,
+            padding: isMobile ? '14px 16px' : '18px 24px',
+            background: '#fff', border: `1px solid ${C.rule}`,
+            borderRadius: 16, marginBottom: isMobile ? 12 : 16, cursor: 'pointer',
+            boxShadow: '0 4px 18px rgba(11,22,56,.05)',
+            transition: 'transform .15s', animation: 'fadeIn .6s ease both',
+          }}
+          onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+          onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}>
+          <div style={{ fontSize: isMobile ? 30 : 38, flexShrink: 0 }}>🏢</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: isMobile ? 15 : 17, fontWeight: 800, letterSpacing: '-0.3px', marginBottom: 2, color: C.ink }}>
+              Les codes de l'entreprise
+            </div>
+            <div style={{ fontSize: isMobile ? 12 : 13.5, color: C.mute, lineHeight: 1.45 }}>
+              Savoir-être en poste : choisis la meilleure réaction face à des situations réelles.
+            </div>
+          </div>
+          <div style={{
+            flexShrink: 0, padding: isMobile ? '8px 14px' : '10px 18px',
+            background: C.bluePrimary, color: '#fff', borderRadius: 99,
+            fontSize: isMobile ? 12.5 : 13.5, fontWeight: 700, whiteSpace: 'nowrap',
+          }}>
+            {isMobile ? 'Jouer' : '🏢 S\'entraîner'}
+          </div>
+        </div>
+
         {/* Bannière Lettre de motivation IA */}
         <div
           onClick={() => navigate('/lettre')}

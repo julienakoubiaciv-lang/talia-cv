@@ -6,7 +6,7 @@ import { useCRMBridge } from '@/hooks/useCRMBridge.jsx';
 import { useAuth } from '@/hooks/useAuth.jsx';
 import { useIsMobile } from '@/hooks/useWindowWidth';
 import { useCRMToken } from '@/hooks/useCRMToken';
-import { usePlan } from '@/hooks/usePlan';
+import { useEntitlements } from '@/hooks/useEntitlements';
 import { PlanBanner } from '@/components/PlanGate';
 import { CheckoutSuccessBanner } from '@/components/CheckoutSuccessBanner.jsx';
 import { useCheckoutSuccess } from '@/hooks/useCheckoutSuccess';
@@ -514,7 +514,7 @@ export default function Home() {
   const { user, signOut } = useAuth();
   const isMobile = useIsMobile();
   const { crmLink, isLinked: isCRMLinked, linkFromURL, unlink: unlinkCRM } = useCRMToken();
-  const { isFree, plan, canCV, remainingCVs, canBulk, nextPlan, upgrade } = usePlan();
+  const { isFree, plan, canCV, remainingCVs, canBulk, nextPlan, upgrade } = useEntitlements();
 
   // Taux de complétion global du simulateur d'entretien (localStorage)
   const interviewPct = getOverallCompletion();

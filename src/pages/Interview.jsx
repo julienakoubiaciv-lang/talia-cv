@@ -29,7 +29,7 @@ import {
 import { generateInterviewSession } from '@/lib/interviewAI';
 import { QuotaError } from '@/lib/claudeClient';
 import { getHist } from '@/lib/cvData';
-import { usePlan } from '@/hooks/usePlan';
+import { useEntitlements } from '@/hooks/useEntitlements';
 import SamFeedback from '@/components/game/SamFeedback';
 import { track } from '@/lib/monitoring';
 // Mascotte (loup) retirée temporairement — sera rebranchée plus tard (asset Rive).
@@ -56,7 +56,7 @@ const PICK_TRANSLATOR = -2;
 
 export default function Interview() {
   const navigate = useNavigate();
-  const { isFree } = usePlan();
+  const { proLocked } = useEntitlements();
   const [phase, setPhase]   = useState('intro'); // intro | ai | play | result
   const [mode, setMode]     = useState('training');
   const [session, setSession] = useState([]);
@@ -205,7 +205,7 @@ export default function Interview() {
   if (phase === 'ai') {
     return (
       <AISetup
-        isFree={isFree} loading={aiLoading} error={aiError}
+        isFree={proLocked} loading={aiLoading} error={aiError}
         onGenerate={runAISession}
         onUpsell={() => navigate('/pricing')}
         onBack={() => setPhase('intro')}
@@ -220,7 +220,7 @@ export default function Interview() {
         onReplaySame={() => (isDemo ? startDemo() : isAI ? setPhase('ai') : start(lastGroup))}
         onReplay={() => setPhase('intro')}
         onHome={() => navigate('/')}
-        onUpsell={() => (isFree ? navigate('/pricing') : setPhase('ai'))}
+        onUpsell={() => (proLocked ? navigate('/pricing') : setPhase('ai'))}
       />
     );
   }

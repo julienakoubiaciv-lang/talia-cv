@@ -8,7 +8,7 @@ import { adaptPoste, renderCVFromData } from '@/lib/cvTemplates';
 import { saveHistory } from '@/lib/historySync';
 import { getProfiles, buildProfileContext } from '@/lib/profileData';
 import { useAuth } from '@/hooks/useAuth.jsx';
-import { usePlan } from '@/hooks/usePlan';
+import { useEntitlements } from '@/hooks/useEntitlements';
 import { PlanGate } from '@/components/PlanGate';
 import { callClaude, QuotaError } from '@/lib/claudeClient';
 import { useUpgradeModal } from '@/components/UpgradeModal.jsx';
@@ -424,7 +424,7 @@ function GroupCard({ group, colorSet, isRunning, onUpdate, onRemove, onAddFiles,
 export default function Bulk() {
   const navigate = useNavigate();
   const { toasts, show: showToast, remove: removeToast } = useToast();
-  const { canBulk, nextPlan } = usePlan();
+  const { canBulk, nextPlan } = useEntitlements();
 
   // Migration V0 : Anthropic via Edge Function. L'utilisateur doit être connecté.
   const { user } = useAuth();

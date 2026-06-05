@@ -14,13 +14,13 @@ import {
 import { listPostesBySector } from '@/lib/jobIntel';
 import { QuotaError } from '@/lib/claudeClient';
 import { getHist } from '@/lib/cvData';
-import { usePlan } from '@/hooks/usePlan';
+import { useEntitlements } from '@/hooks/useEntitlements';
 import { track } from '@/lib/monitoring';
 
 
 export default function LetterWriter() {
   const navigate = useNavigate();
-  const { isFree } = usePlan();
+  const { proLocked: isFree } = useEntitlements();
   const latest = useMemo(() => { try { return getHist()[0] || null; } catch { return null; } }, []);
   const cvData = latest?.data || null;
   const postesBySector = useMemo(() => { try { return listPostesBySector(); } catch { return {}; } }, []);

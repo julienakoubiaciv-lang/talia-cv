@@ -6,15 +6,10 @@
  * relie le générateur de CV, le décrypteur de métiers et le simulateur.
  */
 import React, { useMemo } from 'react';
+import { C, FONT } from '@/lib/gameTheme';
 import { useNavigate } from 'react-router-dom';
 import { getJourney } from '@/lib/journey';
 
-const FONT = "'Manrope', system-ui, sans-serif";
-const C = {
-  ink: '#0B1638', ink2: '#3A4156', mute: '#8390A6',
-  line: '#E6EAF1', bg: '#F4F6FA', blue: '#1539B7', blueSoft: '#EEF2FF',
-  green: '#0CA678', greenSoft: '#E6F8F1', amber: '#E8A500',
-};
 
 export default function Journey() {
   const navigate = useNavigate();

@@ -6,6 +6,7 @@
  * Réutilise claude-proxy (action 'coach') ; gating PRO via usePlan.
  */
 import React, { useState, useMemo } from 'react';
+import { C, FONT } from '@/lib/gameTheme';
 import { useNavigate } from 'react-router-dom';
 import {
   generateCoverLetter, markLetterGenerated, LETTER_FORMATS, LETTER_TONES,
@@ -16,12 +17,6 @@ import { getHist } from '@/lib/cvData';
 import { usePlan } from '@/hooks/usePlan';
 import { track } from '@/lib/monitoring';
 
-const FONT = "'Manrope', system-ui, sans-serif";
-const C = {
-  ink: '#0B1638', ink2: '#3A4156', mute: '#8390A6',
-  line: '#E6EAF1', bg: '#F4F6FA', blue: '#1539B7', blueSoft: '#EEF2FF',
-  green: '#0CA678', greenSoft: '#E6F8F1', red: '#E03131', redSoft: '#FFF0F0',
-};
 
 export default function LetterWriter() {
   const navigate = useNavigate();

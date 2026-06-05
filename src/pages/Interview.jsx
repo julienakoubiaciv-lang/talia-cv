@@ -16,6 +16,7 @@
  * commente chaque réponse. Jeu gratuit (banque statique, zéro coût API).
  */
 import React, { useState, useMemo, useEffect } from 'react';
+import { C, FONT } from '@/lib/gameTheme';
 import { useNavigate } from 'react-router-dom';
 import {
   listSectors, listGroups, buildSession, buildDemoSession,
@@ -31,14 +32,6 @@ import { getHist } from '@/lib/cvData';
 import { usePlan } from '@/hooks/usePlan';
 import { track } from '@/lib/monitoring';
 // Mascotte (loup) retirée temporairement — sera rebranchée plus tard (asset Rive).
-
-const FONT = "'Manrope', system-ui, sans-serif";
-const C = {
-  ink: '#0B1638', ink2: '#3A4156', mute: '#8390A6',
-  line: '#E6EAF1', bg: '#F4F6FA', blue: '#1539B7', blueSoft: '#EEF2FF',
-  green: '#0CA678', greenSoft: '#E6F8F1', red: '#E03131', redSoft: '#FFF0F0',
-  amber: '#E8A500', boss: '#7048E8', bossSoft: '#F3EEFF',
-};
 
 const SESSION_SIZE = 8;
 const START_HEARTS  = 3;

@@ -7,6 +7,7 @@
  * XP partagé avec le reste de l'app ; note /20 « maîtrise des codes ».
  */
 import React, { useState, useMemo } from 'react';
+import { C, FONT } from '@/lib/gameTheme';
 import { useNavigate } from 'react-router-dom';
 import {
   CODE_THEMES, listCodeThemes, buildCodesSession,
@@ -15,13 +16,6 @@ import {
 import { addXp, getTotalXp } from '@/lib/interviewProgress';
 import { track } from '@/lib/monitoring';
 
-const FONT = "'Manrope', system-ui, sans-serif";
-const C = {
-  ink: '#0B1638', ink2: '#3A4156', mute: '#8390A6',
-  line: '#E6EAF1', bg: '#F4F6FA', blue: '#1539B7', blueSoft: '#EEF2FF',
-  green: '#0CA678', greenSoft: '#E6F8F1', amber: '#E8A500', amberSoft: '#FBF3DE',
-  red: '#E03131', redSoft: '#FFF0F0',
-};
 const SESSION_SIZE = 8;
 const toneColor = { good: C.green, mid: C.amber, bad: C.red };
 const toneSoft  = { good: C.greenSoft, mid: C.amberSoft, bad: C.redSoft };

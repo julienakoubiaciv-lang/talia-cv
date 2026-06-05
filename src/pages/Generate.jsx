@@ -1175,6 +1175,14 @@ RÈGLES :
             onCreateNew={() => navigate('/profils/nouveau')}
           />
 
+          {/* ── PICKER SECTEUR (placé sous le profil IA) ────────────────── */}
+          <div style={{
+            background: '#fff', borderRadius: 16, padding: 22,
+            border: '1.5px solid ' + C.rule, marginBottom: 16,
+          }}>
+            <SectorPicker value={sectorId} onChange={setSectorId} />
+          </div>
+
           {/* Stepper */}
           <Stepper
             steps={[
@@ -1408,14 +1416,6 @@ RÈGLES :
             keywords={annonceKeywords}
             onChange={handleAnnonceInput}
           />
-
-          {/* ── PICKER SECTEUR : réorganise les sections + active des sections spécialisées ── */}
-          <div style={{
-            background: '#fff', borderRadius: 16, padding: 22,
-            border: '1.5px solid ' + C.rule, marginBottom: 16,
-          }}>
-            <SectorPicker value={sectorId} onChange={setSectorId} />
-          </div>
 
           {/* ── BOUTON GÉNÉRER ────────────────────────────────────────── */}
           <div ref={card3Ref} style={{ marginBottom: 16 }}>

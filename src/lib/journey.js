@@ -9,34 +9,15 @@
  * `computeJourney(stats)` est pur (testable) ; `getJourney()` lit les stores.
  */
 import { getHist } from '@/lib/cvData';
-import {
-  getOverallCompletion, getTotalXp, getDailyStreak, getThemesPlayed, getProgress,
-} from '@/lib/interviewProgress';
+import { getOverallCompletion, getThemesPlayed, getProgress } from '@/lib/interviewProgress';
 import { getValidatedJobs, getJobsPlayed } from '@/lib/jobsProgress';
 import { getLettersCount } from '@/lib/coverLetter';
+import { getTotalXp, getDailyStreak, levelForXp, LEVELS, syncBadges } from '@/lib/playerProfile';
+
+// Niveau : centralisé dans playerProfile, ré-exporté pour compat (Journey.jsx / tests).
+export { levelForXp, LEVELS };
 
 const INTERVIEW_PASS_PCT = 60; // 12/20 → un thème est « validé » à 60 %
-
-/** Paliers de niveau selon l'XP cumulée (du plus haut au plus bas pour lookup). */
-export const LEVELS = [
-  { min: 0,    label: 'Débutant',  emoji: '🌱' },
-  { min: 200,  label: 'Apprenti',  emoji: '📘' },
-  { min: 600,  label: 'Confirmé',  emoji: '⚡' },
-  { min: 1200, label: 'Pro',       emoji: '🏆' },
-  { min: 2500, label: 'Expert',    emoji: '👑' },
-];
-
-/** Niveau (et progression vers le suivant) pour une XP donnée. */
-export function levelForXp(xp = 0) {
-  let idx = 0;
-  for (let i = 0; i < LEVELS.length; i++) if (xp >= LEVELS[i].min) idx = i;
-  const current = LEVELS[idx];
-  const next = LEVELS[idx + 1] || null;
-  const span = next ? next.min - current.min : 1;
-  const into = next ? xp - current.min : 1;
-  const progress = next ? Math.max(0, Math.min(100, Math.round((into / span) * 100))) : 100;
-  return { ...current, index: idx, next, progress, toNext: next ? Math.max(0, next.min - xp) : 0 };
-}
 
 /**
  * Construit le parcours à partir de statistiques déjà collectées (fonction pure).
@@ -120,7 +101,7 @@ export function getJourney() {
   const prog = getProgress();
   const validatedThemes = Object.values(prog).filter((p) => (p?.best || 0) >= INTERVIEW_PASS_PCT).length;
 
-  return computeJourney({
+  const journey = computeJourney({
     cvCount,
     overall: getOverallCompletion(),
     themesPlayed: getThemesPlayed(),
@@ -131,4 +112,9 @@ export function getJourney() {
     xp: getTotalXp(),
     streak: getDailyStreak(),
   });
+
+  // Persiste les badges fraîchement débloqués (1re date conservée) → base ligues/badges.
+  syncBadges(journey.badges.filter((b) => b.earned).map((b) => b.id));
+
+  return journey;
 }

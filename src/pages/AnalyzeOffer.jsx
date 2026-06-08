@@ -12,18 +12,48 @@ import React, { useState, useMemo } from 'react';
 import { C, FONT } from '@/lib/gameTheme';
 import { useNavigate } from 'react-router-dom';
 import { analyzeMatch, atsCheck } from '@/lib/smartMatcher';
-import { getHist } from '@/lib/cvData';
+import { optimizeCvForOffer } from '@/lib/cvOptimize';
+import { QuotaError } from '@/lib/claudeClient';
+import { getHist, saveEditorState, loadEditorState } from '@/lib/cvData';
+import { useEntitlements } from '@/hooks/useEntitlements';
 import { track } from '@/lib/monitoring';
 
 export default function AnalyzeOffer() {
   const navigate = useNavigate();
+  const { proLocked } = useEntitlements();
   const latest = useMemo(() => { try { return getHist()[0] || null; } catch { return null; } }, []);
   const cvData = latest?.data || null;
 
   const [offer, setOffer] = useState('');
   const [result, setResult] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState(null);
 
   const canAnalyze = !!cvData && offer.trim().length >= 30;
+
+  // Ouvre l'éditeur sur un CV donné (hand-off via l'état éditeur).
+  function openEditorWith(cv) {
+    const base = loadEditorState() || {};
+    saveEditorState({ ...base, cvData: cv, name: latest?.name || base.name || '', generatedHTML: '' });
+    navigate('/editor');
+  }
+
+  async function optimize() {
+    if (!cvData) return;
+    if (proLocked) { navigate('/pricing'); return; }
+    setAiLoading(true); setAiError(null);
+    try {
+      const optimized = await optimizeCvForOffer({ cvData, offerText: offer, missing: result?.match?.missing || [] });
+      track('cv_optimized', { missing: (result?.match?.missing || []).length });
+      openEditorWith(optimized);
+    } catch (err) {
+      setAiError(err instanceof QuotaError
+        ? 'Quota d\'optimisations atteint. Reviens plus tard ou passe à un plan supérieur.'
+        : (err?.message || 'L\'optimisation a échoué. Réessaie.'));
+    } finally {
+      setAiLoading(false);
+    }
+  }
 
   function analyze() {
     if (!canAnalyze) return;
@@ -138,8 +168,18 @@ export default function AnalyzeOffer() {
               </div>
             </div>
 
-            <button style={S.cta} onClick={() => navigate('/editor')}>✏️ Améliorer mon CV</button>
+            {aiError && <div style={S.errBox}>⚠️ {aiError}</div>}
+
+            {/* Optimisation IA (PRO) — réécrit accroche + missions avec les mots-clés */}
+            <button
+              style={{ ...S.cta, position: 'relative', opacity: aiLoading ? 0.7 : 1, cursor: aiLoading ? 'wait' : 'pointer' }}
+              onClick={optimize} disabled={aiLoading}>
+              <span style={S.proTag}>PRO ✨</span>
+              {aiLoading ? 'Optimisation en cours…' : 'Optimiser mon CV avec l\'IA'}
+            </button>
+            <button style={S.ghostBtn} onClick={() => openEditorWith(cvData)}>✏️ Compléter moi-même dans l'éditeur</button>
             <button style={S.ghostBtn} onClick={analyze}>↻ Relancer l'analyse</button>
+            <p style={S.hint}>L'IA réécrit ton accroche et tes missions avec les bons mots-clés — sans rien inventer — puis ouvre l'éditeur pour compléter le reste.</p>
           </div>
         )}
       </div>
@@ -190,6 +230,8 @@ const S = {
   cta: { width: '100%', background: C.blue, color: '#fff', border: 'none', borderRadius: 14, padding: '15px 20px', fontSize: 15.5, fontWeight: 700, cursor: 'pointer', fontFamily: FONT, boxShadow: '0 8px 24px rgba(21,57,183,.22)' },
   ghostBtn: { width: '100%', background: '#fff', color: C.ink2, border: `1px solid ${C.line}`, borderRadius: 12, padding: '12px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: FONT, marginTop: 10 },
   hint: { fontSize: 12, color: C.mute, textAlign: 'center', marginTop: 10 },
+  proTag: { position: 'absolute', top: 8, right: 12, fontSize: 9.5, fontWeight: 800, letterSpacing: 0.5, background: 'rgba(255,255,255,.22)', padding: '2px 7px', borderRadius: 6 },
+  errBox: { fontSize: 13, fontWeight: 600, color: C.red, background: C.redSoft, borderRadius: 12, padding: '11px 14px', marginBottom: 12, lineHeight: 1.45 },
 
   results: { marginTop: 22 },
   scoreCard: { display: 'flex', alignItems: 'center', gap: 16, background: '#fff', border: `1px solid ${C.line}`, borderRadius: 16, padding: '16px 18px', marginBottom: 12, boxShadow: '0 4px 18px rgba(11,22,56,.05)' },

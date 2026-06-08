@@ -11,6 +11,7 @@ import { PlanBanner } from '@/components/PlanGate';
 import { CheckoutSuccessBanner } from '@/components/CheckoutSuccessBanner.jsx';
 import { useCheckoutSuccess } from '@/hooks/useCheckoutSuccess';
 import { getOverallCompletion } from '@/lib/interviewProgress';
+import { isDemoMode, setDemoMode } from '@/lib/demoMode';
 
 /* ─── Design tokens ─────────────────────────────────────────────────────── */
 const C = {
@@ -532,6 +533,7 @@ export default function Home() {
   const [selectedForms, setSelectedForms] = useState([]); // formations sélectionnées
   const [groupByBulk, setGroupByBulk] = useState(false);
   const [tourOpen, setTourOpen] = useState(false);
+  const [demoOn, setDemoOn] = useState(() => isDemoMode());
   const [leadSentIds, setLeadSentIds] = useState(new Set()); // IDs déjà envoyés au CRM
 
   useEffect(() => { setCvList(getHistorySync()); }, []);
@@ -798,6 +800,34 @@ export default function Home() {
 
       {/* ── Main content ─────────────────────────────────────────────────── */}
       <main style={{ maxWidth: 1180, margin: '0 auto', padding: isMobile ? '24px 16px 60px' : '56px 64px 80px' }}>
+
+        {/* Bandeau Mode démo — IA simulée en local (en attendant le backend) */}
+        {demoOn && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: isMobile ? 10 : 14,
+            padding: isMobile ? '12px 14px' : '14px 20px',
+            background: 'linear-gradient(90deg,#FFF8E6,#FEF1F6)',
+            border: '1px solid #F0D8A8', borderRadius: 14,
+            marginBottom: isMobile ? 18 : 24,
+          }}>
+            <span style={{ fontSize: isMobile ? 22 : 26 }}>🧪</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: isMobile ? 13.5 : 15, fontWeight: 800, color: C.ink }}>Mode démo actif</div>
+              <div style={{ fontSize: isMobile ? 11.5 : 13, color: C.ink2, lineHeight: 1.45 }}>
+                Les fonctionnalités IA (lettre, test, oral, optimisation…) sont simulées en local, sans backend.
+              </div>
+            </div>
+            <button
+              onClick={() => { setDemoMode(false); setDemoOn(false); }}
+              style={{
+                flexShrink: 0, background: '#fff', color: C.ink2, border: '1px solid #E7C98F',
+                borderRadius: 99, padding: isMobile ? '7px 12px' : '8px 14px',
+                fontSize: isMobile ? 11.5 : 12.5, fontWeight: 700, cursor: 'pointer',
+              }}>
+              Désactiver
+            </button>
+          </div>
+        )}
 
         {/* Bannière Parcours — colonne vertébrale gamifiée vers l'emploi */}
         <div

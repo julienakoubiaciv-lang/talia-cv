@@ -14,20 +14,34 @@ describe('computeDiagnostic', () => {
   it('profil vide : score 0, tout en axe de progression', () => {
     const d = computeDiagnostic({});
     expect(d.global).toBe(0);
-    expect(d.pillars).toHaveLength(5);
+    expect(d.pillars).toHaveLength(6);
     expect(d.strengths).toHaveLength(0);
-    expect(d.gaps).toHaveLength(5);
+    expect(d.gaps).toHaveLength(6);
   });
 
   it('profil complet : score élevé, des forces', () => {
     const d = computeDiagnostic({
       cvExists: true, cvAts: 100, interviewOverall: 90,
       jobsValidated: 3, jobsCovered: 3, codesBest: 18, lettersGenerated: 2,
+      oralBest: 18, recruitBest: 18,
     });
     expect(d.global).toBeGreaterThanOrEqual(85);
     expect(d.tier.label).toBe('Prêt à l\'emploi');
-    expect(d.strengths.length).toBeGreaterThanOrEqual(4);
+    expect(d.strengths.length).toBeGreaterThanOrEqual(5);
     expect(d.gaps).toHaveLength(0);
+  });
+
+  it('le pilier entretien combine simulateur écrit et oral', () => {
+    const d = computeDiagnostic({ interviewOverall: 100, oralBest: 0 });
+    // 100 % écrit mais 0 oral → pilier à 50
+    expect(d.pillars.find((p) => p.id === 'entretien').score).toBe(50);
+    const d2 = computeDiagnostic({ interviewOverall: 100, oralBest: 20 });
+    expect(d2.pillars.find((p) => p.id === 'entretien').score).toBe(100);
+  });
+
+  it('le pilier recrutement convertit la note /20 en pourcentage', () => {
+    const d = computeDiagnostic({ recruitBest: 15 });
+    expect(d.pillars.find((p) => p.id === 'recrutement').score).toBe(75);
   });
 
   it('le pilier CV est 0 sans CV même avec un score ATS', () => {

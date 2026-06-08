@@ -14,6 +14,8 @@ import { getValidatedJobs } from '@/lib/jobsProgress';
 import { listJobs } from '@/lib/jobIntel';
 import { getCodesBest } from '@/lib/workCodes';
 import { getLettersCount } from '@/lib/coverLetter';
+import { getOralBest } from '@/lib/oralInterview';
+import { getTestBest } from '@/lib/recruitTest';
 
 const clamp = (v) => Math.max(0, Math.min(100, Math.round(v || 0)));
 
@@ -35,12 +37,20 @@ export function tierForScore(g) {
  * @param {number} s.jobsCovered      - métiers disponibles
  * @param {number} s.codesBest        - meilleure note /20 aux codes
  * @param {number} s.lettersGenerated - lettres générées
+ * @param {number} s.oralBest         - meilleure note /20 à l'entretien oral
+ * @param {number} s.recruitBest      - meilleure note /20 au test de recrutement
  */
 export function computeDiagnostic(s) {
   const {
     cvExists = false, cvAts = 0, interviewOverall = 0,
     jobsValidated = 0, jobsCovered = 0, codesBest = 0, lettersGenerated = 0,
+    oralBest = 0, recruitBest = 0,
   } = s || {};
+
+  // La préparation à l'entretien combine l'entraînement écrit (simulateur QCM)
+  // et l'oral (note /20). Réussir l'oral fait monter ce pilier.
+  const oralPct = clamp((oralBest / 20) * 100);
+  const entretienScore = clamp((clamp(interviewOverall) + oralPct) / 2);
 
   const pillars = [
     {
@@ -51,9 +61,10 @@ export function computeDiagnostic(s) {
     },
     {
       id: 'entretien', emoji: '🎤', label: 'Préparation à l\'entretien',
-      score: clamp(interviewOverall),
-      cta: '/entretien', ctaLabel: 'M\'entraîner à l\'entretien',
-      reco: 'Entraîne-toi sur les thèmes d\'entretien jusqu\'à les valider.',
+      score: entretienScore,
+      cta: oralPct < clamp(interviewOverall) ? '/entretien-oral' : '/entretien',
+      ctaLabel: oralPct < clamp(interviewOverall) ? 'M\'entraîner à l\'oral' : 'M\'entraîner à l\'entretien',
+      reco: 'Entraîne-toi à l\'écrit (simulateur) ET à l\'oral jusqu\'à être à l\'aise.',
     },
     {
       id: 'metier', emoji: '🧭', label: 'Connaissance des métiers',
@@ -72,6 +83,12 @@ export function computeDiagnostic(s) {
       score: lettersGenerated > 0 ? 100 : 0,
       cta: '/lettre', ctaLabel: 'Rédiger ma lettre',
       reco: 'Génère ta lettre / mail de motivation personnalisé(e).',
+    },
+    {
+      id: 'recrutement', emoji: '🧩', label: 'Tests de recrutement',
+      score: clamp((recruitBest / 20) * 100),
+      cta: '/test-recrutement', ctaLabel: 'Passer un test de recrutement',
+      reco: 'Entraîne-toi aux tests de présélection : aptitudes, métier, mises en situation.',
     },
   ];
 
@@ -96,5 +113,7 @@ export function getDiagnostic() {
     jobsCovered: listJobs().length,
     codesBest: getCodesBest(),
     lettersGenerated: getLettersCount(),
+    oralBest: getOralBest(),
+    recruitBest: getTestBest(),
   });
 }

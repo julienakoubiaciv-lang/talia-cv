@@ -138,6 +138,36 @@ export function analyzeMatch(offerText, cvData) {
   return { present, missing, score, total: offerKeywords.length };
 }
 
+/**
+ * Vérifie la compatibilité « ATS » d'un CV (lisibilité par les robots de tri des
+ * recruteurs) via des heuristiques sur la complétude des champs clés. Pur/testable.
+ * @param {object} cvData
+ * @returns {{ score:number, passed:number, total:number, checks:Array<{id,label,ok,hint}> }}
+ */
+export function atsCheck(cvData = {}) {
+  const d = cvData || {};
+  const emailOk = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(d.email || '').trim());
+  const exp = (d.experiences || []).filter((e) => e && e.poste && e.entreprise);
+  const expDated = exp.some((e) => e.periode && String(e.periode).trim());
+  const tech = (d.competences?.techniques || []).filter(Boolean);
+
+  const checks = [
+    { id: 'identite',    label: 'Nom et prénom renseignés',        ok: !!(d.prenom && d.nom),                           hint: 'Indique clairement ton prénom et ton nom.' },
+    { id: 'email',       label: 'Email valide',                    ok: emailOk,                                          hint: 'Ajoute un email professionnel au format valide.' },
+    { id: 'tel',         label: 'Téléphone renseigné',             ok: !!(d.telephone && String(d.telephone).trim()),   hint: 'Un numéro joignable rassure le recruteur.' },
+    { id: 'poste',       label: 'Intitulé de poste clair',         ok: !!(d.poste && String(d.poste).trim()),           hint: "Mets un titre de poste explicite : les ATS s'en servent pour matcher." },
+    { id: 'accroche',    label: 'Accroche professionnelle',        ok: String(d.accroche || '').trim().length >= 80,    hint: 'Rédige 2-3 lignes d’accroche avec tes mots-clés métier.' },
+    { id: 'exp',         label: 'Au moins une expérience complète',ok: exp.length > 0,                                   hint: 'Renseigne poste + entreprise pour chaque expérience.' },
+    { id: 'expDate',     label: 'Expériences datées',              ok: expDated,                                         hint: 'Ajoute les périodes : les ATS lisent les dates.' },
+    { id: 'formation',   label: 'Au moins une formation',          ok: (d.formations || []).some((f) => f && (f.titre || f.isTalia)), hint: 'Indique ta formation principale.' },
+    { id: 'competences', label: '5 compétences clés ou plus',      ok: tech.length >= 5,                                hint: 'Liste au moins 5 compétences techniques (mots-clés scannés par les ATS).' },
+  ];
+
+  const passed = checks.filter((c) => c.ok).length;
+  const score = Math.round((passed / checks.length) * 100);
+  return { score, passed, total: checks.length, checks };
+}
+
 // ─── Analyse sémantique via Claude (Edge Function claude-proxy) ───────────────
 //
 // Migration V0 : plus aucun fetch direct à /api/anthropic.

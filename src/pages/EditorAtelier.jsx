@@ -121,23 +121,36 @@ function computeScore(cvData) {
   return Math.round((score / max) * 100);
 }
 
-// ─── Complétude d'une étape (= toutes les cases essentielles remplies) ──────
+// ─── Complétude d'une étape : TOUTES les cases doivent être remplies ───────────
+const filled = (v) => !!(v && String(v).trim());
+
 function isStepComplete(stepId, d) {
   if (!d) return false;
   switch (stepId) {
     case 'identite':
-      return !!(d.prenom && d.nom && d.email && d.telephone && d.poste && (d.accroche || '').trim());
-    case 'experiences':
-      return (d.experiences || []).some(e => e && e.poste && e.entreprise);
-    case 'formations':
-      return (d.formations || []).some(f => f && (f.titre || f.isTalia));
-    case 'competences':
-      return ((d.competences?.techniques || []).filter(Boolean).length > 0)
-        || ((d.competences?.comportementales || []).filter(Boolean).length > 0);
-    case 'langues':
-      return (d.langues || []).some(l => l && (typeof l === 'string' ? l.trim() : l.langue));
+      // tous les champs du formulaire identité
+      return [d.prenom, d.nom, d.dateNaissance, d.adresse, d.email, d.telephone, d.linkedin, d.poste, d.accroche].every(filled);
+    case 'experiences': {
+      const exps = d.experiences || [];
+      return exps.length > 0 && exps.every((e) =>
+        e && filled(e.poste) && filled(e.entreprise) && filled(e.lieu) && filled(e.periode)
+        && (e.missions || []).some(filled));
+    }
+    case 'formations': {
+      const fs = d.formations || [];
+      return fs.length > 0 && fs.every((f) => f && (f.isTalia || (filled(f.titre) && filled(f.etablissement) && filled(f.periode))));
+    }
+    case 'competences': {
+      const c = d.competences || {};
+      // les 3 catégories doivent contenir au moins une entrée
+      return ['techniques', 'comportementales', 'outils'].every((cat) => (c[cat] || []).filter(filled).length > 0);
+    }
+    case 'langues': {
+      const ls = d.langues || [];
+      return ls.length > 0 && ls.every((l) => (typeof l === 'string' ? filled(l) : filled(l?.langue) && filled(l?.niveau)));
+    }
     case 'interets':
-      return (d.centresInteret || []).filter(Boolean).length > 0;
+      return (d.centresInteret || []).filter(filled).length > 0;
     default:
       return false;
   }

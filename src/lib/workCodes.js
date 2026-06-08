@@ -340,3 +340,23 @@ export function computeNote(scores) {
   const total = scores.reduce((s, n) => s + (n || 0), 0);
   return Math.round((total / (scores.length * 2)) * 20);
 }
+
+// ── Persistance de la maîtrise des codes (meilleure note /20) ─────────────────
+const LS_CODES = 'talia_codes_progress';
+
+/** Enregistre le résultat d'une session « codes » (meilleure note conservée). */
+export function saveCodesResult(note) {
+  try {
+    const prev = JSON.parse(localStorage.getItem(LS_CODES) || '{}');
+    const n = Math.max(0, Math.min(20, Math.round(note || 0)));
+    const data = { bestNote: Math.max(prev.bestNote || 0, n), plays: (prev.plays || 0) + 1 };
+    localStorage.setItem(LS_CODES, JSON.stringify(data));
+    return data;
+  } catch { return null; }
+}
+
+/** Meilleure note /20 obtenue aux codes (0 si jamais joué). */
+export function getCodesBest() {
+  try { return JSON.parse(localStorage.getItem(LS_CODES) || '{}').bestNote || 0; }
+  catch { return 0; }
+}

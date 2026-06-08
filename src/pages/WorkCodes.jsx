@@ -11,7 +11,7 @@ import { C, FONT } from '@/lib/gameTheme';
 import { useNavigate } from 'react-router-dom';
 import {
   CODE_THEMES, listCodeThemes, buildCodesSession,
-  xpForScore, computeNote, SCORE_META, PASS_MARK,
+  xpForScore, computeNote, saveCodesResult, SCORE_META, PASS_MARK,
 } from '@/lib/workCodes';
 import { addXp, getTotalXp } from '@/lib/interviewProgress';
 import SamFeedback from '@/components/game/SamFeedback';
@@ -52,7 +52,9 @@ export default function WorkCodes() {
 
   function next() {
     if (idx + 1 >= session.length) {
-      track('codes_session_done', { theme, total: session.length, note: computeNote(scores), xp });
+      const note = computeNote(scores);
+      saveCodesResult(note);
+      track('codes_session_done', { theme, total: session.length, note, xp });
       setPhase('done');
     } else { setIdx(idx + 1); setPicked(null); }
   }

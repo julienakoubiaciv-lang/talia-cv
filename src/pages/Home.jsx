@@ -1024,6 +1024,37 @@ export default function Home() {
           </div>
         </div>
 
+        {/* Bannière Test de recrutement IA */}
+        <div
+          onClick={() => navigate('/test-recrutement')}
+          style={{
+            display: 'flex', alignItems: 'center', gap: isMobile ? 12 : 18,
+            padding: isMobile ? '14px 16px' : '18px 24px',
+            background: '#fff', border: `1px solid ${C.rule}`,
+            borderRadius: 16, marginBottom: isMobile ? 20 : 28, cursor: 'pointer',
+            boxShadow: '0 4px 18px rgba(11,22,56,.05)',
+            transition: 'transform .15s', animation: 'fadeIn .6s ease both',
+          }}
+          onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+          onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}>
+          <div style={{ fontSize: isMobile ? 30 : 38, flexShrink: 0 }}>🧩</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: isMobile ? 15 : 17, fontWeight: 800, letterSpacing: '-0.3px', marginBottom: 2, color: C.ink }}>
+              Test de recrutement IA
+            </div>
+            <div style={{ fontSize: isMobile ? 12 : 13.5, color: C.mute, lineHeight: 1.45 }}>
+              Aptitudes, métier et mises en situation, adaptés à ton CV et à l'annonce.
+            </div>
+          </div>
+          <div style={{
+            flexShrink: 0, padding: isMobile ? '8px 14px' : '10px 18px',
+            background: C.bluePrimary, color: '#fff', borderRadius: 99,
+            fontSize: isMobile ? 12.5 : 13.5, fontWeight: 700, whiteSpace: 'nowrap',
+          }}>
+            {isMobile ? 'Tester' : '🧩 Passer le test'}
+          </div>
+        </div>
+
         {/* Hero — titre de la liste des CV (placé sous les modules) */}
         <div style={{ margin: isMobile ? '8px 0 28px' : '16px 0 48px', animation: 'fadeIn 0.8s ease both' }}>
           <h1 style={{ fontSize: isMobile ? 36 : 64, fontWeight: 700, color: C.ink, letterSpacing: isMobile ? '-0.8px' : '-2px', lineHeight: 1.05, marginBottom: 8 }}>Mes CV</h1>

@@ -31,6 +31,7 @@ const LetterWriter  = lazy(() => import('./pages/LetterWriter.jsx'));
 const WorkCodes     = lazy(() => import('./pages/WorkCodes.jsx'));
 const AnalyzeOffer  = lazy(() => import('./pages/AnalyzeOffer.jsx'));
 const Diagnostic    = lazy(() => import('./pages/Diagnostic.jsx'));
+const RecruitTest   = lazy(() => import('./pages/RecruitTest.jsx'));
 
 // Spinner minimal affiché pendant le chargement d'un chunk
 function PageLoader() {
@@ -78,6 +79,7 @@ export default function App() {
                     <Route path="/codes"              element={<WorkCodes />} />
                     <Route path="/analyse"            element={<AnalyzeOffer />} />
                     <Route path="/diagnostic"         element={<Diagnostic />} />
+                    <Route path="/test-recrutement"   element={<RecruitTest />} />
                   </Routes>
                 </Suspense>
               </ErrorBoundary>

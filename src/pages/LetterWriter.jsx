@@ -9,7 +9,7 @@ import React, { useState, useMemo } from 'react';
 import { C, FONT } from '@/lib/gameTheme';
 import { useNavigate } from 'react-router-dom';
 import {
-  generateCoverLetter, markLetterGenerated, LETTER_FORMATS, LETTER_TONES,
+  generateCoverLetter, markLetterGenerated, LETTER_FORMATS, LETTER_TONES, MESSAGE_TYPES,
 } from '@/lib/coverLetter';
 import { listPostesBySector } from '@/lib/jobIntel';
 import { QuotaError } from '@/lib/claudeClient';
@@ -25,6 +25,8 @@ export default function LetterWriter() {
   const cvData = latest?.data || null;
   const postesBySector = useMemo(() => { try { return listPostesBySector(); } catch { return {}; } }, []);
 
+  const [messageType, setMessageType] = useState('motivation'); // motivation | relance | remerciement
+  const [extra, setExtra]   = useState('');
   const [targetMode, setTargetMode] = useState('annonce'); // 'annonce' | 'poste'
   const [offer, setOffer]   = useState('');
   const [company, setCompany] = useState('');
@@ -32,6 +34,7 @@ export default function LetterWriter() {
   const [targetRole, setTargetRole] = useState('');
   const [format, setFormat] = useState('lettre');
   const [tone, setTone]     = useState('equilibre');
+  const mt = MESSAGE_TYPES[messageType];
   const [loading, setLoading] = useState(false);
   const [error, setError]   = useState(null);
   const [subject, setSubject] = useState('');
@@ -46,14 +49,15 @@ export default function LetterWriter() {
     if (!canGenerate) return;
     setLoading(true); setError(null); setCopied(false);
     try {
+      const common = { cvData, company, format, tone, messageType, extra };
       const payload = targetMode === 'annonce'
-        ? { cvData, offerText: offer, company, roleTitle, format, tone }
-        : { cvData, targetRole, company, format, tone };
+        ? { ...common, offerText: offer, roleTitle }
+        : { ...common, targetRole };
       const letter = await generateCoverLetter(payload);
       setSubject(letter.subject || '');
       setText(letter.text);
       markLetterGenerated();
-      track('cover_letter_generated', { format, tone, targetMode, hasOffer: !!offer.trim(), targetRole });
+      track('cover_letter_generated', { messageType, format, tone, targetMode, hasOffer: !!offer.trim(), targetRole });
     } catch (err) {
       if (err instanceof QuotaError) {
         setError({ type: 'quota', message: 'Quota de générations atteint. Reviens plus tard ou passe à un plan supérieur.' });
@@ -85,15 +89,15 @@ export default function LetterWriter() {
       <div style={S.wrap}>
         <div style={S.top}>
           <button style={S.backBtn} onClick={() => navigate('/')}>← Accueil</button>
-          <span style={S.brandTag}>ALTIO · Lettre IA</span>
+          <span style={S.brandTag}>ALTIO · Candidature</span>
         </div>
 
         <div style={S.header}>
-          <span style={S.eyebrow}>Candidature · PRO ✨</span>
-          <h1 style={S.h1}>Lettre de motivation</h1>
+          <span style={S.eyebrow}>Kit de candidature · PRO ✨</span>
+          <h1 style={S.h1}>Tes messages de candidature</h1>
           <p style={S.lead}>
-            Génère une lettre, un email ou un message LinkedIn personnalisé à partir
-            de ton CV et de l'offre visée. À toi de la relire et l'ajuster.
+            Lettre de motivation, mail de relance ou de remerciement — généré à partir
+            de ton CV et de l'offre. À toi de relire et d'ajuster.
           </p>
         </div>
 
@@ -125,17 +129,33 @@ export default function LetterWriter() {
               )}
             </div>
 
-            {/* Format */}
-            <div style={S.sectionLabel}>Format</div>
+            {/* Type de message */}
+            <div style={S.sectionLabel}>Type de message</div>
             <div style={S.choiceRow}>
-              {Object.entries(LETTER_FORMATS).map(([id, f]) => (
-                <button key={id} onClick={() => setFormat(id)}
-                  style={{ ...S.choice, ...(format === id ? S.choiceActive : {}) }}>
-                  <span style={{ fontSize: 18 }}>{f.emoji}</span>
-                  <span style={S.choiceLabel}>{f.label}</span>
+              {Object.entries(MESSAGE_TYPES).map(([id, m]) => (
+                <button key={id} onClick={() => setMessageType(id)}
+                  style={{ ...S.choice, ...(messageType === id ? S.choiceActive : {}) }}>
+                  <span style={{ fontSize: 18 }}>{m.emoji}</span>
+                  <span style={S.choiceLabel}>{m.label}</span>
                 </button>
               ))}
             </div>
+
+            {/* Format — seulement pour la motivation (relance/remerciement = email) */}
+            {!mt.forceEmail && (
+              <>
+                <div style={S.sectionLabel}>Format</div>
+                <div style={S.choiceRow}>
+                  {Object.entries(LETTER_FORMATS).map(([id, f]) => (
+                    <button key={id} onClick={() => setFormat(id)}
+                      style={{ ...S.choice, ...(format === id ? S.choiceActive : {}) }}>
+                      <span style={{ fontSize: 18 }}>{f.emoji}</span>
+                      <span style={S.choiceLabel}>{f.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
 
             {/* Ton */}
             <div style={S.sectionLabel}>Ton</div>
@@ -199,6 +219,17 @@ export default function LetterWriter() {
               </>
             )}
 
+            {mt.extraLabel && (
+              <>
+                <div style={S.sectionLabel}>{mt.extraLabel}</div>
+                <textarea
+                  style={S.textarea} rows={2} value={extra} disabled={loading}
+                  onChange={(e) => setExtra(e.target.value)}
+                  placeholder="Quelques mots de contexte pour personnaliser le message…"
+                />
+              </>
+            )}
+
             {error && (
               <div style={{ ...S.err, background: error.type === 'quota' ? C.blueSoft : C.redSoft, color: error.type === 'quota' ? C.blue : C.red }}>
                 <span>{error.type === 'quota' ? '⏳ ' : '⚠️ '}{error.message}</span>
@@ -209,19 +240,19 @@ export default function LetterWriter() {
             <button
               style={{ ...S.cta, opacity: canGenerate ? 1 : 0.6, cursor: canGenerate ? 'pointer' : 'not-allowed' }}
               onClick={run} disabled={!canGenerate}>
-              {loading ? '✨ Rédaction en cours…' : hasResult ? '✨ Régénérer' : '✨ Générer ma lettre'}
+              {loading ? '✨ Rédaction en cours…' : hasResult ? '✨ Régénérer' : `✨ Générer mon message · ${mt.label}`}
             </button>
 
             {/* Résultat */}
             {hasResult && (
               <div style={S.resultBlock}>
-                {format === 'email' && (
+                {(mt.forceEmail || format === 'email') && (
                   <>
                     <div style={S.sectionLabel}>Objet</div>
                     <input style={S.subjectInput} value={subject} onChange={(e) => setSubject(e.target.value)} />
                   </>
                 )}
-                <div style={S.sectionLabel}>Ta lettre (éditable)</div>
+                <div style={S.sectionLabel}>Ton message (éditable)</div>
                 <textarea style={S.resultArea} rows={14} value={text} onChange={(e) => setText(e.target.value)} />
                 <div style={S.resultBtns}>
                   <button style={S.actionBtn} onClick={copy}>{copied ? '✓ Copié !' : '📋 Copier'}</button>

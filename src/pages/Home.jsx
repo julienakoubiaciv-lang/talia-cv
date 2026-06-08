@@ -993,7 +993,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Bannière Lettre de motivation IA */}
+        {/* Bannière Kit de candidature IA */}
         <div
           onClick={() => navigate('/lettre')}
           style={{
@@ -1009,10 +1009,10 @@ export default function Home() {
           <div style={{ fontSize: isMobile ? 30 : 38, flexShrink: 0 }}>✉️</div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: isMobile ? 15 : 17, fontWeight: 800, letterSpacing: '-0.3px', marginBottom: 2, color: C.ink }}>
-              Lettre de motivation IA
+              Kit de candidature IA
             </div>
             <div style={{ fontSize: isMobile ? 12 : 13.5, color: C.mute, lineHeight: 1.45 }}>
-              Lettre, email ou message LinkedIn généré depuis ton CV et l'offre visée.
+              Lettre de motivation, mail de relance ou de remerciement, généré depuis ton CV.
             </div>
           </div>
           <div style={{

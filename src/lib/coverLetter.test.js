@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { normalizeCoverLetter, describeTarget, LETTER_FORMATS, LETTER_TONES } from './coverLetter.js';
+import { normalizeCoverLetter, describeTarget, LETTER_FORMATS, LETTER_TONES, MESSAGE_TYPES } from './coverLetter.js';
 
 describe('normalizeCoverLetter', () => {
   it('gère l\'objet { subject, paragraphs }', () => {
@@ -62,5 +62,32 @@ describe('describeTarget', () => {
   it('tronque une annonce très longue', () => {
     const t = describeTarget({ offerText: 'x'.repeat(8000) });
     expect(t.length).toBeLessThan(4100);
+  });
+});
+
+describe('MESSAGE_TYPES (kit de candidature)', () => {
+  it('expose les trois types attendus', () => {
+    expect(Object.keys(MESSAGE_TYPES)).toEqual(['motivation', 'relance', 'remerciement']);
+  });
+
+  it('relance et remerciement forcent le format email', () => {
+    expect(MESSAGE_TYPES.relance.forceEmail).toBe(true);
+    expect(MESSAGE_TYPES.remerciement.forceEmail).toBe(true);
+    expect(MESSAGE_TYPES.motivation.forceEmail).toBe(false);
+  });
+
+  it('chaque type a un label, un emoji, une intro et des règles', () => {
+    for (const m of Object.values(MESSAGE_TYPES)) {
+      expect(m.label.length).toBeGreaterThan(2);
+      expect(m.emoji.length).toBeGreaterThan(0);
+      expect(m.intro.length).toBeGreaterThan(10);
+      expect(m.rules.length).toBeGreaterThan(10);
+    }
+  });
+
+  it('seuls relance et remerciement proposent un champ contextuel', () => {
+    expect(MESSAGE_TYPES.motivation.extraLabel).toBe('');
+    expect(MESSAGE_TYPES.relance.extraLabel.length).toBeGreaterThan(0);
+    expect(MESSAGE_TYPES.remerciement.extraLabel.length).toBeGreaterThan(0);
   });
 });

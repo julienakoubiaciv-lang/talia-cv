@@ -21,6 +21,28 @@ export const LETTER_TONES = {
   dynamique: { label: 'Dynamique' },
 };
 
+/** Types de message du kit de candidature. */
+export const MESSAGE_TYPES = {
+  motivation: {
+    label: 'Motivation', emoji: '✍️', forceEmail: false,
+    extraLabel: '',
+    intro: 'une candidature (lettre ou mail de motivation) pour postuler à un poste',
+    rules: 'Mets en avant la motivation et l\'adéquation entre le profil et le poste, preuve(s) concrète(s) à l\'appui.',
+  },
+  relance: {
+    label: 'Relance', emoji: '🔔', forceEmail: true,
+    extraLabel: 'Depuis quand as-tu postulé ? (optionnel)',
+    intro: 'un email de RELANCE courtois après une candidature restée sans réponse',
+    rules: 'Rappelle brièvement la candidature et le poste, réaffirme l\'intérêt, reste poli et non insistant, propose de fournir tout complément utile. Court (≈ 120-160 mots).',
+  },
+  remerciement: {
+    label: 'Remerciement', emoji: '🙏', forceEmail: true,
+    extraLabel: 'Personne rencontrée / échange marquant (optionnel)',
+    intro: 'un email de REMERCIEMENT après un entretien d\'embauche',
+    rules: 'Remercie pour l\'échange, rappelle un point marquant de l\'entretien et un atout clé, réaffirme la motivation. Sincère et concis (≈ 120-160 mots).',
+  },
+};
+
 const LS_COUNT = 'talia_letters_count';
 
 /** Incrémente le compteur de lettres générées (alimente le parcours). */
@@ -38,11 +60,13 @@ export function getLettersCount() {
   catch { return 0; }
 }
 
-function systemFor(format, tone) {
+function systemFor(format, tone, messageType = 'motivation') {
   const fmt = LETTER_FORMATS[format] || LETTER_FORMATS.lettre;
   const ton = (LETTER_TONES[tone] || LETTER_TONES.equilibre).label;
-  return `Tu es un coach emploi qui rédige une candidature percutante pour un candidat.
+  const mt = MESSAGE_TYPES[messageType] || MESSAGE_TYPES.motivation;
+  return `Tu es un coach emploi. Tu rédiges pour un candidat ${mt.intro}.
 
+OBJECTIF SPÉCIFIQUE : ${mt.rules}
 FORMAT : ${fmt.label} (${fmt.hint}).
 TON : ${ton}.
 
@@ -110,27 +134,33 @@ export function normalizeCoverLetter(raw) {
  */
 export async function generateCoverLetter({
   cvData, offerText = '', company = '', roleTitle = '', targetRole = '',
-  format = 'lettre', tone = 'equilibre',
+  format = 'lettre', tone = 'equilibre', messageType = 'motivation', extra = '',
 }) {
   const cvText = cvDataToText(cvData);
   if (!cvText.trim()) {
     throw new Error('CV vide : génère ou sélectionne d\'abord un CV.');
   }
 
+  // Relance & remerciement sont des emails (avec objet).
+  const mt = MESSAGE_TYPES[messageType] || MESSAGE_TYPES.motivation;
+  const fmt = mt.forceEmail ? 'email' : format;
+
   const target = describeTarget({ offerText, company, roleTitle, targetRole });
+  const extraTxt = String(extra).trim();
   const userContent =
     `CIBLE DE LA CANDIDATURE :\n${target}\n\n` +
+    (extraTxt ? `ÉLÉMENTS À INTÉGRER :\n${extraTxt.slice(0, 1000)}\n\n` : '') +
     `CV DU CANDIDAT :\n${cvText}\n\n` +
-    `Rédige la candidature, adaptée à cette cible.`;
+    `Rédige le message, adapté à cette cible.`;
 
   const res = await callClaude({
     action: 'coach',
     model: 'claude-haiku-4-5',
     max_tokens: 1500,
-    system: systemFor(format, tone),
+    system: systemFor(fmt, tone, messageType),
     messages: [{ role: 'user', content: userContent }],
     metadata: {
-      feature: 'cover_letter', format, tone,
+      feature: 'cover_letter', messageType, format: fmt, tone,
       hasOffer: !!String(offerText).trim(), hasRole: !!String(targetRole).trim(), hasCompany: !!String(company).trim(),
     },
   });

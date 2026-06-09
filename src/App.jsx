@@ -5,6 +5,7 @@ import { SettingsProvider } from './hooks/useSettings.jsx';
 import { AuthProvider } from './hooks/useAuth.jsx';
 import { UpgradeModalProvider } from './components/UpgradeModal.jsx';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
+import ProgressSync from './components/ProgressSync.jsx';
 
 // SettingsPanel chargé en lazy : il n'est jamais visible au premier rendu
 // (s'ouvre uniquement sur clic icône ⚙) → hors du bundle initial
@@ -58,6 +59,7 @@ export default function App() {
       <SettingsProvider>
         <BrowserRouter>
           <AuthProvider>
+            <ProgressSync />
             <UpgradeModalProvider>
               <ErrorBoundary>
                 <Suspense fallback={<PageLoader />}>

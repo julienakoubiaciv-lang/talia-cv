@@ -25,6 +25,7 @@ export const PROGRESS_KEYS = [
   'talia_recruit_progress',   // { bestNote, plays }
   'talia_oral_progress',      // { bestNote, plays }
   'talia_letters_count',      // compteur de lettres générées
+  'talia_energy',             // { day, spent } — énergie IA du jour
 ];
 
 // ── Snapshot / hydratation du cache local ────────────────────────────────────
@@ -105,12 +106,21 @@ export function mergeBestNote(a = {}, b = {}) {
   };
 }
 
+/** Énergie IA : même jour → dépense maxi (anti-contournement multi-appareil) ;
+ *  jour différent → on garde le jour le plus récent (recharge). */
+export function mergeEnergy(a = {}, b = {}) {
+  const da = a.day || '', db = b.day || '';
+  if (da && db && da === db) return { day: da, spent: Math.max(a.spent || 0, b.spent || 0) };
+  return db >= da ? { day: db, spent: b.spent || 0 } : { day: da, spent: a.spent || 0 };
+}
+
 const KEY_MERGERS = {
   talia_player: mergePlayer,
   talia_codes_progress: mergeBestNote,
   talia_recruit_progress: mergeBestNote,
   talia_oral_progress: mergeBestNote,
   talia_letters_count: (a = 0, b = 0) => Math.max(Number(a) || 0, Number(b) || 0),
+  talia_energy: mergeEnergy,
 };
 
 /** Fusionne deux blobs de progression (local + distant), clé par clé. */

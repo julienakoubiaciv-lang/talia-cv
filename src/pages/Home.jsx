@@ -14,6 +14,7 @@ import { getOverallCompletion } from '@/lib/interviewProgress';
 import { isDemoMode, setDemoMode } from '@/lib/demoMode';
 import { alpha } from '@/lib/gameTheme';
 import { useTheme } from '@/hooks/useTheme.jsx';
+import EnergyBar from '@/components/EnergyBar';
 
 /* ─── Design tokens ─────────────────────────────────────────────────────── */
 const C = {
@@ -800,6 +801,9 @@ export default function Home() {
             {isMobile ? '☁' : '☁ Connexion'}
           </button>
         )}
+
+        {/* Énergie IA du jour */}
+        <EnergyBar variant="pill" />
 
         {/* Bascule thème clair / sombre */}
         <button onClick={toggleTheme} title={mode === 'dark' ? 'Passer en clair' : 'Passer en sombre'}

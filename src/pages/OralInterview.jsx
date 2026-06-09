@@ -19,6 +19,9 @@ import { QuotaError } from '@/lib/claudeClient';
 import { getHist } from '@/lib/cvData';
 import { addXp, getTotalXp } from '@/lib/interviewProgress';
 import { useEntitlements } from '@/hooks/useEntitlements';
+import { useEnergy } from '@/hooks/useEnergy';
+import { EnergyError } from '@/lib/aiEnergy';
+import EnergyBar from '@/components/EnergyBar';
 import SamFeedback from '@/components/game/SamFeedback';
 import { track } from '@/lib/monitoring';
 
@@ -28,6 +31,7 @@ const ttsSupported = isSpeechSupported();
 export default function OralInterview() {
   const navigate = useNavigate();
   const { proLocked: isFree } = useEntitlements();
+  const energy = useEnergy();
   const latest = useMemo(() => { try { return getHist()[0] || null; } catch { return null; } }, []);
   const cvData = latest?.data || null;
 
@@ -60,12 +64,14 @@ export default function OralInterview() {
     if (!cvData || phase === 'loading') return;
     setPhase('loading'); setError(null);
     try {
+      energy.ensure();
       const qs = await generateOralQuestions({ cvData, offerText: offer, count: DEFAULT_COUNT });
+      energy.spend();
       setQuestions(qs); setIdx(0); resetTurn(); setResults([]); setXp(0);
       setPhase('play');
       track('oral_start', { count: qs.length, hasOffer: !!offer.trim(), recSupported });
     } catch (e) {
-      const type = e instanceof QuotaError ? 'quota' : 'error';
+      const type = e instanceof EnergyError ? 'energy' : e instanceof QuotaError ? 'quota' : 'error';
       setError({ type, message: e?.message || 'Une erreur est survenue. Réessaie.' });
       setPhase('setup');
     }
@@ -157,6 +163,8 @@ export default function OralInterview() {
           )}
         </div>
 
+        <div style={{ marginTop: 12 }}><EnergyBar variant="card" /></div>
+
         <div style={S.sectionLabel}>Offre visée (optionnel)</div>
         <textarea style={S.textarea} rows={4} value={offer} disabled={loading}
           onChange={(e) => setOffer(e.target.value)}
@@ -169,9 +177,9 @@ export default function OralInterview() {
         </div>
 
         {error && (
-          <div style={{ ...S.err, background: error.type === 'quota' ? C.blueSoft : C.redSoft, color: error.type === 'quota' ? C.blue : C.red }}>
-            <span>{error.type === 'quota' ? '⏳ ' : '⚠️ '}{error.message}</span>
-            {error.type === 'quota' && <button style={S.errBtn} onClick={() => navigate('/pricing')}>Voir les offres</button>}
+          <div style={{ ...S.err, background: error.type === 'energy' ? C.amberSoft : error.type === 'quota' ? C.blueSoft : C.redSoft, color: error.type === 'energy' ? C.amber : error.type === 'quota' ? C.blue : C.red }}>
+            <span>{error.type === 'energy' ? '⚡ ' : error.type === 'quota' ? '⏳ ' : '⚠️ '}{error.message}</span>
+            {(error.type === 'quota' || error.type === 'energy') && <button style={S.errBtn} onClick={() => navigate('/pricing')}>Voir les offres</button>}
           </div>
         )}
 

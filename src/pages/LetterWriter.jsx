@@ -15,12 +15,16 @@ import { listPostesBySector } from '@/lib/jobIntel';
 import { QuotaError } from '@/lib/claudeClient';
 import { getHist } from '@/lib/cvData';
 import { useEntitlements } from '@/hooks/useEntitlements';
+import { useEnergy } from '@/hooks/useEnergy';
+import { EnergyError } from '@/lib/aiEnergy';
+import EnergyBar from '@/components/EnergyBar';
 import { track } from '@/lib/monitoring';
 
 
 export default function LetterWriter() {
   const navigate = useNavigate();
   const { proLocked: isFree } = useEntitlements();
+  const energy = useEnergy();
   const latest = useMemo(() => { try { return getHist()[0] || null; } catch { return null; } }, []);
   const cvData = latest?.data || null;
   const postesBySector = useMemo(() => { try { return listPostesBySector(); } catch { return {}; } }, []);
@@ -49,17 +53,21 @@ export default function LetterWriter() {
     if (!canGenerate) return;
     setLoading(true); setError(null); setCopied(false);
     try {
+      energy.ensure();
       const common = { cvData, company, format, tone, messageType, extra };
       const payload = targetMode === 'annonce'
         ? { ...common, offerText: offer, roleTitle }
         : { ...common, targetRole };
       const letter = await generateCoverLetter(payload);
+      energy.spend();
       setSubject(letter.subject || '');
       setText(letter.text);
       markLetterGenerated();
       track('cover_letter_generated', { messageType, format, tone, targetMode, hasOffer: !!offer.trim(), targetRole });
     } catch (err) {
-      if (err instanceof QuotaError) {
+      if (err instanceof EnergyError) {
+        setError({ type: 'energy', message: err.message });
+      } else if (err instanceof QuotaError) {
         setError({ type: 'quota', message: 'Quota de générations atteint. Reviens plus tard ou passe à un plan supérieur.' });
       } else {
         setError({ type: 'error', message: err?.message || 'La génération a échoué. Réessaie.' });
@@ -128,6 +136,8 @@ export default function LetterWriter() {
                 <div style={S.empty}>Aucun CV trouvé. Génère d'abord un CV pour personnaliser ta lettre.</div>
               )}
             </div>
+
+            <div style={{ marginTop: 12 }}><EnergyBar variant="card" /></div>
 
             {/* Type de message */}
             <div style={S.sectionLabel}>Type de message</div>
@@ -230,12 +240,18 @@ export default function LetterWriter() {
               </>
             )}
 
-            {error && (
-              <div style={{ ...S.err, background: error.type === 'quota' ? C.blueSoft : C.redSoft, color: error.type === 'quota' ? C.blue : C.red }}>
-                <span>{error.type === 'quota' ? '⏳ ' : '⚠️ '}{error.message}</span>
-                {error.type === 'quota' && <button style={S.errBtn} onClick={() => navigate('/pricing')}>Voir les offres</button>}
-              </div>
-            )}
+            {error && (() => {
+              const info = error.type === 'quota' || error.type === 'energy';
+              const bg = error.type === 'energy' ? C.amberSoft : info ? C.blueSoft : C.redSoft;
+              const fg = error.type === 'energy' ? C.amber : info ? C.blue : C.red;
+              const icon = error.type === 'energy' ? '⚡ ' : error.type === 'quota' ? '⏳ ' : '⚠️ ';
+              return (
+                <div style={{ ...S.err, background: bg, color: fg }}>
+                  <span>{icon}{error.message}</span>
+                  {info && <button style={S.errBtn} onClick={() => navigate('/pricing')}>Voir les offres</button>}
+                </div>
+              );
+            })()}
 
             <button
               style={{ ...S.cta, opacity: canGenerate ? 1 : 0.6, cursor: canGenerate ? 'pointer' : 'not-allowed' }}

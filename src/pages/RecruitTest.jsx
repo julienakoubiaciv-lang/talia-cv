@@ -17,6 +17,9 @@ import { QuotaError } from '@/lib/claudeClient';
 import { getHist } from '@/lib/cvData';
 import { addXp, getTotalXp } from '@/lib/interviewProgress';
 import { useEntitlements } from '@/hooks/useEntitlements';
+import { useEnergy } from '@/hooks/useEnergy';
+import { EnergyError } from '@/lib/aiEnergy';
+import EnergyBar from '@/components/EnergyBar';
 import SamFeedback from '@/components/game/SamFeedback';
 import { track } from '@/lib/monitoring';
 
@@ -25,6 +28,7 @@ const XP_PER_CORRECT = 20;
 export default function RecruitTest() {
   const navigate = useNavigate();
   const { proLocked: isFree } = useEntitlements();
+  const energy = useEnergy();
   const latest = useMemo(() => { try { return getHist()[0] || null; } catch { return null; } }, []);
   const cvData = latest?.data || null;
   const postesBySector = useMemo(() => { try { return listPostesBySector(); } catch { return {}; } }, []);
@@ -54,16 +58,18 @@ export default function RecruitTest() {
     if (!cvData || phase === 'loading' || !cats.length) return;
     setPhase('loading'); setError(null);
     try {
+      energy.ensure();
       const sectorLabel = sector;
       const t = await generateRecruitTest({
         cvData, offerText: offer, company, roleTitle, sectorLabel,
         categories: cats, count: DEFAULT_COUNT,
       });
+      energy.spend();
       setTest(t); setIdx(0); setPicked(null); setAnswers([]); setXp(0);
       setPhase('play');
       track('recruit_test_start', { count: t.length, cats: cats.join(','), hasOffer: !!offer.trim(), sector });
     } catch (e) {
-      const type = e instanceof QuotaError ? 'quota' : 'error';
+      const type = e instanceof EnergyError ? 'energy' : e instanceof QuotaError ? 'quota' : 'error';
       setError({ type, message: e?.message || 'Une erreur est survenue. Réessaie.' });
       setPhase('setup');
     }
@@ -128,6 +134,8 @@ export default function RecruitTest() {
           )}
         </div>
 
+        <div style={{ marginTop: 12 }}><EnergyBar variant="card" /></div>
+
         <div style={S.sectionLabel}>Cibler le test</div>
         <input style={S.input} value={company} disabled={loading}
           onChange={(e) => setCompany(e.target.value)} placeholder="Entreprise (optionnel)" />
@@ -161,12 +169,18 @@ export default function RecruitTest() {
           })}
         </div>
 
-        {error && (
-          <div style={{ ...S.err, background: error.type === 'quota' ? C.blueSoft : C.redSoft, color: error.type === 'quota' ? C.blue : C.red }}>
-            <span>{error.type === 'quota' ? '⏳ ' : '⚠️ '}{error.message}</span>
-            {error.type === 'quota' && <button style={S.errBtn} onClick={() => navigate('/pricing')}>Voir les offres</button>}
-          </div>
-        )}
+        {error && (() => {
+          const info = error.type === 'quota' || error.type === 'energy';
+          const bg = error.type === 'energy' ? C.amberSoft : info ? C.blueSoft : C.redSoft;
+          const fg = error.type === 'energy' ? C.amber : info ? C.blue : C.red;
+          const icon = error.type === 'energy' ? '⚡ ' : error.type === 'quota' ? '⏳ ' : '⚠️ ';
+          return (
+            <div style={{ ...S.err, background: bg, color: fg }}>
+              <span>{icon}{error.message}</span>
+              {info && <button style={S.errBtn} onClick={() => navigate('/pricing')}>Voir les offres</button>}
+            </div>
+          );
+        })()}
 
         <button style={{ ...S.bigStart, opacity: canStart ? 1 : 0.6, cursor: canStart ? 'pointer' : 'not-allowed' }}
           onClick={start} disabled={!canStart}>

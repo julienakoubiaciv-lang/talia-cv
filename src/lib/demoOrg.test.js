@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { DEMO_INVITES, redeemDemoInvite, demoMembership, demoOrgTier, leaveDemoOrg } from './demoOrg.js';
+import { DEMO_INVITES, redeemDemoInvite, demoMembership, demoOrgTier, leaveDemoOrg, createDemoInvite } from './demoOrg.js';
 
 describe('demoOrg', () => {
   beforeEach(() => leaveDemoOrg());
@@ -28,5 +28,13 @@ describe('demoOrg', () => {
     expect(demoOrgTier()).toBe('school');
     leaveDemoOrg();
     expect(demoMembership()).toBeNull();
+  });
+
+  it('un lien généré par un conseiller fait rejoindre son groupe', () => {
+    const token = createDemoInvite({ managerId: 'karim', managerName: 'Karim B.' });
+    const res = redeemDemoInvite(token);
+    expect(res.ok).toBe(true);
+    expect(demoMembership().manager).toBe('karim');
+    expect(demoOrgTier()).toBe('school');
   });
 });

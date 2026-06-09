@@ -9,6 +9,7 @@
  * deux étudiants différents, on réinitialise l'état entre les deux.
  */
 const LS_MEMBER = 'talia_demo_membership';
+const LS_GEN = 'talia_demo_gen_invites';   // liens générés depuis le dashboard
 
 /** Écoles de démo, indexées par token d'invitation. */
 export const DEMO_INVITES = {
@@ -17,9 +18,22 @@ export const DEMO_INVITES = {
   'COWORK-SOPHIE':    { orgId: 'demo-cowork', orgName: 'Cowork · Coach Sophie', type: 'cowork', tier: 'cowork', cohort: 'Coachés', manager: 'Sophie (coach)' },
 };
 
+function readGen() {
+  try { return JSON.parse(localStorage.getItem(LS_GEN) || '{}'); } catch { return {}; }
+}
+
+/** Génère un lien d'invitation de démo (conseiller pré-assigné). Renvoie le token. */
+export function createDemoInvite({ managerId, managerName, orgName = 'École Talia Paris', tier = 'school', cohort = '' } = {}) {
+  const token = `GEN-${(managerId || 'org').toUpperCase()}-${Date.now().toString(36).toUpperCase()}`;
+  const gen = readGen();
+  gen[token] = { orgId: 'demo-paris', orgName, type: 'school', tier, cohort, manager: managerId || null, managerName: managerName || null };
+  try { localStorage.setItem(LS_GEN, JSON.stringify(gen)); } catch { /* ignore */ }
+  return token;
+}
+
 /** Consomme un lien d'invitation de démo → enregistre l'appartenance. */
 export function redeemDemoInvite(token) {
-  const inv = DEMO_INVITES[token];
+  const inv = DEMO_INVITES[token] || readGen()[token];
   if (!inv) return { ok: false, reason: 'invalid' };
   const membership = { ...inv, joinedAt: new Date().toISOString() };
   try { localStorage.setItem(LS_MEMBER, JSON.stringify(membership)); } catch { /* ignore */ }

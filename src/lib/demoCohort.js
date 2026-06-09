@@ -76,3 +76,32 @@ export function getVisibleRoster() {
   const roster = read();
   return v.role === 'admin' ? roster : roster.filter((s) => s.manager === v.id);
 }
+
+// ── Fiche élève : piliers d'employabilité (dérivés, déterministes) ────────────
+export const PILLARS = [
+  { id: 'cv',          label: 'CV prêt',        emoji: '📄' },
+  { id: 'entretien',   label: 'Entretien',      emoji: '🎤' },
+  { id: 'metier',      label: 'Métiers',        emoji: '🧭' },
+  { id: 'codes',       label: 'Savoir-être',    emoji: '🏢' },
+  { id: 'candidature', label: 'Candidature',    emoji: '✉️' },
+  { id: 'recrutement', label: 'Tests',          emoji: '🧩' },
+];
+
+/** Détail par pilier pour un élève (démo : dérivé du score global). */
+export function studentPillars(s) {
+  const base = typeof s.employability === 'number' ? s.employability : Math.min(100, Math.round((s.xp || 0) / 30));
+  const seed = [...(s.id || 'x')].reduce((a, c) => a + c.charCodeAt(0), 0);
+  return PILLARS.map((p, i) => {
+    const off = ((seed * (i + 3)) % 37) - 18; // -18..+18, déterministe
+    return { ...p, score: Math.max(0, Math.min(100, base + off)) };
+  });
+}
+
+/** Un élève « décroche » : inactif, sans série, ou employabilité faible. */
+export function needsFollowup(s) {
+  if (!s) return false;
+  if (/il y a/i.test(s.lastActive || '')) return true;
+  if ((s.streak || 0) === 0) return true;
+  if (typeof s.employability === 'number' && s.employability < 40) return true;
+  return false;
+}

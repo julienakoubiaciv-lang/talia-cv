@@ -16,7 +16,7 @@
  * commente chaque réponse. Jeu gratuit (banque statique, zéro coût API).
  */
 import React, { useState, useMemo, useEffect } from 'react';
-import { C, FONT } from '@/lib/gameTheme';
+import { C, FONT, alpha } from '@/lib/gameTheme';
 import { useNavigate } from 'react-router-dom';
 import {
   listSectors, listGroups, buildSession, buildDemoSession,
@@ -773,7 +773,7 @@ const S = {
   leadb: { fontSize: 14.5, color: C.ink2, lineHeight: 1.6, margin: 0, maxWidth: 480 },
 
   // Tableau de bord
-  dash: { display: 'flex', alignItems: 'stretch', background: '#fff', border: `1px solid ${C.line}`, borderRadius: 14, padding: '14px 8px', marginBottom: 20, boxShadow: '0 2px 12px rgba(11,22,56,.04)' },
+  dash: { display: 'flex', alignItems: 'stretch', background: C.card, border: `1px solid ${C.line}`, borderRadius: 14, padding: '14px 8px', marginBottom: 20, boxShadow: '0 2px 12px rgba(11,22,56,.04)' },
   dashItem: { flex: 1, textAlign: 'center', padding: '0 6px' },
   dashVal: { fontSize: 22, fontWeight: 800, color: C.ink, letterSpacing: -0.5 },
   dashUnit: { fontSize: 13, fontWeight: 700, color: C.mute },
@@ -783,14 +783,14 @@ const S = {
   sectionLabel: { fontSize: 11.5, fontWeight: 800, letterSpacing: 0.6, textTransform: 'uppercase', color: C.mute, margin: '22px 0 11px' },
 
   // CTA Session IA (intro)
-  aiCta: { position: 'relative', display: 'flex', alignItems: 'center', gap: 12, width: '100%', textAlign: 'left', background: '#fff', border: `1.5px solid ${C.blue}`, borderRadius: 16, padding: '16px 18px', cursor: 'pointer', fontFamily: FONT, marginBottom: 4, boxShadow: '0 6px 22px rgba(21,57,183,.1)' },
+  aiCta: { position: 'relative', display: 'flex', alignItems: 'center', gap: 12, width: '100%', textAlign: 'left', background: C.card, border: `1.5px solid ${C.blue}`, borderRadius: 16, padding: '16px 18px', cursor: 'pointer', fontFamily: FONT, marginBottom: 4, boxShadow: '0 6px 22px rgba(21,57,183,.1)' },
   aiBadge: { position: 'absolute', top: 14, right: 16, fontSize: 9.5, fontWeight: 800, letterSpacing: 0.6, background: C.blue, color: '#fff', padding: '3px 8px', borderRadius: 6 },
   aiTitle: { fontSize: 15.5, fontWeight: 800, color: C.ink, paddingRight: 60 },
   aiSub: { fontSize: 12.5, color: C.ink2, marginTop: 4 },
   aiArrow: { fontSize: 18, color: C.blue, flexShrink: 0 },
 
   // Écran AISetup
-  aiBlock: { background: '#fff', border: `1px solid ${C.line}`, borderRadius: 14, padding: '14px 16px', marginBottom: 6 },
+  aiBlock: { background: C.card, border: `1px solid ${C.line}`, borderRadius: 14, padding: '14px 16px', marginBottom: 6 },
   aiBlockLabel: { fontSize: 10.5, fontWeight: 800, letterSpacing: 0.8, color: C.mute, marginBottom: 8 },
   aiCvRow: { display: 'flex', alignItems: 'center', gap: 10 },
   aiCvName: { fontSize: 14.5, fontWeight: 700, color: C.ink },
@@ -808,7 +808,7 @@ const S = {
 
   bigStart: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, width: '100%', background: C.blue, color: '#fff', border: 'none', borderRadius: 14, padding: '15px 20px', fontSize: 16, fontWeight: 700, cursor: 'pointer', fontFamily: FONT, boxShadow: '0 8px 24px rgba(21,57,183,.25)' },
   bigStartSub: { fontSize: 12, fontWeight: 600, color: '#C9D4F5' },
-  ghostBtn: { background: '#fff', color: C.ink2, border: `1px solid ${C.line}`, borderRadius: 12, padding: '12px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: FONT },
+  ghostBtn: { background: C.card, color: C.ink2, border: `1px solid ${C.line}`, borderRadius: 12, padding: '12px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: FONT },
 
   // Démo guidée (carte premium sombre)
   demoCta: { position: 'relative', display: 'flex', alignItems: 'center', gap: 12, width: '100%', textAlign: 'left', background: C.ink, color: '#fff', border: 'none', borderRadius: 16, padding: '18px 18px', cursor: 'pointer', fontFamily: FONT, boxShadow: '0 10px 30px rgba(11,22,56,.18)' },
@@ -819,15 +819,15 @@ const S = {
   demoArrow: { fontSize: 18, color: '#9AA6C4', flexShrink: 0 },
 
   sectorRow: { display: 'flex', gap: 7, flexWrap: 'wrap', marginBottom: 4 },
-  sectorChip: { display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: `1.5px solid ${C.line}`, borderRadius: 99, padding: '8px 13px', fontSize: 12.5, fontWeight: 700, color: C.ink2, cursor: 'pointer', fontFamily: FONT, transition: 'all .12s' },
+  sectorChip: { display: 'inline-flex', alignItems: 'center', gap: 6, background: C.card, border: `1.5px solid ${C.line}`, borderRadius: 99, padding: '8px 13px', fontSize: 12.5, fontWeight: 700, color: C.ink2, cursor: 'pointer', fontFamily: FONT, transition: 'all .12s' },
 
   modeRow: { display: 'flex', gap: 8, marginBottom: 8 },
-  modeCard: { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, background: '#fff', border: `1.5px solid ${C.line}`, borderRadius: 12, padding: '13px 8px', cursor: 'pointer', fontFamily: FONT, color: C.ink, transition: 'all .12s' },
+  modeCard: { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, background: C.card, border: `1.5px solid ${C.line}`, borderRadius: 12, padding: '13px 8px', cursor: 'pointer', fontFamily: FONT, color: C.ink, transition: 'all .12s' },
   modeCardActive: { borderColor: C.blue, background: C.blueSoft, boxShadow: '0 0 0 3px rgba(21,57,183,.08)' },
   modeDesc: { fontSize: 12.5, color: C.ink2, minHeight: 18, margin: '0 0 20px' },
 
   catGrid: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 },
-  catCard: { display: 'flex', alignItems: 'center', gap: 11, background: '#fff', border: `1px solid ${C.line}`, borderRadius: 13, padding: '13px 13px', cursor: 'pointer', fontFamily: FONT, textAlign: 'left', transition: 'border-color .15s, transform .1s' },
+  catCard: { display: 'flex', alignItems: 'center', gap: 11, background: C.card, border: `1px solid ${C.line}`, borderRadius: 13, padding: '13px 13px', cursor: 'pointer', fontFamily: FONT, textAlign: 'left', transition: 'border-color .15s, transform .1s' },
   catEmoji: { fontSize: 22, flexShrink: 0 },
   catTextWrap: { display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 },
   catName: { fontSize: 13.5, fontWeight: 700, color: C.ink, lineHeight: 1.2 },
@@ -842,15 +842,15 @@ const S = {
   xpPill: { fontSize: 12, fontWeight: 800, color: C.blue, background: C.blueSoft, padding: '3px 9px', borderRadius: 99 },
   progText: { fontSize: 12.5, fontWeight: 700, color: C.mute },
 
-  progBar: { height: 8, background: '#E3E8F2', borderRadius: 99, overflow: 'hidden', marginBottom: 10 },
+  progBar: { height: 8, background: C.track, borderRadius: 99, overflow: 'hidden', marginBottom: 10 },
   progFill: { height: '100%', background: C.blue, borderRadius: 99, transition: 'width .35s cubic-bezier(.16,.84,.24,1)' },
 
   timerWrap: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 },
-  timerBar: { flex: 1, height: 6, background: '#E3E8F2', borderRadius: 99, overflow: 'hidden' },
+  timerBar: { flex: 1, height: 6, background: C.track, borderRadius: 99, overflow: 'hidden' },
   timerFill: { height: '100%', borderRadius: 99, transition: 'width 1s linear' },
   timerNum: { fontSize: 13, fontWeight: 800, minWidth: 34, textAlign: 'right' },
 
-  card: { background: '#fff', border: `1px solid ${C.line}`, borderRadius: 18, padding: '20px 22px 24px', boxShadow: '0 4px 20px rgba(11,22,56,.05)' },
+  card: { background: C.card, border: `1px solid ${C.line}`, borderRadius: 18, padding: '20px 22px 24px', boxShadow: '0 4px 20px rgba(11,22,56,.05)' },
   cardBoss: { border: `2px solid ${C.boss}`, boxShadow: '0 8px 30px rgba(112,72,232,.18)' },
   catChip: { display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, padding: '5px 11px', borderRadius: 99 },
   kindTag: { marginLeft: 6, fontSize: 10, fontWeight: 800, letterSpacing: 0.4, background: C.boss + '1A', color: C.boss, padding: '2px 7px', borderRadius: 6 },
@@ -860,14 +860,14 @@ const S = {
   scenarioHead: { display: 'flex', alignItems: 'center', gap: 10, margin: '18px 0 14px' },
   scenarioLine: { flex: 1, height: 1, background: C.line },
   scenarioLabel: { fontSize: 10.5, fontWeight: 800, letterSpacing: 0.8, textTransform: 'uppercase', color: C.blue, whiteSpace: 'nowrap' },
-  context: { background: '#F1F5FE', borderLeft: `4px solid ${C.blue}`, borderRadius: '0 12px 12px 0', padding: '14px 16px', fontSize: 15.5, color: C.ink, lineHeight: 1.6, textAlign: 'left', marginBottom: 14 },
+  context: { background: C.card2, borderLeft: `4px solid ${C.blue}`, borderRadius: '0 12px 12px 0', padding: '14px 16px', fontSize: 15.5, color: C.ink, lineHeight: 1.6, textAlign: 'left', marginBottom: 14 },
   situation: { fontSize: 20, fontWeight: 800, color: C.ink, lineHeight: 1.32, textAlign: 'center', letterSpacing: -0.3, margin: '4px 0 2px' },
   questionRow: { display: 'flex', justifyContent: 'center', margin: '18px 0 10px' },
   questionLabel: { fontSize: 10.5, fontWeight: 800, letterSpacing: 0.8, textTransform: 'uppercase', color: C.mute },
   question: { fontSize: 15, fontWeight: 600, color: C.ink2, textAlign: 'center', marginBottom: 18 },
 
   options: { display: 'grid', gap: 10 },
-  opt: { display: 'flex', alignItems: 'center', gap: 12, width: '100%', background: '#fff', border: `1.5px solid ${C.line}`, borderRadius: 12, padding: '13px 14px', fontSize: 14, fontWeight: 500, color: C.ink, cursor: 'pointer', fontFamily: FONT, transition: 'all .12s' },
+  opt: { display: 'flex', alignItems: 'center', gap: 12, width: '100%', background: C.card, border: `1.5px solid ${C.line}`, borderRadius: 12, padding: '13px 14px', fontSize: 14, fontWeight: 500, color: C.ink, cursor: 'pointer', fontFamily: FONT, transition: 'all .12s' },
   optCorrect: { borderColor: C.green, background: C.greenSoft, fontWeight: 700 },
   optWrong: { borderColor: C.red, background: C.redSoft },
   optBullet: { width: 24, height: 24, borderRadius: 7, background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, color: C.ink2, flexShrink: 0 },
@@ -875,14 +875,14 @@ const S = {
   markWrong: { color: C.red, fontWeight: 800, fontSize: 16 },
 
   // Traducteur Pro
-  tCasual: { position: 'relative', background: C.redSoft, border: `1px solid ${C.red}33`, borderRadius: 12, padding: '14px 14px 12px', fontSize: 14.5, fontStyle: 'italic', color: C.ink, lineHeight: 1.5, textAlign: 'left', marginBottom: 14 },
+  tCasual: { position: 'relative', background: C.redSoft, border: `1px solid ${alpha(C.red, 20)}`, borderRadius: 12, padding: '14px 14px 12px', fontSize: 14.5, fontStyle: 'italic', color: C.ink, lineHeight: 1.5, textAlign: 'left', marginBottom: 14 },
   tCasualLabel: { display: 'block', fontSize: 10, fontWeight: 800, letterSpacing: 0.8, color: C.red, marginBottom: 5, fontStyle: 'normal' },
   tZone: { display: 'flex', flexWrap: 'wrap', gap: 8, minHeight: 56, alignItems: 'center', border: '1.5px dashed', borderRadius: 12, padding: '12px', marginBottom: 12, transition: 'all .15s' },
   tPlaceholder: { fontSize: 13, color: C.mute, fontStyle: 'italic' },
   tPool: { display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14, justifyContent: 'center' },
-  tBlock: { background: '#fff', border: `1.5px solid ${C.blue}`, color: C.blue, borderRadius: 10, padding: '10px 14px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: FONT, boxShadow: '0 2px 6px rgba(21,57,183,.1)' },
+  tBlock: { background: C.card, border: `1.5px solid ${C.blue}`, color: C.blue, borderRadius: 10, padding: '10px 14px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: FONT, boxShadow: '0 2px 6px rgba(21,57,183,.1)' },
   tBlockPlaced: { background: C.blue, border: `1.5px solid ${C.blue}`, color: '#fff', borderRadius: 10, padding: '10px 14px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: FONT },
-  tTarget: { background: C.greenSoft, border: `1px solid ${C.green}33`, borderRadius: 12, padding: '12px 14px', fontSize: 14.5, fontWeight: 600, color: C.ink, textAlign: 'left', marginBottom: 4 },
+  tTarget: { background: C.greenSoft, border: `1px solid ${alpha(C.green, 20)}`, borderRadius: 12, padding: '12px 14px', fontSize: 14.5, fontWeight: 600, color: C.ink, textAlign: 'left', marginBottom: 4 },
   tTargetLabel: { display: 'block', fontSize: 10, fontWeight: 800, letterSpacing: 0.8, color: C.green, marginBottom: 5 },
   tSubmit: { width: '100%', background: C.blue, color: '#fff', border: 'none', borderRadius: 12, padding: '13px', fontSize: 15, fontWeight: 700, fontFamily: FONT },
 
@@ -895,16 +895,16 @@ const S = {
   resultSub: { fontSize: 14, color: C.ink2, fontWeight: 600, marginBottom: 10 },
   validBadge: { display: 'inline-block', fontSize: 13, fontWeight: 800, padding: '6px 14px', borderRadius: 99, marginBottom: 12 },
   resultVerdict: { fontSize: 15.5, fontWeight: 700, marginBottom: 18 },
-  scoreBarOuter: { height: 12, background: '#E3E8F2', borderRadius: 99, overflow: 'hidden', maxWidth: 420, margin: '0 auto 20px' },
+  scoreBarOuter: { height: 12, background: C.track, borderRadius: 99, overflow: 'hidden', maxWidth: 420, margin: '0 auto 20px' },
   scoreBarInner: { height: '100%', borderRadius: 99, transition: 'width .6s ease' },
   statRow: { display: 'flex', gap: 10, justifyContent: 'center', maxWidth: 420, margin: '0 auto 18px' },
-  statBox: { flex: 1, background: '#fff', border: `1px solid ${C.line}`, borderRadius: 12, padding: '12px 8px' },
+  statBox: { flex: 1, background: C.card, border: `1px solid ${C.line}`, borderRadius: 12, padding: '12px 8px' },
   statVal: { fontSize: 18, fontWeight: 800, color: C.ink },
   statLbl: { fontSize: 11, color: C.mute, marginTop: 2 },
-  catResults: { background: '#fff', border: `1px solid ${C.line}`, borderRadius: 14, padding: '8px 14px', maxWidth: 420, margin: '0 auto 14px' },
+  catResults: { background: C.card, border: `1px solid ${C.line}`, borderRadius: 14, padding: '8px 14px', maxWidth: 420, margin: '0 auto 14px' },
   catResultRow: { display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: `1px solid ${C.bg}` },
 
-  streakCard: { display: 'flex', alignItems: 'center', gap: 12, background: '#FFF7E6', border: `1px solid ${C.amber}33`, borderRadius: 14, padding: '12px 16px', maxWidth: 420, margin: '0 auto 22px' },
+  streakCard: { display: 'flex', alignItems: 'center', gap: 12, background: C.amberSoft, border: `1px solid ${alpha(C.amber, 20)}`, borderRadius: 14, padding: '12px 16px', maxWidth: 420, margin: '0 auto 22px' },
   streakTitle: { fontSize: 14, fontWeight: 800, color: C.ink },
   streakSub: { fontSize: 12, color: C.ink2, marginTop: 1 },
 
@@ -915,5 +915,5 @@ const S = {
   upsellBadge: { position: 'absolute', top: 16, right: 16, fontSize: 10, fontWeight: 800, letterSpacing: 0.5, background: '#EEF2FF', color: C.blue, padding: '3px 9px', borderRadius: 6 },
   upsellTitle: { fontSize: 16, fontWeight: 800, marginBottom: 6 },
   upsellText: { fontSize: 13, color: '#B9C2DA', lineHeight: 1.55, marginBottom: 16 },
-  upsellBtn: { width: '100%', background: '#fff', color: C.ink, border: 'none', borderRadius: 11, padding: '12px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: FONT },
+  upsellBtn: { width: '100%', background: C.card, color: C.ink, border: 'none', borderRadius: 11, padding: '12px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: FONT },
 };

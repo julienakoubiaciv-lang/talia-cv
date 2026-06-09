@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.jsx';
 import './index.css';
+import './styles/altio-theme.css';
 import { initMonitoring } from './lib/monitoring';
 
 // Initialise Sentry + PostHog (no-op si les env vars sont absentes)

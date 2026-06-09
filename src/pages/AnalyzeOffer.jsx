@@ -9,7 +9,7 @@
  * 100% local (analyzeMatch + atsCheck purs) → aucun coût/backend.
  */
 import React, { useState, useMemo } from 'react';
-import { C, FONT } from '@/lib/gameTheme';
+import { C, FONT, alpha } from '@/lib/gameTheme';
 import { useNavigate } from 'react-router-dom';
 import { analyzeMatch, atsCheck } from '@/lib/smartMatcher';
 import { optimizeCvForOffer } from '@/lib/cvOptimize';
@@ -196,7 +196,7 @@ function Ring({ value, color }) {
       display: 'grid', placeItems: 'center',
     }}>
       <div style={{
-        width: 54, height: 54, borderRadius: '50%', background: '#fff',
+        width: 54, height: 54, borderRadius: '50%', background: C.card,
         display: 'grid', placeItems: 'center', fontSize: 18, fontWeight: 800, color,
       }}>{value}%</div>
     </div>
@@ -216,8 +216,8 @@ const S = {
   lead: { fontSize: 14.5, color: C.ink2, lineHeight: 1.6, margin: 0, maxWidth: 480 },
 
   sectionLabel: { fontSize: 11.5, fontWeight: 800, letterSpacing: 0.6, textTransform: 'uppercase', color: C.mute, margin: '18px 0 10px' },
-  block: { background: '#fff', border: `1px solid ${C.line}`, borderRadius: 14, padding: '14px 16px', marginBottom: 12 },
-  blockAmber: { background: C.amberSoft, border: `1px solid ${C.amber}33` },
+  block: { background: C.card, border: `1px solid ${C.line}`, borderRadius: 14, padding: '14px 16px', marginBottom: 12 },
+  blockAmber: { background: C.amberSoft, border: `1px solid ${alpha(C.amber, 20)}` },
   blockLabel: { fontSize: 10.5, fontWeight: 800, letterSpacing: 0.8, color: C.mute, marginBottom: 8 },
   blockTitle: { fontSize: 14, fontWeight: 800, marginBottom: 12 },
   cvRow: { display: 'flex', alignItems: 'center', gap: 10 },
@@ -228,19 +228,19 @@ const S = {
 
   textarea: { width: '100%', boxSizing: 'border-box', border: `1.5px solid ${C.line}`, borderRadius: 12, padding: '12px 14px', fontSize: 14, fontFamily: FONT, color: C.ink, lineHeight: 1.5, resize: 'vertical', marginBottom: 14, outline: 'none' },
   cta: { width: '100%', background: C.blue, color: '#fff', border: 'none', borderRadius: 14, padding: '15px 20px', fontSize: 15.5, fontWeight: 700, cursor: 'pointer', fontFamily: FONT, boxShadow: '0 8px 24px rgba(21,57,183,.22)' },
-  ghostBtn: { width: '100%', background: '#fff', color: C.ink2, border: `1px solid ${C.line}`, borderRadius: 12, padding: '12px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: FONT, marginTop: 10 },
+  ghostBtn: { width: '100%', background: C.card, color: C.ink2, border: `1px solid ${C.line}`, borderRadius: 12, padding: '12px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: FONT, marginTop: 10 },
   hint: { fontSize: 12, color: C.mute, textAlign: 'center', marginTop: 10 },
   proTag: { position: 'absolute', top: 8, right: 12, fontSize: 9.5, fontWeight: 800, letterSpacing: 0.5, background: 'rgba(255,255,255,.22)', padding: '2px 7px', borderRadius: 6 },
   errBox: { fontSize: 13, fontWeight: 600, color: C.red, background: C.redSoft, borderRadius: 12, padding: '11px 14px', marginBottom: 12, lineHeight: 1.45 },
 
   results: { marginTop: 22 },
-  scoreCard: { display: 'flex', alignItems: 'center', gap: 16, background: '#fff', border: `1px solid ${C.line}`, borderRadius: 16, padding: '16px 18px', marginBottom: 12, boxShadow: '0 4px 18px rgba(11,22,56,.05)' },
+  scoreCard: { display: 'flex', alignItems: 'center', gap: 16, background: C.card, border: `1px solid ${C.line}`, borderRadius: 16, padding: '16px 18px', marginBottom: 12, boxShadow: '0 4px 18px rgba(11,22,56,.05)' },
   scoreTitle: { fontSize: 15, fontWeight: 800, color: C.ink },
   scoreSub: { fontSize: 12.5, color: C.mute, marginTop: 2 },
   scoreVerdict: { fontSize: 13, fontWeight: 700, marginTop: 6, lineHeight: 1.4 },
 
   chips: { display: 'flex', flexWrap: 'wrap', gap: 7 },
-  chipAmber: { fontSize: 12, fontWeight: 700, color: '#8a6400', background: '#fff', border: `1px solid ${C.amber}55`, borderRadius: 99, padding: '5px 11px' },
+  chipAmber: { fontSize: 12, fontWeight: 700, color: '#8a6400', background: C.card, border: `1px solid ${alpha(C.amber, 34)}`, borderRadius: 99, padding: '5px 11px' },
   note: { fontSize: 12, color: C.ink2, marginTop: 10, lineHeight: 1.45 },
 
   atsHead: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },

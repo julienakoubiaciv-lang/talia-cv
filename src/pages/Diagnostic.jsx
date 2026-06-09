@@ -6,7 +6,7 @@
  * d'action avec liens directs vers les modules. Effet « bilan de compétences ».
  */
 import React, { useState, useCallback } from 'react';
-import { C, FONT } from '@/lib/gameTheme';
+import { C, FONT, alpha } from '@/lib/gameTheme';
 import { useNavigate } from 'react-router-dom';
 import { getDiagnostic } from '@/lib/employability';
 
@@ -112,7 +112,7 @@ function Ring({ value, color }) {
       display: 'grid', placeItems: 'center',
     }}>
       <div style={{
-        width: 64, height: 64, borderRadius: '50%', background: '#fff',
+        width: 64, height: 64, borderRadius: '50%', background: C.card,
         display: 'grid', placeItems: 'center', fontSize: 22, fontWeight: 800, color,
       }}>{value}</div>
     </div>
@@ -137,27 +137,27 @@ const S = {
   scoreSub: { fontSize: 12.5, color: '#9AA6C4', marginTop: 2 },
 
   sectionLabel: { fontSize: 11.5, fontWeight: 800, letterSpacing: 0.6, textTransform: 'uppercase', color: C.mute, margin: '22px 0 11px' },
-  block: { background: '#fff', border: `1px solid ${C.line}`, borderRadius: 16, padding: '14px 16px' },
-  blockGreen: { background: C.greenSoft, border: `1px solid ${C.green}22` },
+  block: { background: C.card, border: `1px solid ${C.line}`, borderRadius: 16, padding: '14px 16px' },
+  blockGreen: { background: C.greenSoft, border: `1px solid ${alpha(C.green, 13)}` },
 
   pillarRow: { display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0' },
   pillarTop: { display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 5 },
   pillarLabel: { fontSize: 13.5, fontWeight: 600, color: C.ink },
   pillarScore: { fontSize: 12.5, fontWeight: 800 },
-  pillarBar: { height: 7, background: '#EEF1F6', borderRadius: 99, overflow: 'hidden' },
+  pillarBar: { height: 7, background: C.track, borderRadius: 99, overflow: 'hidden' },
   pillarFill: { height: '100%', borderRadius: 99, transition: 'width .5s ease' },
 
   strengthRow: { display: 'flex', alignItems: 'center', gap: 10, padding: '7px 0' },
 
-  gapCard: { background: '#fff', border: `1px solid ${C.line}`, borderRadius: 14, padding: '14px 16px', marginBottom: 10 },
+  gapCard: { background: C.card, border: `1px solid ${C.line}`, borderRadius: 14, padding: '14px 16px', marginBottom: 10 },
   gapHead: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 },
   gapTitle: { fontSize: 14.5, fontWeight: 800, color: C.ink, flex: 1 },
   gapScore: { fontSize: 13, fontWeight: 800 },
   gapReco: { fontSize: 13, color: C.ink2, lineHeight: 1.5, marginBottom: 12 },
   gapBtn: { background: C.blue, color: '#fff', border: 'none', borderRadius: 11, padding: '11px 16px', fontSize: 13.5, fontWeight: 700, cursor: 'pointer', fontFamily: FONT },
 
-  allGood: { background: C.greenSoft, border: `1px solid ${C.green}33`, borderRadius: 14, padding: '14px 16px', fontSize: 13.5, fontWeight: 600, color: C.ink, lineHeight: 1.5 },
+  allGood: { background: C.greenSoft, border: `1px solid ${alpha(C.green, 20)}`, borderRadius: 14, padding: '14px 16px', fontSize: 13.5, fontWeight: 600, color: C.ink, lineHeight: 1.5 },
 
   footerBtns: { display: 'grid', gap: 10, marginTop: 22 },
-  ghostBtn: { background: '#fff', color: C.ink2, border: `1px solid ${C.line}`, borderRadius: 12, padding: '12px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: FONT },
+  ghostBtn: { background: C.card, color: C.ink2, border: `1px solid ${C.line}`, borderRadius: 12, padding: '12px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: FONT },
 };

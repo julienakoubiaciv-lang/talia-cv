@@ -6,7 +6,7 @@
  * Réutilise claude-proxy (action 'coach') ; gating PRO via usePlan.
  */
 import React, { useState, useMemo } from 'react';
-import { C, FONT } from '@/lib/gameTheme';
+import { C, FONT, alpha } from '@/lib/gameTheme';
 import { useNavigate } from 'react-router-dom';
 import {
   generateCoverLetter, markLetterGenerated, LETTER_FORMATS, LETTER_TONES, MESSAGE_TYPES,
@@ -282,7 +282,7 @@ const S = {
 
   sectionLabel: { fontSize: 11.5, fontWeight: 800, letterSpacing: 0.6, textTransform: 'uppercase', color: C.mute, margin: '18px 0 10px' },
 
-  block: { background: '#fff', border: `1px solid ${C.line}`, borderRadius: 14, padding: '14px 16px' },
+  block: { background: C.card, border: `1px solid ${C.line}`, borderRadius: 14, padding: '14px 16px' },
   blockLabel: { fontSize: 10.5, fontWeight: 800, letterSpacing: 0.8, color: C.mute, marginBottom: 8 },
   cvRow: { display: 'flex', alignItems: 'center', gap: 10 },
   cvName: { fontSize: 14.5, fontWeight: 700, color: C.ink },
@@ -290,7 +290,7 @@ const S = {
   empty: { fontSize: 13, color: C.ink2, lineHeight: 1.5 },
 
   choiceRow: { display: 'flex', gap: 8 },
-  choice: { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, background: '#fff', border: `1.5px solid ${C.line}`, borderRadius: 12, padding: '11px 8px', cursor: 'pointer', fontFamily: FONT, color: C.ink },
+  choice: { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, background: C.card, border: `1.5px solid ${C.line}`, borderRadius: 12, padding: '11px 8px', cursor: 'pointer', fontFamily: FONT, color: C.ink },
   choiceActive: { borderColor: C.blue, background: C.blueSoft, boxShadow: '0 0 0 3px rgba(21,57,183,.08)' },
   choiceLabel: { fontSize: 13, fontWeight: 700 },
 
@@ -303,10 +303,10 @@ const S = {
 
   resultBlock: { marginTop: 8 },
   subjectInput: { width: '100%', boxSizing: 'border-box', border: `1.5px solid ${C.line}`, borderRadius: 10, padding: '10px 12px', fontSize: 14, fontWeight: 600, fontFamily: FONT, color: C.ink, outline: 'none' },
-  resultArea: { width: '100%', boxSizing: 'border-box', border: `1.5px solid ${C.green}55`, background: '#FBFEFD', borderRadius: 12, padding: '14px', fontSize: 14, fontFamily: FONT, color: C.ink, lineHeight: 1.6, resize: 'vertical', outline: 'none' },
+  resultArea: { width: '100%', boxSizing: 'border-box', border: `1.5px solid ${alpha(C.green, 34)}`, background: C.card2, borderRadius: 12, padding: '14px', fontSize: 14, fontFamily: FONT, color: C.ink, lineHeight: 1.6, resize: 'vertical', outline: 'none' },
   resultBtns: { display: 'flex', gap: 10, marginTop: 12 },
   actionBtn: { flex: 1, background: C.green, color: '#fff', border: 'none', borderRadius: 11, padding: '12px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: FONT },
-  actionGhost: { flex: 1, background: '#fff', color: C.ink2, border: `1px solid ${C.line}`, borderRadius: 11, padding: '12px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: FONT },
+  actionGhost: { flex: 1, background: C.card, color: C.ink2, border: `1px solid ${C.line}`, borderRadius: 11, padding: '12px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: FONT },
   hint: { fontSize: 12, color: C.mute, textAlign: 'center', marginTop: 10 },
 
   upsell: { position: 'relative', background: C.ink, color: '#fff', borderRadius: 16, padding: '22px 20px', textAlign: 'left' },

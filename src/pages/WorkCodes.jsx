@@ -222,7 +222,7 @@ const S = {
   xpPill: { fontSize: 12, fontWeight: 800, color: C.blue, background: C.blueSoft, padding: '4px 10px', borderRadius: 99 },
   xpRow: { marginBottom: 16 },
   progText: { fontSize: 12.5, fontWeight: 700, color: C.mute },
-  progBar: { height: 8, background: '#E3E8F2', borderRadius: 99, overflow: 'hidden', marginBottom: 12 },
+  progBar: { height: 8, background: C.track, borderRadius: 99, overflow: 'hidden', marginBottom: 12 },
   progFill: { height: '100%', background: C.blue, borderRadius: 99, transition: 'width .35s cubic-bezier(.16,.84,.24,1)' },
 
   header: { marginBottom: 18 },
@@ -231,24 +231,24 @@ const S = {
   lead: { fontSize: 14.5, color: C.ink2, lineHeight: 1.6, margin: 0, maxWidth: 480 },
 
   bigStart: { width: '100%', background: C.blue, color: '#fff', border: 'none', borderRadius: 14, padding: '15px 20px', fontSize: 16, fontWeight: 700, cursor: 'pointer', fontFamily: FONT, boxShadow: '0 8px 24px rgba(21,57,183,.25)' },
-  ghostBtn: { width: '100%', background: '#fff', color: C.ink2, border: `1px solid ${C.line}`, borderRadius: 12, padding: '12px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: FONT },
+  ghostBtn: { width: '100%', background: C.card, color: C.ink2, border: `1px solid ${C.line}`, borderRadius: 12, padding: '12px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: FONT },
   sectionLabel: { fontSize: 11.5, fontWeight: 800, letterSpacing: 0.6, textTransform: 'uppercase', color: C.mute, margin: '24px 0 12px' },
   grid: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 },
-  themeCard: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, background: '#fff', border: `1px solid ${C.line}`, borderRadius: 14, padding: '16px 10px', cursor: 'pointer', fontFamily: FONT, textAlign: 'center' },
+  themeCard: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, background: C.card, border: `1px solid ${C.line}`, borderRadius: 14, padding: '16px 10px', cursor: 'pointer', fontFamily: FONT, textAlign: 'center' },
   themeName: { fontSize: 13.5, fontWeight: 700, color: C.ink, marginTop: 2 },
   themeCount: { fontSize: 11, color: C.mute },
 
-  card: { background: '#fff', border: `1px solid ${C.line}`, borderRadius: 18, padding: '20px 22px 24px', boxShadow: '0 4px 20px rgba(11,22,56,.05)', animation: 'sjtIn .35s ease both' },
+  card: { background: C.card, border: `1px solid ${C.line}`, borderRadius: 18, padding: '20px 22px 24px', boxShadow: '0 4px 20px rgba(11,22,56,.05)', animation: 'sjtIn .35s ease both' },
   chip: { display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, padding: '5px 11px', borderRadius: 99 },
   scenarioHead: { display: 'flex', alignItems: 'center', gap: 10, margin: '16px 0 12px' },
   scenarioLine: { flex: 1, height: 1, background: C.line },
   scenarioLabel: { fontSize: 10.5, fontWeight: 800, letterSpacing: 0.8, textTransform: 'uppercase', color: C.blue, whiteSpace: 'nowrap' },
-  context: { background: '#F1F5FE', borderLeft: `4px solid ${C.blue}`, borderRadius: '0 12px 12px 0', padding: '12px 14px', fontSize: 14, color: C.ink, lineHeight: 1.55, marginBottom: 12 },
+  context: { background: C.card2, borderLeft: `4px solid ${C.blue}`, borderRadius: '0 12px 12px 0', padding: '12px 14px', fontSize: 14, color: C.ink, lineHeight: 1.55, marginBottom: 12 },
   situation: { fontSize: 18.5, fontWeight: 800, color: C.ink, lineHeight: 1.35, letterSpacing: -0.3 },
   prompt: { fontSize: 13.5, color: C.ink2, fontWeight: 600, margin: '10px 0 16px' },
 
   options: { display: 'grid', gap: 10 },
-  opt: { display: 'flex', alignItems: 'center', gap: 10, width: '100%', background: '#fff', border: `1.5px solid ${C.line}`, borderRadius: 12, padding: '13px 14px', fontSize: 14, fontWeight: 500, color: C.ink, cursor: 'pointer', fontFamily: FONT, transition: 'all .12s' },
+  opt: { display: 'flex', alignItems: 'center', gap: 10, width: '100%', background: C.card, border: `1.5px solid ${C.line}`, borderRadius: 12, padding: '13px 14px', fontSize: 14, fontWeight: 500, color: C.ink, cursor: 'pointer', fontFamily: FONT, transition: 'all .12s' },
   markGood: { color: C.green, fontWeight: 800, fontSize: 16 },
   markTone: { fontWeight: 800, fontSize: 16 },
 

@@ -12,23 +12,26 @@ import { CheckoutSuccessBanner } from '@/components/CheckoutSuccessBanner.jsx';
 import { useCheckoutSuccess } from '@/hooks/useCheckoutSuccess';
 import { getOverallCompletion } from '@/lib/interviewProgress';
 import { isDemoMode, setDemoMode } from '@/lib/demoMode';
+import { alpha } from '@/lib/gameTheme';
+import { useTheme } from '@/hooks/useTheme.jsx';
 
 /* ─── Design tokens ─────────────────────────────────────────────────────── */
 const C = {
-  bluePrimary: '#1539B7',
-  blueHover:   '#1F4FE0',
-  blueSoft:    '#EEF2FF',
-  navy:        '#0B1638',
-  navyDeep:    '#0F1A40',
-  ink:         '#0B1020',
-  ink2:        '#3A4156',
-  mute:        '#9AA0AE',
-  rule:        '#ECEDF1',
-  bg:          '#FFFFFF',
-  surface:     '#F7F8FA',
-  ok:          '#1F8A5B',
-  okBg:        'rgba(31,138,91,0.10)',
-  star:        '#F5B400',
+  bluePrimary: 'var(--altio-blue)',
+  blueHover:   'var(--altio-blue-hover)',
+  blueSoft:    'var(--altio-blue-soft)',
+  navy:        'var(--altio-ink)',
+  navyDeep:    'var(--altio-ink)',
+  ink:         'var(--altio-ink)',
+  ink2:        'var(--altio-ink2)',
+  mute:        'var(--altio-mute)',
+  rule:        'var(--altio-line)',
+  bg:          'var(--altio-bg)',
+  surface:     'var(--altio-card2)',
+  card:        'var(--altio-card)',
+  ok:          'var(--altio-green)',
+  okBg:        'var(--altio-green-soft)',
+  star:        'var(--altio-star)',
 };
 
 const FONT = "'Manrope', system-ui, sans-serif";
@@ -142,7 +145,7 @@ function Stars({ value = 5, size = 22 }) {
 function ConfirmModal({ name, onConfirm, onCancel }) {
   return (
     <div onClick={onCancel} style={{ position: 'fixed', inset: 0, background: 'rgba(11,16,32,0.45)', backdropFilter: 'blur(3px)', zIndex: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 20, padding: '32px', maxWidth: 400, width: '90%', boxShadow: '0 40px 100px rgba(11,16,32,.28), 0 0 0 1px rgba(0,0,0,.04)', fontFamily: FONT }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: C.card, borderRadius: 20, padding: '32px', maxWidth: 400, width: '90%', boxShadow: '0 40px 100px rgba(11,16,32,.28), 0 0 0 1px rgba(0,0,0,.04)', fontFamily: FONT }}>
         <div style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(239,68,68,.10)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ef4444', marginBottom: 20 }}>
           <IconTrash s={20} />
         </div>
@@ -151,7 +154,7 @@ function ConfirmModal({ name, onConfirm, onCancel }) {
           <strong style={{ color: C.ink }}>{name}</strong> sera définitivement supprimé.
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
-          <button onClick={onCancel} style={{ flex: 1, padding: '11px', border: `1px solid ${C.rule}`, borderRadius: 10, background: '#fff', fontSize: 13.5, fontWeight: 600, color: C.ink2, cursor: 'pointer' }}>Annuler</button>
+          <button onClick={onCancel} style={{ flex: 1, padding: '11px', border: `1px solid ${C.rule}`, borderRadius: 10, background: C.card, fontSize: 13.5, fontWeight: 600, color: C.ink2, cursor: 'pointer' }}>Annuler</button>
           <button onClick={onConfirm} style={{ flex: 1, padding: '11px', border: 'none', borderRadius: 10, background: '#ef4444', fontSize: 13.5, fontWeight: 700, color: '#fff', cursor: 'pointer' }}>Supprimer</button>
         </div>
       </div>
@@ -172,7 +175,7 @@ function PreviewModal({ item, onModify, onDownload, downloading, onClose }) {
       <div onClick={e => e.stopPropagation()} style={{
         width: '100%', maxWidth: isMobile ? '100%' : 1040,
         height: isMobile ? 'min(88vh, 640px)' : 'min(740px, 90vh)',
-        background: '#fff', borderRadius: isMobile ? 16 : 20, overflow: 'hidden',
+        background: C.card, borderRadius: isMobile ? 16 : 20, overflow: 'hidden',
         boxShadow: '0 40px 100px rgba(11,16,32,.28), 0 0 0 1px rgba(0,0,0,.04)',
         display: 'flex', flexDirection: 'column', fontFamily: FONT,
       }}>
@@ -196,7 +199,7 @@ function PreviewModal({ item, onModify, onDownload, downloading, onClose }) {
                 disabled={downloading}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 7, padding: '9px 18px',
-                  border: `1px solid ${C.rule}`, borderRadius: 10, background: '#fff',
+                  border: `1px solid ${C.rule}`, borderRadius: 10, background: C.card,
                   fontSize: 13, fontWeight: 600, color: C.ink,
                   cursor: downloading ? 'wait' : 'pointer',
                   opacity: downloading ? 0.7 : 1,
@@ -210,7 +213,7 @@ function PreviewModal({ item, onModify, onDownload, downloading, onClose }) {
             <button onClick={() => { onModify(item); onClose(); }} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: isMobile ? '8px 14px' : '9px 18px', border: 'none', borderRadius: 10, background: C.bluePrimary, fontSize: 13, fontWeight: 600, color: '#fff', cursor: 'pointer' }}>
               <IconEdit s={13} /> Modifier
             </button>
-            <button onClick={onClose} style={{ width: 34, height: 34, border: `1px solid ${C.rule}`, borderRadius: 10, background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.mute, flexShrink: 0 }}>
+            <button onClick={onClose} style={{ width: 34, height: 34, border: `1px solid ${C.rule}`, borderRadius: 10, background: C.card, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.mute, flexShrink: 0 }}>
               <IconX s={15} />
             </button>
           </div>
@@ -349,7 +352,7 @@ function CVCard({ item, onModify, onView, onDelete, onCreateLead, animDelay }) {
 /* ─── Stat Card ──────────────────────────────────────────────────────────── */
 function StatCard({ icon, value, label, sub, badge }) {
   return (
-    <div style={{ background: '#fff', borderRadius: 16, padding: '22px 24px', border: `1px solid ${C.rule}`, boxShadow: '0 1px 2px rgba(15,20,40,.02)', display: 'flex', alignItems: 'center', gap: 16, flex: '1 1 180px' }}>
+    <div style={{ background: C.card, borderRadius: 16, padding: '22px 24px', border: `1px solid ${C.rule}`, boxShadow: '0 1px 2px rgba(15,20,40,.02)', display: 'flex', alignItems: 'center', gap: 16, flex: '1 1 180px' }}>
       <div style={{ width: 46, height: 46, borderRadius: 12, background: C.blueSoft, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.bluePrimary, flexShrink: 0 }}>
         {icon}
       </div>
@@ -421,7 +424,7 @@ function OnboardingTour({ onClose, onAction }) {
       animation:'fadeIn .25s ease', fontFamily:FONT,
     }}>
       <div style={{
-        width:'min(540px, 96vw)', background:'#fff', borderRadius:24,
+        width:'min(540px, 96vw)', background: C.card, borderRadius:24,
         overflow:'hidden', boxShadow:'0 40px 100px rgba(11,16,32,.4)',
         animation:'fadeInUp .35s cubic-bezier(.16,.84,.24,1)',
       }}>
@@ -473,7 +476,7 @@ function OnboardingTour({ onClose, onAction }) {
             {step > 0 && (
               <button onClick={() => setStep(step-1)} style={{
                 padding:'11px 18px', border:`1px solid ${C.rule}`, borderRadius:10,
-                background:'#fff', fontSize:13, fontWeight:600, color:C.ink2,
+                background: C.card, fontSize:13, fontWeight:600, color:C.ink2,
                 cursor:'pointer', fontFamily:FONT, display:'flex', alignItems:'center', gap:5,
               }}>
                 ← Précédent
@@ -534,6 +537,7 @@ export default function Home() {
   const [groupByBulk, setGroupByBulk] = useState(false);
   const [tourOpen, setTourOpen] = useState(false);
   const [demoOn, setDemoOn] = useState(() => isDemoMode());
+  const { mode, toggle: toggleTheme } = useTheme();
   const [leadSentIds, setLeadSentIds] = useState(new Set()); // IDs déjà envoyés au CRM
 
   useEffect(() => { setCvList(getHistorySync()); }, []);
@@ -780,8 +784,26 @@ export default function Home() {
           </div>
         ) : (
           <button onClick={() => navigate('/auth')}
-            style={{ padding: isMobile ? '7px 10px' : '7px 16px', borderRadius: 99, fontSize: 12, fontWeight: 700, background: C.blueSoft, color: C.bluePrimary, border: `1.5px solid ${C.bluePrimary}33`, cursor: 'pointer', fontFamily: 'Manrope,sans-serif', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 5 }}>
+            style={{ padding: isMobile ? '7px 10px' : '7px 16px', borderRadius: 99, fontSize: 12, fontWeight: 700, background: C.blueSoft, color: C.bluePrimary, border: `1.5px solid ${alpha(C.bluePrimary, 20)}`, cursor: 'pointer', fontFamily: 'Manrope,sans-serif', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 5 }}>
             {isMobile ? '☁' : '☁ Connexion'}
+          </button>
+        )}
+
+        {/* Bascule thème clair / sombre */}
+        <button onClick={toggleTheme} title={mode === 'dark' ? 'Passer en clair' : 'Passer en sombre'}
+          style={{ flexShrink: 0, width: 34, height: 34, background: C.surface, color: C.ink2, border: `1px solid ${C.rule}`, borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, transition: 'all .15s' }}
+          onMouseEnter={e => { e.currentTarget.style.background=C.blueSoft; e.currentTarget.style.color=C.bluePrimary; e.currentTarget.style.borderColor=alpha(C.bluePrimary, 34); }}
+          onMouseLeave={e => { e.currentTarget.style.background=C.surface; e.currentTarget.style.color=C.ink2; e.currentTarget.style.borderColor=C.rule; }}>
+          {mode === 'dark' ? '☀️' : '🌙'}
+        </button>
+
+        {/* Charte graphique */}
+        {!isMobile && (
+          <button onClick={() => navigate('/charte')} title="Charte graphique"
+            style={{ flexShrink: 0, width: 34, height: 34, background: C.surface, color: C.ink2, border: `1px solid ${C.rule}`, borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, transition: 'all .15s' }}
+            onMouseEnter={e => { e.currentTarget.style.background=C.blueSoft; e.currentTarget.style.color=C.bluePrimary; e.currentTarget.style.borderColor=alpha(C.bluePrimary, 34); }}
+            onMouseLeave={e => { e.currentTarget.style.background=C.surface; e.currentTarget.style.color=C.ink2; e.currentTarget.style.borderColor=C.rule; }}>
+            🎨
           </button>
         )}
 
@@ -789,7 +811,7 @@ export default function Home() {
         {!isMobile && (
           <button onClick={() => setTourOpen(true)} title="Visite guidée"
             style={{ flexShrink: 0, width: 34, height: 34, background: C.surface, color: C.ink2, border: `1px solid ${C.rule}`, borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .15s' }}
-            onMouseEnter={e => { e.currentTarget.style.background=C.blueSoft; e.currentTarget.style.color=C.bluePrimary; e.currentTarget.style.borderColor=`${C.bluePrimary}55`; }}
+            onMouseEnter={e => { e.currentTarget.style.background=C.blueSoft; e.currentTarget.style.color=C.bluePrimary; e.currentTarget.style.borderColor=`${alpha(C.bluePrimary, 34)}`; }}
             onMouseLeave={e => { e.currentTarget.style.background=C.surface; e.currentTarget.style.color=C.ink2; e.currentTarget.style.borderColor=C.rule; }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
@@ -820,7 +842,7 @@ export default function Home() {
             <button
               onClick={() => { setDemoMode(false); setDemoOn(false); }}
               style={{
-                flexShrink: 0, background: '#fff', color: C.ink2, border: '1px solid #E7C98F',
+                flexShrink: 0, background: C.card, color: C.ink2, border: '1px solid #E7C98F',
                 borderRadius: 99, padding: isMobile ? '7px 12px' : '8px 14px',
                 fontSize: isMobile ? 11.5 : 12.5, fontWeight: 700, cursor: 'pointer',
               }}>
@@ -853,7 +875,7 @@ export default function Home() {
           </div>
           <div style={{
             flexShrink: 0, padding: isMobile ? '8px 14px' : '10px 18px',
-            background: '#fff', color: C.bluePrimary, borderRadius: 99,
+            background: C.card, color: C.bluePrimary, borderRadius: 99,
             fontSize: isMobile ? 12.5 : 13.5, fontWeight: 700, whiteSpace: 'nowrap',
           }}>
             {isMobile ? 'Voir' : '🧗 Mon parcours'}
@@ -892,7 +914,7 @@ export default function Home() {
           </div>
           <div style={{
             flexShrink: 0, padding: isMobile ? '8px 14px' : '10px 18px',
-            background: '#fff', color: C.ink, borderRadius: 99,
+            background: C.card, color: C.ink, borderRadius: 99,
             fontSize: isMobile ? 12.5 : 13.5, fontWeight: 700, whiteSpace: 'nowrap',
           }}>
             {isMobile ? '▶ Jouer' : '▶ S\'entraîner'}
@@ -905,7 +927,7 @@ export default function Home() {
           style={{
             display: 'flex', alignItems: 'center', gap: isMobile ? 12 : 18,
             padding: isMobile ? '14px 16px' : '18px 24px',
-            background: '#fff', border: `1px solid ${C.rule}`,
+            background: C.card, border: `1px solid ${C.rule}`,
             borderRadius: 16, marginBottom: isMobile ? 20 : 28, cursor: 'pointer',
             boxShadow: '0 4px 18px rgba(11,22,56,.05)',
             transition: 'transform .15s', animation: 'fadeIn .6s ease both',
@@ -936,7 +958,7 @@ export default function Home() {
           style={{
             display: 'flex', alignItems: 'center', gap: isMobile ? 12 : 18,
             padding: isMobile ? '14px 16px' : '18px 24px',
-            background: '#fff', border: `1px solid ${C.rule}`,
+            background: C.card, border: `1px solid ${C.rule}`,
             borderRadius: 16, marginBottom: isMobile ? 12 : 16, cursor: 'pointer',
             boxShadow: '0 4px 18px rgba(11,22,56,.05)',
             transition: 'transform .15s', animation: 'fadeIn .6s ease both',
@@ -967,7 +989,7 @@ export default function Home() {
           style={{
             display: 'flex', alignItems: 'center', gap: isMobile ? 12 : 18,
             padding: isMobile ? '14px 16px' : '18px 24px',
-            background: '#fff', border: `1px solid ${C.rule}`,
+            background: C.card, border: `1px solid ${C.rule}`,
             borderRadius: 16, marginBottom: isMobile ? 12 : 16, cursor: 'pointer',
             boxShadow: '0 4px 18px rgba(11,22,56,.05)',
             transition: 'transform .15s', animation: 'fadeIn .6s ease both',
@@ -998,7 +1020,7 @@ export default function Home() {
           style={{
             display: 'flex', alignItems: 'center', gap: isMobile ? 12 : 18,
             padding: isMobile ? '14px 16px' : '18px 24px',
-            background: '#fff', border: `1px solid ${C.rule}`,
+            background: C.card, border: `1px solid ${C.rule}`,
             borderRadius: 16, marginBottom: isMobile ? 12 : 16, cursor: 'pointer',
             boxShadow: '0 4px 18px rgba(11,22,56,.05)',
             transition: 'transform .15s', animation: 'fadeIn .6s ease both',
@@ -1029,7 +1051,7 @@ export default function Home() {
           style={{
             display: 'flex', alignItems: 'center', gap: isMobile ? 12 : 18,
             padding: isMobile ? '14px 16px' : '18px 24px',
-            background: '#fff', border: `1px solid ${C.rule}`,
+            background: C.card, border: `1px solid ${C.rule}`,
             borderRadius: 16, marginBottom: isMobile ? 20 : 28, cursor: 'pointer',
             boxShadow: '0 4px 18px rgba(11,22,56,.05)',
             transition: 'transform .15s', animation: 'fadeIn .6s ease both',
@@ -1060,7 +1082,7 @@ export default function Home() {
           style={{
             display: 'flex', alignItems: 'center', gap: isMobile ? 12 : 18,
             padding: isMobile ? '14px 16px' : '18px 24px',
-            background: '#fff', border: `1px solid ${C.rule}`,
+            background: C.card, border: `1px solid ${C.rule}`,
             borderRadius: 16, marginBottom: isMobile ? 20 : 28, cursor: 'pointer',
             boxShadow: '0 4px 18px rgba(11,22,56,.05)',
             transition: 'transform .15s', animation: 'fadeIn .6s ease both',
@@ -1091,7 +1113,7 @@ export default function Home() {
           style={{
             display: 'flex', alignItems: 'center', gap: isMobile ? 12 : 18,
             padding: isMobile ? '14px 16px' : '18px 24px',
-            background: '#fff', border: `1px solid ${C.rule}`,
+            background: C.card, border: `1px solid ${C.rule}`,
             borderRadius: 16, marginBottom: isMobile ? 20 : 28, cursor: 'pointer',
             boxShadow: '0 4px 18px rgba(11,22,56,.05)',
             transition: 'transform .15s', animation: 'fadeIn .6s ease both',
@@ -1218,7 +1240,7 @@ export default function Home() {
                 </div>
 
                 {/* Sort dropdown */}
-                <div style={{ position:'relative', display:'flex', alignItems:'center', gap:6, padding:'8px 12px', background:'#fff', border:`1px solid ${C.rule}`, borderRadius:99, fontSize:12.5, fontWeight:600, color:C.ink }}>
+                <div style={{ position:'relative', display:'flex', alignItems:'center', gap:6, padding:'8px 12px', background: C.card, border:`1px solid ${C.rule}`, borderRadius:99, fontSize:12.5, fontWeight:600, color:C.ink }}>
                   <IconSort s={13} />
                   <select value={sortBy} onChange={e => setSortBy(e.target.value)}
                     style={{ border:'none', background:'transparent', fontSize:12.5, fontWeight:600, color:C.ink, fontFamily:FONT, cursor:'pointer', outline:'none', paddingRight:18, appearance:'none', backgroundImage:'url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'10\' height=\'10\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%239AA0AE\' stroke-width=\'2.5\'><polyline points=\'6 9 12 15 18 9\'/></svg>")', backgroundRepeat:'no-repeat', backgroundPosition:'right 0 center' }}>
@@ -1378,7 +1400,7 @@ export default function Home() {
             </div>
             <div style={{ fontSize:16, fontWeight:700, color:C.ink, marginBottom:6 }}>Aucun CV ne correspond</div>
             <div style={{ fontSize:13, color:C.mute, marginBottom:18 }}>Essaie une autre recherche ou retire des filtres.</div>
-            <button onClick={clearFilters} style={{ padding:'9px 20px', border:`1px solid ${C.rule}`, background:'#fff', borderRadius:99, fontSize:13, fontWeight:600, color:C.ink, cursor:'pointer', fontFamily:FONT }}>
+            <button onClick={clearFilters} style={{ padding:'9px 20px', border:`1px solid ${C.rule}`, background: C.card, borderRadius:99, fontSize:13, fontWeight:600, color:C.ink, cursor:'pointer', fontFamily:FONT }}>
               Réinitialiser les filtres
             </button>
           </div>

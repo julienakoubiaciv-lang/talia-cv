@@ -6,7 +6,7 @@
  * relie le générateur de CV, le décrypteur de métiers et le simulateur.
  */
 import React, { useMemo } from 'react';
-import { C, FONT } from '@/lib/gameTheme';
+import { C, FONT, alpha } from '@/lib/gameTheme';
 import { useNavigate } from 'react-router-dom';
 import { getJourney } from '@/lib/journey';
 
@@ -66,7 +66,7 @@ export default function Journey() {
                 <div style={S.rail}>
                   <div style={{
                     ...S.dot,
-                    background: tone === 'done' ? C.green : tone === 'locked' ? '#E3E8F2' : '#fff',
+                    background: tone === 'done' ? C.green : tone === 'locked' ? C.track : '#fff',
                     borderColor: tone === 'done' ? C.green : tone === 'todo' ? C.blue : C.line,
                     color: tone === 'done' ? '#fff' : tone === 'locked' ? C.mute : C.blue,
                   }}>
@@ -143,18 +143,18 @@ const S = {
   rail: { display: 'flex', flexDirection: 'column', alignItems: 'center', width: 36, flexShrink: 0 },
   dot: { width: 36, height: 36, borderRadius: '50%', border: '2px solid', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 800, flexShrink: 0 },
   line: { width: 2, flex: 1, minHeight: 18, margin: '2px 0' },
-  stepCard: { flex: 1, background: '#fff', border: `1px solid ${C.line}`, borderRadius: 14, padding: '13px 15px', marginBottom: 12 },
+  stepCard: { flex: 1, background: C.card, border: `1px solid ${C.line}`, borderRadius: 14, padding: '13px 15px', marginBottom: 12 },
   stepCardLocked: { background: '#F7F9FC', borderStyle: 'dashed' },
   stepHead: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 },
   stepTitle: { fontSize: 14.5, fontWeight: 800, color: C.ink, flex: 1 },
   stepDoneTag: { fontSize: 10.5, fontWeight: 800, color: C.green, background: C.greenSoft, padding: '3px 8px', borderRadius: 99 },
-  stepSoonTag: { fontSize: 10.5, fontWeight: 800, color: C.mute, background: '#EEF1F6', padding: '3px 8px', borderRadius: 99 },
+  stepSoonTag: { fontSize: 10.5, fontWeight: 800, color: C.mute, background: C.track, padding: '3px 8px', borderRadius: 99 },
   stepDesc: { fontSize: 13, color: C.ink2, lineHeight: 1.45, marginBottom: 10 },
   stepBtn: { background: C.blue, color: '#fff', border: 'none', borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: FONT },
-  stepBtnGhost: { background: '#fff', color: C.blue, border: `1.5px solid ${C.blue}33`, borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: FONT },
+  stepBtnGhost: { background: C.card, color: C.blue, border: `1.5px solid ${alpha(C.blue, 20)}`, borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: FONT },
 
   badgeGrid: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 },
-  badge: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, background: '#fff', border: `1px solid ${C.line}`, borderRadius: 14, padding: '14px 6px', textAlign: 'center' },
+  badge: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, background: C.card, border: `1px solid ${C.line}`, borderRadius: 14, padding: '14px 6px', textAlign: 'center' },
   badgeLocked: { background: '#F7F9FC' },
   badgeEmoji: { fontSize: 26 },
   badgeLabel: { fontSize: 10.5, fontWeight: 700, lineHeight: 1.25 },

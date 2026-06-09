@@ -1,0 +1,70 @@
+/* ============================================================
+   Altio CV — Tokens de thème (charte vivante)
+   Pilotés par l'attribut html[data-theme="light"|"dark"] (useTheme).
+   Le mode clair = « Thème A · Vibrant clair », le mode sombre =
+   « Thème B · Arcade sombre » de la charte. Tous les composants qui
+   consomment gameTheme `C` (= var(--altio-*)) basculent d'un coup.
+   ============================================================ */
+
+:root,
+html[data-theme="light"] {
+  --altio-ink:  #0B1638;
+  --altio-ink2: #3A4156;
+  --altio-mute: #8390A6;
+
+  --altio-bg:    #F4F6FA;
+  --altio-line:  #E6EAF1;
+  --altio-line2: #EEF1F8;
+  --altio-card:  #FFFFFF;
+  --altio-card2: #F8FAFE;
+  --altio-track: #E3E8F2;
+
+  --altio-blue:       #1539B7;
+  --altio-blue-soft:  #EEF2FF;
+  --altio-blue-hover: #1F4FE0;
+
+  --altio-green:      #0CA678;
+  --altio-green-soft: #E6F8F1;
+  --altio-red:        #E03131;
+  --altio-red-soft:   #FFF0F0;
+  --altio-amber:      #E8A500;
+  --altio-amber-soft: #FBF3DE;
+  --altio-boss:       #7048E8;
+  --altio-boss-soft:  #F3EEFF;
+  --altio-star:       #F5B400;
+
+  --altio-shadow-card: 0 4px 20px rgba(11,22,56,.06);
+  --altio-shadow-cta:  0 8px 24px rgba(21,57,183,.28);
+  --altio-shadow-pop:  0 18px 50px -20px rgba(11,22,56,.28);
+}
+
+html[data-theme="dark"] {
+  --altio-ink:  #EAF0FF;
+  --altio-ink2: #AEB9DC;
+  --altio-mute: #7A86AE;
+
+  --altio-bg:    #070B1B;
+  --altio-line:  rgba(255,255,255,.10);
+  --altio-line2: rgba(255,255,255,.06);
+  --altio-card:  #121A38;
+  --altio-card2: #0E1530;
+  --altio-track: rgba(255,255,255,.08);
+
+  --altio-blue:       #5C82FF;
+  --altio-blue-soft:  rgba(92,130,255,.16);
+  --altio-blue-hover: #7A98FF;
+
+  --altio-green:      #23D89A;
+  --altio-green-soft: rgba(35,216,154,.14);
+  --altio-red:        #FF5C70;
+  --altio-red-soft:   rgba(255,92,112,.15);
+  --altio-amber:      #FFC23D;
+  --altio-amber-soft: rgba(255,194,61,.14);
+  --altio-boss:       #A487FF;
+  --altio-boss-soft:  rgba(164,135,255,.18);
+  --altio-star:       #FFC742;
+
+  --altio-shadow-card: 0 10px 34px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.05);
+  --altio-shadow-cta:  0 10px 30px rgba(92,130,255,.5);
+  --altio-shadow-pop:  0 24px 60px -16px rgba(0,0,0,.7), 0 0 0 1px rgba(255,255,255,.05);
+}

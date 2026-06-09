@@ -7,7 +7,7 @@
  * clavier si la reconnaissance vocale n'est pas disponible.
  */
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
-import { C, FONT } from '@/lib/gameTheme';
+import { C, FONT, alpha } from '@/lib/gameTheme';
 import { useNavigate } from 'react-router-dom';
 import {
   generateOralQuestions, evaluateOralAnswer, analyzeDelivery,
@@ -385,7 +385,7 @@ const S = {
   hud: { display: 'flex', alignItems: 'center', gap: 10 },
   xpPill: { fontSize: 12, fontWeight: 800, color: C.blue, background: C.blueSoft, padding: '4px 10px', borderRadius: 99 },
   progText: { fontSize: 12.5, fontWeight: 700, color: C.mute },
-  progBar: { height: 8, background: '#E3E8F2', borderRadius: 99, overflow: 'hidden', marginBottom: 12 },
+  progBar: { height: 8, background: C.track, borderRadius: 99, overflow: 'hidden', marginBottom: 12 },
   progFill: { height: '100%', background: C.blue, borderRadius: 99, transition: 'width .35s cubic-bezier(.16,.84,.24,1)' },
 
   header: { marginBottom: 18 },
@@ -393,7 +393,7 @@ const S = {
   h1: { fontSize: 32, fontWeight: 800, letterSpacing: -1, lineHeight: 1.1, margin: '0 0 12px' },
   lead: { fontSize: 14.5, color: C.ink2, lineHeight: 1.6, margin: 0, maxWidth: 480 },
 
-  block: { background: '#fff', border: `1px solid ${C.line}`, borderRadius: 16, padding: '14px 16px' },
+  block: { background: C.card, border: `1px solid ${C.line}`, borderRadius: 16, padding: '14px 16px' },
   blockLabel: { fontSize: 11, fontWeight: 800, letterSpacing: 0.8, textTransform: 'uppercase', color: C.mute, marginBottom: 10 },
   cvRow: { display: 'flex', alignItems: 'center', gap: 12 },
   cvName: { fontSize: 14.5, fontWeight: 700, color: C.ink, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
@@ -401,23 +401,23 @@ const S = {
   empty: { fontSize: 13.5, color: C.ink2, lineHeight: 1.5 },
 
   sectionLabel: { fontSize: 11.5, fontWeight: 800, letterSpacing: 0.6, textTransform: 'uppercase', color: C.mute, margin: '22px 0 11px' },
-  textarea: { width: '100%', boxSizing: 'border-box', background: '#fff', border: `1.5px solid ${C.line}`, borderRadius: 12, padding: '12px 14px', fontSize: 14, color: C.ink, fontFamily: FONT, outline: 'none', resize: 'vertical', lineHeight: 1.5 },
-  infoBox: { background: C.blueSoft, border: `1px solid ${C.blue}22`, borderRadius: 12, padding: '12px 14px', fontSize: 13, color: C.ink2, lineHeight: 1.5, marginTop: 16 },
+  textarea: { width: '100%', boxSizing: 'border-box', background: C.card, border: `1.5px solid ${C.line}`, borderRadius: 12, padding: '12px 14px', fontSize: 14, color: C.ink, fontFamily: FONT, outline: 'none', resize: 'vertical', lineHeight: 1.5 },
+  infoBox: { background: C.blueSoft, border: `1px solid ${alpha(C.blue, 13)}`, borderRadius: 12, padding: '12px 14px', fontSize: 13, color: C.ink2, lineHeight: 1.5, marginTop: 16 },
 
   bigStart: { width: '100%', marginTop: 18, background: C.blue, color: '#fff', border: 'none', borderRadius: 14, padding: '15px 20px', fontSize: 16, fontWeight: 700, cursor: 'pointer', fontFamily: FONT, boxShadow: '0 8px 24px rgba(21,57,183,.25)' },
-  ghostBtn: { width: '100%', background: '#fff', color: C.ink2, border: `1px solid ${C.line}`, borderRadius: 12, padding: '12px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: FONT },
+  ghostBtn: { width: '100%', background: C.card, color: C.ink2, border: `1px solid ${C.line}`, borderRadius: 12, padding: '12px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: FONT },
   hint: { fontSize: 12, color: C.mute, lineHeight: 1.5, marginTop: 10, textAlign: 'center' },
 
   err: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, borderRadius: 12, padding: '12px 14px', fontSize: 13.5, fontWeight: 600, marginTop: 16 },
   errBtn: { background: C.blue, color: '#fff', border: 'none', borderRadius: 9, padding: '8px 12px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: FONT, whiteSpace: 'nowrap' },
 
-  upsell: { background: '#fff', border: `1px solid ${C.line}`, borderRadius: 18, padding: '24px 22px', textAlign: 'center', position: 'relative', marginTop: 8 },
+  upsell: { background: C.card, border: `1px solid ${C.line}`, borderRadius: 18, padding: '24px 22px', textAlign: 'center', position: 'relative', marginTop: 8 },
   upsellBadge: { position: 'absolute', top: 16, right: 16, background: C.amberSoft, color: C.amber, fontSize: 11, fontWeight: 800, padding: '3px 9px', borderRadius: 99, letterSpacing: 0.5 },
   upsellTitle: { fontSize: 17, fontWeight: 800, color: C.ink, marginBottom: 8 },
   upsellText: { fontSize: 13.5, color: C.ink2, lineHeight: 1.6, marginBottom: 18, maxWidth: 420, marginLeft: 'auto', marginRight: 'auto' },
   cta: { background: C.blue, color: '#fff', border: 'none', borderRadius: 12, padding: '13px 24px', fontSize: 14.5, fontWeight: 700, cursor: 'pointer', fontFamily: FONT },
 
-  card: { background: '#fff', border: `1px solid ${C.line}`, borderRadius: 18, padding: '20px 22px 24px', boxShadow: '0 4px 20px rgba(11,22,56,.05)', animation: 'oralIn .35s ease both' },
+  card: { background: C.card, border: `1px solid ${C.line}`, borderRadius: 18, padding: '20px 22px 24px', boxShadow: '0 4px 20px rgba(11,22,56,.05)', animation: 'oralIn .35s ease both' },
   chip: { display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, padding: '5px 11px', borderRadius: 99 },
   question: { fontSize: 19, fontWeight: 800, color: C.ink, lineHeight: 1.35, letterSpacing: -0.3, margin: '16px 0 10px' },
   ttsBtn: { background: C.blueSoft, color: C.blue, border: 'none', borderRadius: 9, padding: '7px 12px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: FONT },
@@ -433,7 +433,7 @@ const S = {
 
   fbList: { marginTop: 8 },
   ul: { margin: '4px 0 0', paddingLeft: 18, fontSize: 13, color: C.ink2, lineHeight: 1.5 },
-  modelBox: { marginTop: 10, background: '#fff', border: `1px solid ${C.line}`, borderRadius: 10, padding: '10px 12px', fontSize: 13, color: C.ink, lineHeight: 1.5 },
+  modelBox: { marginTop: 10, background: C.card, border: `1px solid ${C.line}`, borderRadius: 10, padding: '10px 12px', fontSize: 13, color: C.ink, lineHeight: 1.5 },
 
   nextBtn: { width: '100%', marginTop: 16, background: C.ink, color: '#fff', border: 'none', borderRadius: 13, padding: '14px', fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: FONT },
 

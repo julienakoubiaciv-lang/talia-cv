@@ -12,7 +12,7 @@
  * XP partagé avec le simulateur d'entretien (interviewProgress).
  */
 import React, { useState, useMemo } from 'react';
-import { C, FONT } from '@/lib/gameTheme';
+import { C, FONT, alpha } from '@/lib/gameTheme';
 import { useNavigate } from 'react-router-dom';
 import { listJobsBySector, getJob, detectTargetJob } from '@/lib/jobIntel';
 import { shuffle } from '@/lib/interviewBank';
@@ -424,7 +424,7 @@ const S = {
 
   sectionLabel: { fontSize: 11.5, fontWeight: 800, letterSpacing: 0.6, textTransform: 'uppercase', color: C.mute, margin: '20px 0 11px' },
   grid: { display: 'grid', gap: 10 },
-  jobCard: { display: 'flex', alignItems: 'center', gap: 12, background: '#fff', border: `1px solid ${C.line}`, borderRadius: 14, padding: '14px 15px', cursor: 'pointer', fontFamily: FONT, textAlign: 'left' },
+  jobCard: { display: 'flex', alignItems: 'center', gap: 12, background: C.card, border: `1px solid ${C.line}`, borderRadius: 14, padding: '14px 15px', cursor: 'pointer', fontFamily: FONT, textAlign: 'left' },
   jobEmoji: { fontSize: 24, flexShrink: 0 },
   jobText: { display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 },
   jobName: { fontSize: 14.5, fontWeight: 700, color: C.ink, lineHeight: 1.2 },
@@ -438,10 +438,10 @@ const S = {
   ficheSector: { fontSize: 12.5, color: C.mute, fontWeight: 600 },
   fichePitch: { fontSize: 14.5, color: C.ink2, lineHeight: 1.6, margin: '0 0 20px' },
 
-  block: { background: '#fff', border: `1px solid ${C.line}`, borderRadius: 16, padding: '16px 18px', marginBottom: 14 },
-  blockGreen: { background: C.greenSoft, border: `1px solid ${C.green}22` },
-  blockRed: { background: C.redSoft, border: `1px solid ${C.red}22` },
-  blockBlue: { background: C.blueSoft, border: `1px solid ${C.blue}22` },
+  block: { background: C.card, border: `1px solid ${C.line}`, borderRadius: 16, padding: '16px 18px', marginBottom: 14 },
+  blockGreen: { background: C.greenSoft, border: `1px solid ${alpha(C.green, 13)}` },
+  blockRed: { background: C.redSoft, border: `1px solid ${alpha(C.red, 13)}` },
+  blockBlue: { background: C.blueSoft, border: `1px solid ${alpha(C.blue, 13)}` },
   blockTitle: { fontSize: 14, fontWeight: 800, marginBottom: 12 },
   keyRow: { display: 'flex', flexDirection: 'column', padding: '9px 0', borderBottom: `1px solid ${C.bg}` },
   keyName: { fontSize: 14, fontWeight: 700, color: C.ink },
@@ -450,18 +450,18 @@ const S = {
   li: { fontSize: 13.5, color: C.ink2, lineHeight: 1.6, marginBottom: 4 },
   chips: { display: 'flex', flexWrap: 'wrap', gap: 7 },
   chip: { fontSize: 12, fontWeight: 600, color: C.ink2, background: C.bg, border: `1px solid ${C.line}`, borderRadius: 99, padding: '5px 11px' },
-  chipBlue: { fontSize: 12, fontWeight: 700, color: C.blue, background: '#fff', border: `1px solid ${C.blue}33`, borderRadius: 99, padding: '5px 11px' },
+  chipBlue: { fontSize: 12, fontWeight: 700, color: C.blue, background: C.card, border: `1px solid ${alpha(C.blue, 20)}`, borderRadius: 99, padding: '5px 11px' },
 
-  targetBadge: { fontSize: 11, fontWeight: 800, color: C.amber, background: '#FFF7E6', border: `1px solid ${C.amber}33`, borderRadius: 99, padding: '4px 10px' },
+  targetBadge: { fontSize: 11, fontWeight: 800, color: C.amber, background: C.amberSoft, border: `1px solid ${alpha(C.amber, 20)}`, borderRadius: 99, padding: '4px 10px' },
 
   cta: { width: '100%', background: C.blue, color: '#fff', border: 'none', borderRadius: 14, padding: '15px 20px', fontSize: 15.5, fontWeight: 700, cursor: 'pointer', fontFamily: FONT, marginTop: 8, boxShadow: '0 8px 24px rgba(21,57,183,.22)' },
 
   // Jeu
   hud: { display: 'flex', alignItems: 'center', gap: 10 },
   progText: { fontSize: 12.5, fontWeight: 700, color: C.mute },
-  progBar: { height: 8, background: '#E3E8F2', borderRadius: 99, overflow: 'hidden', marginBottom: 14 },
+  progBar: { height: 8, background: C.track, borderRadius: 99, overflow: 'hidden', marginBottom: 14 },
   progFill: { height: '100%', background: C.blue, borderRadius: 99, transition: 'width .35s cubic-bezier(.16,.84,.24,1)' },
-  gameCard: { background: '#fff', border: `1px solid ${C.line}`, borderRadius: 18, padding: '22px', boxShadow: '0 4px 20px rgba(11,22,56,.05)', animation: 'scenarioIn .4s cubic-bezier(.16,.84,.24,1) both' },
+  gameCard: { background: C.card, border: `1px solid ${C.line}`, borderRadius: 18, padding: '22px', boxShadow: '0 4px 20px rgba(11,22,56,.05)', animation: 'scenarioIn .4s cubic-bezier(.16,.84,.24,1) both' },
   scenarioHead: { display: 'flex', alignItems: 'center', gap: 10, margin: '2px 0 14px' },
   scenarioLine: { flex: 1, height: 1, background: C.line },
   scenarioLabel: { fontSize: 10.5, fontWeight: 800, letterSpacing: 0.8, textTransform: 'uppercase', color: C.blue, whiteSpace: 'nowrap' },
@@ -474,9 +474,9 @@ const S = {
   hsSoft: { background: C.softBg, borderColor: C.soft + '44', color: C.soft },
 
   gamePrompt: { fontSize: 16, fontWeight: 700, color: C.ink, textAlign: 'center', lineHeight: 1.35, margin: '4px 0 16px' },
-  context: { background: '#F1F5FE', borderLeft: `4px solid ${C.blue}`, borderRadius: '0 12px 12px 0', padding: '15px 16px', fontSize: 17, fontWeight: 700, color: C.ink, lineHeight: 1.45, marginBottom: 16 },
+  context: { background: C.card2, borderLeft: `4px solid ${C.blue}`, borderRadius: '0 12px 12px 0', padding: '15px 16px', fontSize: 17, fontWeight: 700, color: C.ink, lineHeight: 1.45, marginBottom: 16 },
   options: { display: 'grid', gap: 10 },
-  opt: { display: 'flex', alignItems: 'center', gap: 10, width: '100%', background: '#fff', border: `1.5px solid ${C.line}`, borderRadius: 12, padding: '13px 14px', fontSize: 14, fontWeight: 500, color: C.ink, cursor: 'pointer', fontFamily: FONT, transition: 'all .12s' },
+  opt: { display: 'flex', alignItems: 'center', gap: 10, width: '100%', background: C.card, border: `1.5px solid ${C.line}`, borderRadius: 12, padding: '13px 14px', fontSize: 14, fontWeight: 500, color: C.ink, cursor: 'pointer', fontFamily: FONT, transition: 'all .12s' },
   optCorrect: { borderColor: C.green, background: C.greenSoft, fontWeight: 700 },
   optWrong: { borderColor: C.red, background: C.redSoft },
   mark: { color: C.green, fontWeight: 800, fontSize: 16 },
@@ -490,5 +490,5 @@ const S = {
   noteOutOf: { fontSize: 22, fontWeight: 700, color: C.mute, marginLeft: 2 },
   noteVerdict: { fontSize: 13.5, fontWeight: 700, lineHeight: 1.5, borderRadius: 12, padding: '12px 16px', maxWidth: 460, margin: '12px auto 0' },
   doneBtns: { display: 'grid', gap: 10, marginTop: 8 },
-  ghostBtn: { background: '#fff', color: C.ink2, border: `1px solid ${C.line}`, borderRadius: 12, padding: '12px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: FONT },
+  ghostBtn: { background: C.card, color: C.ink2, border: `1px solid ${C.line}`, borderRadius: 12, padding: '12px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: FONT },
 };

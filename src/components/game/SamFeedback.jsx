@@ -38,7 +38,7 @@ export default function SamFeedback({ tone = 'good', verdict, name = 'Sam, ton c
 const S = {
   box: { marginTop: 16, border: '1.5px solid', borderRadius: 12, padding: '13px 15px', textAlign: 'left' },
   head: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7 },
-  avatar: { fontSize: 18, width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff', borderRadius: 99, boxShadow: '0 1px 4px rgba(0,0,0,.1)' },
+  avatar: { fontSize: 18, width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', background: C.card, borderRadius: 99, boxShadow: '0 1px 4px rgba(0,0,0,.1)' },
   name: { fontSize: 13, fontWeight: 800, color: C.ink, flex: 1 },
   verdict: { fontSize: 10.5, fontWeight: 800, color: '#fff', padding: '3px 9px', borderRadius: 99 },
   text: { fontSize: 13.5, color: C.ink2, lineHeight: 1.5 },

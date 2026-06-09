@@ -1,0 +1,64 @@
+/**
+ * orgAccess — Accès parrainé par une organisation (école/entreprise).
+ *
+ * Deux choses :
+ *   1. Consommer un LIEN D'INVITATION (?org_invite=TOKEN) → rejoindre l'org.
+ *   2. Lire le TIER EFFECTIF côté serveur (max perso / parrainage).
+ *
+ * Offline-first : sans Supabase ou hors connexion, tout est no-op (l'app
+ * retombe sur le tier perso/local). Le token d'invitation est mémorisé tant
+ * que l'utilisateur n'est pas connecté, puis consommé après login.
+ */
+import { supabase, supabaseReady } from './supabase';
+import { isAuthenticated } from './currentUser';
+
+const LS_PENDING = 'talia_pending_invite';
+
+/** Détecte ?org_invite=TOKEN dans l'URL, le mémorise et nettoie l'URL. */
+export function consumeOrgInviteFromURL() {
+  if (typeof window === 'undefined') return null;
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get('org_invite');
+  if (!token) return null;
+  try { localStorage.setItem(LS_PENDING, token); } catch { /* ignore */ }
+  params.delete('org_invite');
+  const search = params.toString() ? '?' + params.toString() : '';
+  window.history.replaceState({}, '', window.location.pathname + search + window.location.hash);
+  return token;
+}
+
+export function getPendingInvite() {
+  try { return localStorage.getItem(LS_PENDING) || null; } catch { return null; }
+}
+export function clearPendingInvite() {
+  try { localStorage.removeItem(LS_PENDING); } catch { /* ignore */ }
+}
+
+/**
+ * Consomme l'invitation en attente (si connecté). Renvoie le résultat de la RPC
+ * { ok, org_id, org_name, reason } ou null si rien à faire.
+ */
+export async function redeemPendingInvite() {
+  const token = getPendingInvite();
+  if (!token || !supabaseReady || !supabase || !isAuthenticated()) return null;
+  try {
+    const { data, error } = await supabase.rpc('redeem_org_invite', { p_token: token });
+    if (error) { console.warn('[orgAccess] redeem:', error.message); return null; }
+    const res = Array.isArray(data) ? data[0] : data;
+    // On ne réessaie pas un token invalide/épuisé ; on garde si « no_seats » (transitoire)
+    if (res?.ok || ['invalid', 'expired', 'exhausted', 'email_mismatch'].includes(res?.reason)) {
+      clearPendingInvite();
+    }
+    return res || null;
+  } catch (e) { console.warn('[orgAccess] redeem:', e?.message); return null; }
+}
+
+/** Tier effectif côté serveur (max perso/parrainage), ou null hors-ligne. */
+export async function fetchEffectiveTier() {
+  if (!supabaseReady || !supabase || !isAuthenticated()) return null;
+  try {
+    const { data, error } = await supabase.rpc('my_effective_tier');
+    if (error) { console.warn('[orgAccess] tier:', error.message); return null; }
+    return typeof data === 'string' ? data : null;
+  } catch (e) { console.warn('[orgAccess] tier:', e?.message); return null; }
+}

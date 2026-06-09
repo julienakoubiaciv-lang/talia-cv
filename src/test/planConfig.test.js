@@ -19,15 +19,35 @@ import {
   canUseTemplate,
   remainingCVs,
   nextPlanLabel,
+  TIER_RANK,
+  betterTier,
 } from '@/lib/planConfig';
+
+describe('betterTier (max perso / parrainage org)', () => {
+  it('classe free < personal < school < business', () => {
+    expect(TIER_RANK.free).toBeLessThan(TIER_RANK.personal);
+    expect(TIER_RANK.personal).toBeLessThan(TIER_RANK.school);
+    expect(TIER_RANK.school).toBeLessThan(TIER_RANK.business);
+  });
+  it('renvoie le meilleur tier', () => {
+    expect(betterTier('free', 'school')).toBe('school');
+    expect(betterTier('personal', 'school')).toBe('school');
+    expect(betterTier('business', 'school')).toBe('business');
+  });
+  it('ignore null / undefined / inconnu', () => {
+    expect(betterTier('personal', null)).toBe('personal');
+    expect(betterTier(null, undefined)).toBe('free');
+    expect(betterTier('free', 'inconnu')).toBe('free');
+  });
+});
 
 // localStorage est vidé avant chaque test (cf. setup.js)
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 
 describe('PLANS', () => {
-  it('contient les 3 tiers', () => {
-    expect(Object.keys(PLANS)).toEqual(['free', 'personal', 'business']);
+  it('contient les tiers attendus (dont le parrainage école)', () => {
+    expect(Object.keys(PLANS).sort()).toEqual(['business', 'free', 'personal', 'school']);
   });
 
   it('free a maxCVs = 2', () => {

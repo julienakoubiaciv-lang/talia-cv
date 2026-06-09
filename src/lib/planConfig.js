@@ -40,6 +40,20 @@ export const PLANS = {
     crmSync:            false,
     templateIds:        ['classic', 'minimal', 'compact', 'impact'],
   },
+  // Forfait « parrainé » : accès offert à un élève via son école/entreprise.
+  // Pris en charge par l'organisation (sièges), pas de paiement individuel.
+  school: {
+    id:                 'school',
+    label:              'École',
+    emoji:              '🎓',
+    maxCVs:             Infinity,
+    maxProfiles:        3,
+    maxBulkPerSession:  0,
+    bulkEnabled:        false,
+    cloudSync:          true,
+    crmSync:            true,
+    templateIds:        ['classic', 'minimal', 'compact', 'impact'],
+  },
   business: {
     id:                 'business',
     label:              'Business',
@@ -53,6 +67,21 @@ export const PLANS = {
     templateIds:        ['classic', 'minimal', 'compact', 'impact'],
   },
 };
+
+/**
+ * Classement des tiers par niveau d'accès (pour résoudre l'entitlement effectif).
+ * Le tier effectif d'un utilisateur = le MEILLEUR de : abo perso, parrainage org.
+ */
+export const TIER_RANK = { free: 0, personal: 1, school: 2, business: 3 };
+
+/** Renvoie le meilleur tier parmi ceux passés (ignore null/inconnus). */
+export function betterTier(...tiers) {
+  let best = 'free';
+  for (const t of tiers) {
+    if (t && TIER_RANK[t] != null && TIER_RANK[t] > TIER_RANK[best]) best = t;
+  }
+  return best;
+}
 
 // ── Getters / Setters ──────────────────────────────────────────────────────
 

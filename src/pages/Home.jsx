@@ -902,6 +902,27 @@ export default function Home() {
           </div>
         )}
 
+        {/* Accès espace encadrant (démo) */}
+        {demoOn && (
+          <div onClick={() => navigate('/encadrement')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: isMobile ? 12 : 16,
+              padding: isMobile ? '13px 15px' : '15px 20px',
+              background: C.card, border: `1px solid ${C.rule}`, borderRadius: 14,
+              marginBottom: isMobile ? 18 : 24, cursor: 'pointer',
+              boxShadow: '0 4px 18px rgba(11,22,56,.05)',
+            }}>
+            <span style={{ fontSize: isMobile ? 24 : 28 }}>👩‍🏫</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: isMobile ? 14 : 15.5, fontWeight: 800, color: C.ink }}>Espace encadrant</div>
+              <div style={{ fontSize: isMobile ? 12 : 13, color: C.mute, lineHeight: 1.45 }}>
+                Vue conseiller & direction : la progression de la cohorte (démo).
+              </div>
+            </div>
+            <span style={{ flexShrink: 0, fontSize: 12.5, fontWeight: 800, color: C.bluePrimary }}>Ouvrir →</span>
+          </div>
+        )}
+
         {/* Modules — grille 5 par ligne */}
         <div style={{
           display: 'grid',

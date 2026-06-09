@@ -34,6 +34,7 @@ const AnalyzeOffer  = lazy(() => import('./pages/AnalyzeOffer.jsx'));
 const Diagnostic    = lazy(() => import('./pages/Diagnostic.jsx'));
 const RecruitTest   = lazy(() => import('./pages/RecruitTest.jsx'));
 const Charte        = lazy(() => import('./pages/Charte.jsx'));
+const CohortDashboard = lazy(() => import('./pages/CohortDashboard.jsx'));
 const OralInterview = lazy(() => import('./pages/OralInterview.jsx'));
 
 // Spinner minimal affiché pendant le chargement d'un chunk
@@ -85,6 +86,7 @@ export default function App() {
                     <Route path="/diagnostic"         element={<Diagnostic />} />
                     <Route path="/test-recrutement"   element={<RecruitTest />} />
                     <Route path="/charte"             element={<Charte />} />
+                    <Route path="/encadrement"        element={<CohortDashboard />} />
                     <Route path="/entretien-oral"     element={<OralInterview />} />
                   </Routes>
                 </Suspense>

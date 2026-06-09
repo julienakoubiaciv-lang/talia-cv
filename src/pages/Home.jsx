@@ -526,6 +526,50 @@ const HOME_MODULES = [
   { route: '/test-recrutement', emoji: '🧩', accent: '#7048E8', title: 'Test de recrutement IA',     desc: "Aptitudes, métier et mises en situation, adaptés à ton CV et à l'annonce.", cta: 'Passer le test' },
 ];
 
+const NAV_ITEMS = [
+  { id: 'home',        icon: '🏠', label: 'Accueil' },
+  { id: 'cv',          icon: '📄', label: 'Mes CV' },
+  { id: 'prep',        icon: '🎯', label: 'Préparation' },
+  { id: 'encadrement', icon: '👩‍🏫', label: 'Encadrement', optional: true },
+  { id: 'account',     icon: '⚙️', label: 'Compte' },
+];
+
+function Sidebar({ section, setSection, isMobile, showEncadrement }) {
+  const items = NAV_ITEMS.filter((n) => !n.optional || showEncadrement);
+  if (isMobile) {
+    return (
+      <nav style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 40, display: 'flex',
+        background: C.bg, borderTop: `1px solid ${C.rule}`, padding: '6px 2px', boxShadow: '0 -4px 18px rgba(11,22,56,.06)' }}>
+        {items.map((n) => (
+          <button key={n.id} onClick={() => setSection(n.id)}
+            style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, background: 'none', border: 'none', cursor: 'pointer', padding: '6px 2px', fontFamily: 'Manrope,sans-serif', color: section === n.id ? C.bluePrimary : C.mute }}>
+            <span style={{ fontSize: 18 }}>{n.icon}</span>
+            <span style={{ fontSize: 9.5, fontWeight: 700 }}>{n.label}</span>
+          </button>
+        ))}
+      </nav>
+    );
+  }
+  return (
+    <aside style={{ width: 208, flexShrink: 0, position: 'sticky', top: 24, alignSelf: 'flex-start' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        {items.map((n) => {
+          const on = section === n.id;
+          return (
+            <button key={n.id} onClick={() => setSection(n.id)}
+              style={{ display: 'flex', alignItems: 'center', gap: 11, width: '100%', textAlign: 'left',
+                background: on ? C.blueSoft : 'transparent', color: on ? C.bluePrimary : C.ink2,
+                border: 'none', borderRadius: 12, padding: '11px 14px', fontSize: 14.5, fontWeight: on ? 800 : 600,
+                cursor: 'pointer', fontFamily: 'Manrope,sans-serif', transition: 'background .15s' }}>
+              <span style={{ fontSize: 18 }}>{n.icon}</span>{n.label}
+            </button>
+          );
+        })}
+      </div>
+    </aside>
+  );
+}
+
 export default function Home() {
   const navigate = useNavigate();
   const { embedded, notifyCreateLead } = useCRMBridge();
@@ -552,6 +596,7 @@ export default function Home() {
   const [tourOpen, setTourOpen] = useState(false);
   const [demoOn, setDemoOn] = useState(() => isDemoMode());
   const [joinNotice, setJoinNotice] = useState(() => getJoinNotice());
+  const [section, setSection] = useState('home'); // home | cv | prep | encadrement | account
   const { mode, toggle: toggleTheme } = useTheme();
   // Rafraîchit la notice de bienvenue une fois le rattachement école résolu.
   useEffect(() => { const n = getJoinNotice(); if (n) setJoinNotice(n); }, [orgName, isSchool]);
@@ -849,8 +894,22 @@ export default function Home() {
         )}
       </header>
 
-      {/* ── Main content ─────────────────────────────────────────────────── */}
-      <main style={{ maxWidth: 1180, margin: '0 auto', padding: isMobile ? '24px 16px 60px' : '56px 64px 80px' }}>
+      {/* ── Layout : sidebar gauche + contenu ────────────────────────────── */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: isMobile ? 0 : 28, maxWidth: 1300, margin: '0 auto', padding: isMobile ? '16px 0 88px' : '28px 28px 80px' }}>
+        <Sidebar section={section} setSection={setSection} isMobile={isMobile} showEncadrement={demoOn} />
+        <main style={{ flex: 1, minWidth: 0, maxWidth: 1180, padding: isMobile ? '0 16px' : 0 }}>
+
+        {section === 'home' && (
+        <>
+        {/* Tableau de bord */}
+        <div style={{ marginBottom: isMobile ? 16 : 22 }}>
+          <h1 style={{ fontSize: isMobile ? 28 : 42, fontWeight: 800, color: C.ink, letterSpacing: '-1px', lineHeight: 1.05, margin: 0 }}>
+            {user ? 'Bonjour 👋' : 'Bienvenue sur Altio CV'}
+          </h1>
+          <p style={{ fontSize: isMobile ? 13.5 : 15.5, color: C.ink2, marginTop: 8, lineHeight: 1.5, maxWidth: 520 }}>
+            Prépare-toi à décrocher ton poste : CV, entraînements et suivi, au même endroit.
+          </p>
+        </div>
 
         {/* Bienvenue après rattachement à une école (one-shot) */}
         {joinNotice && (
@@ -923,10 +982,32 @@ export default function Home() {
           </div>
         )}
 
+        {/* Raccourcis */}
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr 1fr' : 'repeat(3, 1fr)', gap: 12 }}>
+          {[
+            { ic: '🎯', lb: "S'entraîner", on: () => setSection('prep') },
+            { ic: '📄', lb: 'Nouveau CV', on: () => navigate('/generate') },
+            { ic: '🧪', lb: 'Mon bilan', on: () => navigate('/diagnostic') },
+          ].map((q) => (
+            <button key={q.lb} onClick={q.on}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, background: C.card, border: `1px solid ${C.rule}`, borderRadius: 14, padding: isMobile ? '14px 8px' : '18px 12px', cursor: 'pointer', fontFamily: 'Manrope,sans-serif', boxShadow: '0 4px 18px rgba(11,22,56,.05)' }}>
+              <span style={{ fontSize: isMobile ? 22 : 26 }}>{q.ic}</span>
+              <span style={{ fontSize: isMobile ? 12 : 13.5, fontWeight: 800, color: C.ink }}>{q.lb}</span>
+            </button>
+          ))}
+        </div>
+        </>
+        )}
+
+        {section === 'prep' && (
+        <>
+        <h1 style={{ fontSize: isMobile ? 28 : 42, fontWeight: 800, color: C.ink, letterSpacing: '-1px', lineHeight: 1.05, margin: '0 0 6px' }}>Préparation</h1>
+        <p style={{ fontSize: isMobile ? 13.5 : 15.5, color: C.ink2, margin: '0 0 20px', lineHeight: 1.5, maxWidth: 520 }}>Tes modules d'entraînement vers l'emploi.</p>
+
         {/* Modules — grille 5 par ligne */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(5, 1fr)',
+          gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
           gap: isMobile ? 10 : 14,
           marginBottom: isMobile ? 24 : 36,
         }}>
@@ -957,7 +1038,11 @@ export default function Home() {
             </div>
           ))}
         </div>
+        </>
+        )}
 
+        {section === 'cv' && (
+        <>
         {/* Hero — titre de la liste des CV (placé sous les modules) */}
         <div style={{ margin: isMobile ? '8px 0 28px' : '16px 0 48px', animation: 'fadeIn 0.8s ease both' }}>
           <h1 style={{ fontSize: isMobile ? 36 : 64, fontWeight: 700, color: C.ink, letterSpacing: isMobile ? '-0.8px' : '-2px', lineHeight: 1.05, marginBottom: 8 }}>Mes CV</h1>
@@ -1246,7 +1331,54 @@ export default function Home() {
             </div>
           );
         })}
-      </main>
+        </>
+        )}
+
+        {section === 'encadrement' && (
+          <>
+            <h1 style={{ fontSize: isMobile ? 28 : 42, fontWeight: 800, color: C.ink, letterSpacing: '-1px', lineHeight: 1.05, margin: '0 0 6px' }}>Encadrement</h1>
+            <p style={{ fontSize: isMobile ? 13.5 : 15.5, color: C.ink2, margin: '0 0 20px', lineHeight: 1.5, maxWidth: 520 }}>
+              Suis la progression de tes élèves (conseiller) ou de toute la cohorte (direction).
+            </p>
+            <div onClick={() => navigate('/encadrement')}
+              style={{ display: 'flex', alignItems: 'center', gap: 14, background: C.card, border: `1px solid ${C.rule}`, borderRadius: 16, padding: '18px 20px', cursor: 'pointer', boxShadow: '0 4px 18px rgba(11,22,56,.05)' }}>
+              <span style={{ fontSize: 30 }}>👩‍🏫</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 16, fontWeight: 800, color: C.ink }}>Ouvrir l'espace encadrant</div>
+                <div style={{ fontSize: 13, color: C.mute }}>Liste des élèves, relances, fiches, réattribution.</div>
+              </div>
+              <span style={{ flexShrink: 0, fontSize: 13, fontWeight: 800, color: C.bluePrimary }}>Ouvrir →</span>
+            </div>
+          </>
+        )}
+
+        {section === 'account' && (
+          <>
+            <h1 style={{ fontSize: isMobile ? 28 : 42, fontWeight: 800, color: C.ink, letterSpacing: '-1px', lineHeight: 1.05, margin: '0 0 18px' }}>Compte</h1>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, background: C.card, border: `1px solid ${C.rule}`, borderRadius: 14, padding: '16px 18px', marginBottom: 10 }}>
+              <div>
+                <div style={{ fontSize: 15.5, fontWeight: 800, color: C.ink }}>{plan?.emoji} Forfait {plan?.label}</div>
+                {isSchool && orgName && <div style={{ fontSize: 12.5, color: C.ok, fontWeight: 700, marginTop: 2 }}>🎓 Accès offert par {orgName}</div>}
+              </div>
+              {!isSchool && nextPlan && (
+                <button onClick={() => navigate('/pricing')} style={{ background: C.bluePrimary, color: '#fff', border: 'none', borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'Manrope,sans-serif', whiteSpace: 'nowrap' }}>Passer à {nextPlan}</button>
+              )}
+            </div>
+            {[
+              { lb: '🌙 Thème', btn: mode === 'dark' ? '☀️ Clair' : '🌙 Sombre', on: toggleTheme },
+              { lb: '🧪 Mode démo', btn: demoOn ? 'Désactiver' : 'Activer', on: () => { setDemoMode(!demoOn); setDemoOn(!demoOn); } },
+              { lb: '🎨 Charte graphique', btn: 'Voir', on: () => navigate('/charte') },
+              { lb: user ? `👤 ${user.email}` : '👤 Non connecté', btn: user ? 'Déconnexion' : 'Connexion', on: user ? signOut : () => navigate('/auth') },
+            ].map((r) => (
+              <div key={r.lb} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, background: C.card, border: `1px solid ${C.rule}`, borderRadius: 12, padding: '13px 16px', marginTop: 10 }}>
+                <span style={{ fontSize: 14, fontWeight: 600, color: C.ink2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.lb}</span>
+                <button onClick={r.on} style={{ flexShrink: 0, background: C.surface, color: C.ink2, border: `1px solid ${C.rule}`, borderRadius: 99, padding: '8px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'Manrope,sans-serif' }}>{r.btn}</button>
+              </div>
+            ))}
+          </>
+        )}
+        </main>
+      </div>
 
       <PreviewModal
         item={viewCV}

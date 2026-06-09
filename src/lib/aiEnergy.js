@@ -26,6 +26,7 @@ export const ENERGY_COST = 1;
 export const DAILY_ENERGY = {
   free:     5,
   personal: 40,
+  cowork:   40,       // membre d'une petite équipe (coach)
   school:   40,       // élève parrainé par son école
   business: Infinity,
 };

@@ -12,8 +12,9 @@ const LS_MEMBER = 'talia_demo_membership';
 
 /** Écoles de démo, indexées par token d'invitation. */
 export const DEMO_INVITES = {
-  'TALIA-PARIS-2026': { orgId: 'demo-paris', orgName: 'École Talia Paris', tier: 'school', cohort: 'Promo 2026' },
-  'CFA-LYON-DIGITAL': { orgId: 'demo-lyon',  orgName: 'CFA Lyon Digital',  tier: 'school', cohort: 'Dev Web' },
+  'TALIA-PARIS-2026': { orgId: 'demo-paris', orgName: 'École Talia Paris', type: 'school', tier: 'school', cohort: 'Promo 2026', manager: 'Karim (conseiller)' },
+  'CFA-LYON-DIGITAL': { orgId: 'demo-lyon',  orgName: 'CFA Lyon Digital',  type: 'school', tier: 'school', cohort: 'Dev Web',   manager: 'Nadia (conseillère)' },
+  'COWORK-SOPHIE':    { orgId: 'demo-cowork', orgName: 'Cowork · Coach Sophie', type: 'cowork', tier: 'cowork', cohort: 'Coachés', manager: 'Sophie (coach)' },
 };
 
 /** Consomme un lien d'invitation de démo → enregistre l'appartenance. */

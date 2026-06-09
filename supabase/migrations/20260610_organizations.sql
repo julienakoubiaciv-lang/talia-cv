@@ -15,7 +15,7 @@
 create table if not exists organizations (
   id          uuid primary key default gen_random_uuid(),
   name        text not null,
-  type        text not null default 'school',   -- 'school' | 'company'
+  type        text not null default 'school',   -- 'school' | 'company' | 'cowork'
   tier        text not null default 'school',   -- forfait parrainé (planConfig)
   seats       int  not null default 0,          -- nb de sièges achetés
   status      text not null default 'active',   -- 'active' | 'suspended'
@@ -42,19 +42,24 @@ create table if not exists org_members (
   org_id      uuid not null references organizations(id) on delete cascade,
   user_id     uuid not null references auth.users(id) on delete cascade,
   cohort_id   uuid references cohorts(id) on delete set null,
-  role        text not null default 'member',   -- 'member' | 'manager'
+  -- Conseiller/coach assigné (1 par élève). La direction peut le réattribuer.
+  -- Les managers/admins ne consomment PAS de siège (seuls les 'member' comptent).
+  manager_id  uuid references auth.users(id) on delete set null,
+  role        text not null default 'member',   -- 'member' | 'manager' | 'admin'
   status      text not null default 'active',   -- 'active' | 'revoked'
   joined_at   timestamptz not null default now(),
   primary key (org_id, user_id)
 );
 create index if not exists org_members_user_idx on org_members(user_id);
 create index if not exists org_members_org_idx on org_members(org_id);
+create index if not exists org_members_manager_idx on org_members(manager_id);
 
 -- ── 4. Invitations (le lien d'accès) ────────────────────────────────────────
 create table if not exists org_invites (
   token       text primary key,
   org_id      uuid not null references organizations(id) on delete cascade,
   cohort_id   uuid references cohorts(id) on delete set null,
+  manager_id  uuid references auth.users(id) on delete set null, -- conseiller pré-assigné
   email       text,                             -- optionnel : restreint à cet email
   max_uses    int  not null default 1000,
   used_count  int  not null default 0,
@@ -69,8 +74,9 @@ create index if not exists org_invites_org_idx on org_invites(org_id);
 create or replace function tier_rank(p_tier text)
 returns int language sql immutable as $$
   select case p_tier
-    when 'business' then 3
-    when 'school'   then 2
+    when 'business' then 4
+    when 'school'   then 3
+    when 'cowork'   then 2
     when 'personal' then 1
     else 0 end;
 $$;
@@ -150,17 +156,21 @@ begin
     return query select false, null::uuid, null::text, 'org_inactive'; return;
   end if;
 
-  -- Sièges disponibles ? (on ne recompte pas un membre déjà présent)
+  -- Sièges disponibles ? Seuls les ÉLÈVES (role 'member') consomment un siège.
   select count(*) into v_active from org_members
-   where org_id = v_org.id and status = 'active'
+   where org_id = v_org.id and status = 'active' and role = 'member'
      and user_id <> v_uid;
   if v_org.seats > 0 and v_active >= v_org.seats then
     return query select false, null::uuid, null::text, 'no_seats'; return;
   end if;
 
-  insert into org_members (org_id, user_id, cohort_id, role, status)
-  values (v_org.id, v_uid, v_inv.cohort_id, 'member', 'active')
-  on conflict (org_id, user_id) do update set status = 'active', cohort_id = excluded.cohort_id;
+  insert into org_members (org_id, user_id, cohort_id, manager_id, role, status)
+  values (v_org.id, v_uid, v_inv.cohort_id, v_inv.manager_id, 'member', 'active')
+  on conflict (org_id, user_id) do update set
+    status = 'active',
+    cohort_id = excluded.cohort_id,
+    -- ne réécrase pas une réattribution faite par la direction
+    manager_id = coalesce(org_members.manager_id, excluded.manager_id);
 
   update org_invites set used_count = used_count + 1 where token = p_token;
 
@@ -184,6 +194,11 @@ create or replace function is_org_manager(p_org uuid)
 returns boolean language sql stable as $$
   select exists (select 1 from org_members m where m.org_id = p_org and m.user_id = auth.uid() and m.role = 'manager' and m.status = 'active');
 $$;
+-- Direction de l'org (gère les conseillers, réattribue les élèves, voit tout)
+create or replace function is_org_admin(p_org uuid)
+returns boolean language sql stable as $$
+  select exists (select 1 from org_members m where m.org_id = p_org and m.user_id = auth.uid() and m.role = 'admin' and m.status = 'active');
+$$;
 create or replace function is_staff()
 returns boolean language sql stable as $$
   select exists (select 1 from profiles p where p.id = auth.uid() and p.role in ('owner', 'admin'));
@@ -197,11 +212,22 @@ drop policy if exists "staff_manage_orgs" on organizations;
 create policy "staff_manage_orgs" on organizations
   for all using (is_staff()) with check (is_staff());
 
--- org_members : user lit ses lignes ; manager lit son org ; staff lit tout
+-- org_members : user lit sa ligne ; le conseiller lit SES élèves (manager_id) ;
+-- la direction (admin) lit toute son org ; le staff lit tout.
 drop policy if exists "read_own_membership" on org_members;
 create policy "read_own_membership" on org_members
-  for select using (user_id = auth.uid() or is_org_manager(org_id) or is_staff());
+  for select using (
+    user_id = auth.uid()
+    or manager_id = auth.uid()
+    or is_org_admin(org_id)
+    or is_staff()
+  );
 -- (les insertions passent par redeem_org_invite, security definer)
+-- La direction réattribue un élève (change manager_id/cohort_id) ; staff aussi.
+drop policy if exists "admin_update_members" on org_members;
+create policy "admin_update_members" on org_members
+  for update using (is_org_admin(org_id) or is_staff())
+  with check (is_org_admin(org_id) or is_staff());
 drop policy if exists "staff_manage_members" on org_members;
 create policy "staff_manage_members" on org_members
   for all using (is_staff()) with check (is_staff());
@@ -229,24 +255,26 @@ create policy "managers_read_member_progress" on user_progress
     exists (
       select 1 from org_members m
       where m.user_id = user_progress.user_id
-        and is_org_manager(m.org_id)
+        and (m.manager_id = auth.uid() or is_org_admin(m.org_id))
     )
   );
 
 create or replace view cohort_progress as
 select
-  m.org_id, m.cohort_id, m.user_id,
+  m.org_id, m.cohort_id, m.manager_id, m.user_id,
   p.email,
   up.xp, up.day_streak, up.updated_at
 from org_members m
 join profiles p on p.id = m.user_id
 left join user_progress up on up.user_id = m.user_id
-where m.status = 'active';
+where m.status = 'active' and m.role = 'member';
 grant select on cohort_progress to authenticated;
 
 -- ── 9. Limites de quota pour le tier 'school' ───────────────────────────────
 insert into quota_limits (tier, cv_per_month, smart_match_per_month, coach_per_month, multilingual_per_month, photo_per_month)
-values ('school', 9999, 200, 60, 0, 0)
+values
+  ('school', 9999, 200, 60, 0, 0),
+  ('cowork', 9999, 100, 60, 0, 0)
 on conflict (tier) do update set
   cv_per_month           = excluded.cv_per_month,
   smart_match_per_month  = excluded.smart_match_per_month,

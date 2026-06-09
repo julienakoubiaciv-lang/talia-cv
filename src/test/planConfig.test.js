@@ -46,8 +46,8 @@ describe('betterTier (max perso / parrainage org)', () => {
 // ── Constantes ────────────────────────────────────────────────────────────────
 
 describe('PLANS', () => {
-  it('contient les tiers attendus (dont le parrainage école)', () => {
-    expect(Object.keys(PLANS).sort()).toEqual(['business', 'free', 'personal', 'school']);
+  it('contient les tiers attendus (perso, cowork, école, business)', () => {
+    expect(Object.keys(PLANS).sort()).toEqual(['business', 'cowork', 'free', 'personal', 'school']);
   });
 
   it('free a maxCVs = 2', () => {

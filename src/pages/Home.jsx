@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { saveEditorState, PALETTES, colorForFormation } from '@/lib/cvData';
 import { getHistorySync, deleteHistory } from '@/lib/historySync';
@@ -11,6 +11,8 @@ import { PlanBanner } from '@/components/PlanGate';
 import { CheckoutSuccessBanner } from '@/components/CheckoutSuccessBanner.jsx';
 import { useCheckoutSuccess } from '@/hooks/useCheckoutSuccess';
 import { getOverallCompletion } from '@/lib/interviewProgress';
+import { getTotalXp, levelForXp, getDailyStreak } from '@/lib/playerProfile';
+import { getDiagnostic } from '@/lib/employability';
 import { isDemoMode, setDemoMode } from '@/lib/demoMode';
 import { getJoinNotice, clearJoinNotice } from '@/lib/orgAccess';
 import { alpha } from '@/lib/gameTheme';
@@ -600,6 +602,12 @@ export default function Home() {
   const { mode, toggle: toggleTheme } = useTheme();
   // Rafraîchit la notice de bienvenue une fois le rattachement école résolu.
   useEffect(() => { const n = getJoinNotice(); if (n) setJoinNotice(n); }, [orgName, isSchool]);
+
+  // Tableau de bord : niveau/XP, série, snapshot employabilité.
+  const dashXp = useMemo(() => getTotalXp(), []);
+  const dashLvl = useMemo(() => levelForXp(dashXp), [dashXp]);
+  const dashStreak = useMemo(() => getDailyStreak(), []);
+  const dashDiag = useMemo(() => { try { return getDiagnostic(); } catch { return null; } }, []);
   const [leadSentIds, setLeadSentIds] = useState(new Set()); // IDs déjà envoyés au CRM
 
   useEffect(() => { setCvList(getHistorySync()); }, []);
@@ -782,75 +790,6 @@ export default function Home() {
 
         <div style={{ flex: 1 }} />
 
-        {/* Nouveau CV — bloqué si limite plan atteinte */}
-        <button
-          onClick={() => canCV(cvList.length) ? navigate('/generate') : navigate('/generate')}
-          title={!canCV(cvList.length) ? `Limite ${cvList.length} CV atteinte (plan Gratuit)` : ''}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: isMobile ? '9px 14px' : '10px 22px', background: !canCV(cvList.length) ? C.mute : C.ink, color: '#fff', border: 'none', borderRadius: 99, fontSize: isMobile ? 13 : 13.5, fontWeight: 700, cursor: 'pointer', transition: 'opacity .15s', letterSpacing: '-0.1px', whiteSpace: 'nowrap' }}
-          onMouseEnter={e => e.currentTarget.style.opacity = '.85'}
-          onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
-          <IconPlus s={12} /> {isMobile ? 'Nouveau' : 'Nouveau CV'}
-          {isFree && cvList.length > 0 && remainingCVs(cvList.length) !== Infinity && (
-            <span style={{ fontSize: 10, background: 'rgba(255,255,255,0.25)', padding: '1px 5px', borderRadius: 99 }}>
-              {remainingCVs(cvList.length)}/{plan.maxCVs}
-            </span>
-          )}
-        </button>
-
-        {/* En masse — masqué sur mobile */}
-        {!isMobile && (
-          <button
-            onClick={() => canBulk ? navigate('/bulk') : null}
-            title={!canBulk ? 'Disponible à partir du plan Personnel' : ''}
-            style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '10px 18px', background: C.bg, color: canBulk ? C.ink : C.mute, border: `1.5px solid ${canBulk ? C.rule : C.rule}`, borderRadius: 99, fontSize: 13.5, fontWeight: 700, cursor: canBulk ? 'pointer' : 'not-allowed', transition: 'border-color .15s', letterSpacing: '-0.1px', opacity: canBulk ? 1 : 0.6 }}
-            onMouseEnter={e => { if (canBulk) e.currentTarget.style.borderColor = C.ink; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = C.rule; }}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-            En masse
-            {!canBulk && <span style={{ fontSize: 10 }}>🔒</span>}
-          </button>
-        )}
-
-        {/* Badge CRM lié — masqué sur mobile si pas de place */}
-        {isCRMLinked && !embedded && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 10px', background: '#F0FDF4', border: '1px solid #86EFAC', borderRadius: 99, flexShrink: 0 }}>
-            <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#16A34A', flexShrink: 0 }} />
-            {!isMobile && (
-              <span style={{ fontSize: 11.5, fontWeight: 600, color: '#15803D', whiteSpace: 'nowrap' }}>
-                {crmLink.orgName}
-              </span>
-            )}
-            <button onClick={unlinkCRM} title="Délier le CRM"
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#16A34A', padding: '0 2px', display: 'flex', alignItems: 'center', lineHeight: 1 }}
-              onMouseEnter={e => e.currentTarget.style.opacity = '.6'}
-              onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
-              <IconX s={10} />
-            </button>
-          </div>
-        )}
-
-        {/* Auth — email masqué sur mobile */}
-        {user ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            {!isMobile && (
-              <div style={{ fontSize: 12, color: C.mute, maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={user.email}>
-                {user.email}
-              </div>
-            )}
-            <button onClick={signOut}
-              style={{ padding: isMobile ? '7px 10px' : '7px 14px', borderRadius: 99, fontSize: 12, fontWeight: 600, background: C.surface, color: C.ink2, border: `1px solid ${C.rule}`, cursor: 'pointer', fontFamily: 'Manrope,sans-serif', whiteSpace: 'nowrap' }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = C.ink}
-              onMouseLeave={e => e.currentTarget.style.borderColor = C.rule}>
-              {isMobile ? '↩' : 'Déconnexion'}
-            </button>
-          </div>
-        ) : (
-          <button onClick={() => navigate('/auth')}
-            style={{ padding: isMobile ? '7px 10px' : '7px 16px', borderRadius: 99, fontSize: 12, fontWeight: 700, background: C.blueSoft, color: C.bluePrimary, border: `1.5px solid ${alpha(C.bluePrimary, 20)}`, cursor: 'pointer', fontFamily: 'Manrope,sans-serif', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 5 }}>
-            {isMobile ? '☁' : '☁ Connexion'}
-          </button>
-        )}
-
         {/* Parrainage école (accès offert) */}
         {isSchool && (
           <span title={orgName ? `Accès offert par ${orgName}` : 'Accès offert par ton école'}
@@ -862,36 +801,6 @@ export default function Home() {
 
         {/* Énergie IA du jour */}
         <EnergyBar variant="pill" />
-
-        {/* Bascule thème clair / sombre */}
-        <button onClick={toggleTheme} title={mode === 'dark' ? 'Passer en clair' : 'Passer en sombre'}
-          style={{ flexShrink: 0, width: 34, height: 34, background: C.surface, color: C.ink2, border: `1px solid ${C.rule}`, borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, transition: 'all .15s' }}
-          onMouseEnter={e => { e.currentTarget.style.background=C.blueSoft; e.currentTarget.style.color=C.bluePrimary; e.currentTarget.style.borderColor=alpha(C.bluePrimary, 34); }}
-          onMouseLeave={e => { e.currentTarget.style.background=C.surface; e.currentTarget.style.color=C.ink2; e.currentTarget.style.borderColor=C.rule; }}>
-          {mode === 'dark' ? '☀️' : '🌙'}
-        </button>
-
-        {/* Charte graphique */}
-        {!isMobile && (
-          <button onClick={() => navigate('/charte')} title="Charte graphique"
-            style={{ flexShrink: 0, width: 34, height: 34, background: C.surface, color: C.ink2, border: `1px solid ${C.rule}`, borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, transition: 'all .15s' }}
-            onMouseEnter={e => { e.currentTarget.style.background=C.blueSoft; e.currentTarget.style.color=C.bluePrimary; e.currentTarget.style.borderColor=alpha(C.bluePrimary, 34); }}
-            onMouseLeave={e => { e.currentTarget.style.background=C.surface; e.currentTarget.style.color=C.ink2; e.currentTarget.style.borderColor=C.rule; }}>
-            🎨
-          </button>
-        )}
-
-        {/* Aide */}
-        {!isMobile && (
-          <button onClick={() => setTourOpen(true)} title="Visite guidée"
-            style={{ flexShrink: 0, width: 34, height: 34, background: C.surface, color: C.ink2, border: `1px solid ${C.rule}`, borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .15s' }}
-            onMouseEnter={e => { e.currentTarget.style.background=C.blueSoft; e.currentTarget.style.color=C.bluePrimary; e.currentTarget.style.borderColor=`${alpha(C.bluePrimary, 34)}`; }}
-            onMouseLeave={e => { e.currentTarget.style.background=C.surface; e.currentTarget.style.color=C.ink2; e.currentTarget.style.borderColor=C.rule; }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-            </svg>
-          </button>
-        )}
       </header>
 
       {/* ── Layout : sidebar gauche + contenu ────────────────────────────── */}
@@ -910,6 +819,39 @@ export default function Home() {
             Prépare-toi à décrocher ton poste : CV, entraînements et suivi, au même endroit.
           </p>
         </div>
+
+        {/* Tableau de bord : niveau/XP + énergie */}
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.5fr 1fr', gap: 12, marginBottom: 12 }}>
+          <div style={{ background: C.card, border: `1px solid ${C.rule}`, borderRadius: 16, padding: '16px 18px', boxShadow: '0 4px 18px rgba(11,22,56,.05)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 11, marginBottom: 11 }}>
+              <span style={{ fontSize: 26 }}>{dashLvl.emoji}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 15.5, fontWeight: 800, color: C.ink }}>Niveau {dashLvl.index + 1} · {dashLvl.label}</div>
+                <div style={{ fontSize: 12.5, color: C.mute }}>⚡ {dashXp} XP{dashLvl.next ? ` · encore ${dashLvl.toNext} pour ${dashLvl.next.label}` : ' · niveau max 👑'}</div>
+              </div>
+              {dashStreak > 0 && <span style={{ flexShrink: 0, fontSize: 13, fontWeight: 800, color: C.star, background: alpha(C.star, 16), padding: '5px 10px', borderRadius: 99 }}>🔥 {dashStreak} j</span>}
+            </div>
+            <div style={{ height: 8, background: C.surface, borderRadius: 99, overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${dashLvl.progress}%`, background: C.bluePrimary, borderRadius: 99, transition: 'width .5s ease' }} />
+            </div>
+          </div>
+          <EnergyBar variant="card" />
+        </div>
+
+        {/* Snapshot employabilité */}
+        {dashDiag && (
+          <div onClick={() => navigate('/diagnostic')}
+            style={{ display: 'flex', alignItems: 'center', gap: 14, background: C.card, border: `1px solid ${C.rule}`, borderRadius: 16, padding: '14px 18px', marginBottom: isMobile ? 16 : 22, cursor: 'pointer', boxShadow: '0 4px 18px rgba(11,22,56,.05)' }}>
+            <div style={{ width: 54, height: 54, borderRadius: '50%', flexShrink: 0, background: `conic-gradient(${dashDiag.tier.color} ${dashDiag.global * 3.6}deg, ${C.rule} 0deg)`, display: 'grid', placeItems: 'center' }}>
+              <div style={{ width: 40, height: 40, borderRadius: '50%', background: C.card, display: 'grid', placeItems: 'center', fontSize: 14, fontWeight: 800, color: dashDiag.tier.color }}>{dashDiag.global}</div>
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 15.5, fontWeight: 800, color: C.ink }}>{dashDiag.tier.emoji} {dashDiag.tier.label}</div>
+              <div style={{ fontSize: 12.5, color: C.mute }}>Score d'employabilité · {dashDiag.global}%</div>
+            </div>
+            <span style={{ flexShrink: 0, fontSize: 12.5, fontWeight: 800, color: C.bluePrimary }}>Voir le bilan →</span>
+          </div>
+        )}
 
         {/* Bienvenue après rattachement à une école (one-shot) */}
         {joinNotice && (
@@ -1368,6 +1310,7 @@ export default function Home() {
               { lb: '🌙 Thème', btn: mode === 'dark' ? '☀️ Clair' : '🌙 Sombre', on: toggleTheme },
               { lb: '🧪 Mode démo', btn: demoOn ? 'Désactiver' : 'Activer', on: () => { setDemoMode(!demoOn); setDemoOn(!demoOn); } },
               { lb: '🎨 Charte graphique', btn: 'Voir', on: () => navigate('/charte') },
+              { lb: '🧭 Visite guidée', btn: 'Lancer', on: () => setTourOpen(true) },
               { lb: user ? `👤 ${user.email}` : '👤 Non connecté', btn: user ? 'Déconnexion' : 'Connexion', on: user ? signOut : () => navigate('/auth') },
             ].map((r) => (
               <div key={r.lb} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, background: C.card, border: `1px solid ${C.rule}`, borderRadius: 12, padding: '13px 16px', marginTop: 10 }}>

@@ -1,15 +1,9 @@
 {
   "regions": ["cdg1"],
   "functions": {
-    "api/anthropic.js": {
-      "maxDuration": 30
-    },
     "api/pdf.js": {
       "maxDuration": 60,
       "memory": 1024
-    },
-    "api/parse-pdf.js": {
-      "maxDuration": 60
     }
   },
   "rewrites": [

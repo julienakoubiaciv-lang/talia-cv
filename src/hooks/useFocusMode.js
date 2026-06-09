@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+﻿import { useState, useCallback } from 'react';
 
 // Mapping onglet → zone (data-zone) dans le CV. Indépendant du template :
 // chaque template marque ses blocs avec data-zone="identite|contenu|sidebar".
@@ -28,20 +28,20 @@ export function useFocusMode(iframeRef) {
     if (!selector) return;
 
     // Injecter le style de focus
-    let style = doc.getElementById('talia-focus-style');
+    let style = doc.getElementById('altio-focus-style');
     if (!style) {
       style = doc.createElement('style');
-      style.id = 'talia-focus-style';
+      style.id = 'altio-focus-style';
       doc.head.appendChild(style);
     }
     style.textContent = `
-      .talia-focus-dim {
+      .altio-focus-dim {
         opacity: 0.18 !important;
         filter: blur(0.8px) !important;
         transition: opacity .3s, filter .3s !important;
         pointer-events: none !important;
       }
-      .talia-focus-highlight {
+      .altio-focus-highlight {
         outline: 2.5px solid #FFCC00 !important;
         outline-offset: 3px !important;
         border-radius: 3px !important;
@@ -51,19 +51,19 @@ export function useFocusMode(iframeRef) {
     `;
 
     // Réinitialiser les classes
-    doc.querySelectorAll('.talia-focus-dim, .talia-focus-highlight').forEach(el => {
-      el.classList.remove('talia-focus-dim', 'talia-focus-highlight');
+    doc.querySelectorAll('.altio-focus-dim, .altio-focus-highlight').forEach(el => {
+      el.classList.remove('altio-focus-dim', 'altio-focus-highlight');
     });
 
     // Toutes les zones repérables — indépendant du template grâce à data-zone
     const blocks = doc.querySelectorAll('[data-zone]');
-    blocks.forEach(el => el.classList.add('talia-focus-dim'));
+    blocks.forEach(el => el.classList.add('altio-focus-dim'));
 
     // Mettre en lumière la zone cible
     const targets = doc.querySelectorAll(selector);
     targets.forEach(el => {
-      el.classList.remove('talia-focus-dim');
-      el.classList.add('talia-focus-highlight');
+      el.classList.remove('altio-focus-dim');
+      el.classList.add('altio-focus-highlight');
     });
   }, [iframeRef]);
 
@@ -74,11 +74,11 @@ export function useFocusMode(iframeRef) {
     const doc = iframeRef.current?.contentDocument;
     if (!doc) return;
 
-    doc.querySelectorAll('.talia-focus-dim, .talia-focus-highlight').forEach(el => {
-      el.classList.remove('talia-focus-dim', 'talia-focus-highlight');
+    doc.querySelectorAll('.altio-focus-dim, .altio-focus-highlight').forEach(el => {
+      el.classList.remove('altio-focus-dim', 'altio-focus-highlight');
     });
 
-    const style = doc.getElementById('talia-focus-style');
+    const style = doc.getElementById('altio-focus-style');
     if (style) style.textContent = '';
   }, [iframeRef]);
 

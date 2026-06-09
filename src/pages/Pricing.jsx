@@ -229,7 +229,7 @@ export default function Pricing() {
 
     if (plan.contactSales) {
       // Business → email commercial
-      window.location.href = 'mailto:hello@talia.fr?subject=Plan Business TaliaCV';
+      window.location.href = 'mailto:hello@altio-wave.app?subject=Plan Business Altio CV';
       return;
     }
 
@@ -290,7 +290,7 @@ export default function Pricing() {
         </button>
         <div style={{ flex: 1 }} />
         <div style={{ fontSize: 15, fontWeight: 700, color: C.ink }}>
-          Talia<span style={{ color: C.blue }}>CV</span> — Tarifs
+          Altio <span style={{ color: C.blue }}>CV</span> — Tarifs
         </div>
       </header>
 
@@ -343,7 +343,7 @@ export default function Pricing() {
         {/* Note bas de page */}
         <p style={{ textAlign: 'center', fontSize: 12, color: C.mute, marginTop: 40, lineHeight: 1.7 }}>
           Paiement sécurisé via Stripe · TVA incluse · Annulation à tout moment depuis votre espace client<br />
-          Des questions ? <a href="mailto:hello@talia.fr" style={{ color: C.blue, textDecoration: 'none', fontWeight: 600 }}>hello@talia.fr</a>
+          Des questions ? <a href="mailto:hello@altio-wave.app" style={{ color: C.blue, textDecoration: 'none', fontWeight: 600 }}>hello@altio-wave.app</a>
         </p>
       </main>
     </div>

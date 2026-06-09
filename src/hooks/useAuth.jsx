@@ -74,8 +74,18 @@ export function AuthProvider({ children }) {
 
   const signUp = useCallback(async (email, password) => {
     if (!supabase) throw new Error('Supabase non configuré');
-    const { data, error } = await supabase.auth.signUp({ email, password });
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { emailRedirectTo: `${window.location.origin}/` },
+    });
     if (error) throw error;
+    // Email enumeration protection : sur un email déjà confirmé, GoTrue
+    // renvoie un user obfusqué sans identities[] et sans erreur. On le
+    // détecte pour afficher "compte déjà existant" au lieu d'un faux succès.
+    if (data?.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+      throw new Error('User already registered');
+    }
     return data;
   }, []);
 
@@ -84,8 +94,35 @@ export function AuthProvider({ children }) {
     await supabase.auth.signOut();
   }, []);
 
+  // Envoie un code OTP par SMS et rattache le numéro au compte connecté.
+  const sendPhoneOtp = useCallback(async (phone) => {
+    if (!supabase) throw new Error('Supabase non configuré');
+    const { error } = await supabase.auth.updateUser({ phone });
+    if (error) throw error;
+  }, []);
+
+  // Vérifie le code reçu par SMS ; à la réussite, phone_confirmed_at est posé.
+  const verifyPhoneOtp = useCallback(async (phone, token) => {
+    if (!supabase) throw new Error('Supabase non configuré');
+    const { data, error } = await supabase.auth.verifyOtp({ phone, token, type: 'phone_change' });
+    if (error) throw error;
+    const u = data?.user ?? data?.session?.user ?? null;
+    if (u) {
+      setUser(u);
+      setCurrentUserId(u.id);
+    }
+    return data;
+  }, []);
+
+  // Un utilisateur connecté est "vérifié" s'il a confirmé un téléphone.
+  const phoneVerified = Boolean(user?.phone_confirmed_at);
+
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut, supabaseReady }}>
+    <AuthContext.Provider value={{
+      user, loading, phoneVerified,
+      signIn, signUp, signOut, sendPhoneOtp, verifyPhoneOtp,
+      supabaseReady,
+    }}>
       {children}
     </AuthContext.Provider>
   );

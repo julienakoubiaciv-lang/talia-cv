@@ -1,4 +1,4 @@
-/**
+﻿/**
  * TemplateMinimal — Template CV "bande header + sidebar arrondie"
  *
  * CSS exporté séparément (getMinimalCSS) → injecté dans <head> par cvData.js.
@@ -65,9 +65,9 @@ body{font-family:'Manrope',sans-serif;background:#fff;color:#1a1a1a;}
 .form-block{margin-bottom:6px;}
 .form-titre{font-size:11px;font-weight:600;color:#1a1a1a;}
 .form-meta{font-size:10px;color:#9AA0AE;font-style:italic;}
-.form-talia{margin-bottom:6px;display:block;}
-.form-talia .form-titre{color:#1a1a1a;font-weight:700;}
-.form-talia .form-meta{color:#9AA0AE;}
+.form-altio{margin-bottom:6px;display:block;}
+.form-altio .form-titre{color:#1a1a1a;font-weight:700;}
+.form-altio .form-meta{color:#9AA0AE;}
 .ldm-text{font-size:10.5px;line-height:1.7;color:#444;white-space:pre-line;}
 
 /* Sidebar */
@@ -163,8 +163,8 @@ function FormationsSection({ data }) {
     <>
       <SectionTitle>FORMATIONS</SectionTitle>
       {data.formations.map((f, fi) =>
-        f.isTalia ? (
-          <div key={fi} className="form-talia">
+        f.isAltio ? (
+          <div key={fi} className="form-altio">
             <div className="form-titre" data-field={`formations.${fi}.titre`}>{f.titre}</div>
             <div className="form-meta">
               {f.etablissement || ''}{f.periode ? ` · ${f.periode}` : ''}{' · 1j cours 4j entreprise'}
@@ -292,7 +292,7 @@ export default function TemplateMinimal({
           })}
           {/* Logo — injectMedia remplace l'intérieur de .logo-zone */}
           <div className="logo-zone">
-            <span className="logo-placeholder-text">Logo<br />Talia</span>
+            <span className="logo-placeholder-text">Logo<br />ALTIO</span>
           </div>
         </div>
 

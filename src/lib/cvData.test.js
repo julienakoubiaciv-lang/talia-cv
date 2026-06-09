@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+﻿import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   getHist, setHist, saveToHist, updateHist,
   PALETTES, TEMPLATES,
@@ -24,7 +24,7 @@ const FULL_CV = {
       missions: ['Développer des composants React', 'Optimiser les performances'],
     },
   ],
-  formations: [{ titre: 'BTS SIO', etablissement: 'Lycée X', periode: '2022', isTalia: false }],
+  formations: [{ titre: 'BTS SIO', etablissement: 'Lycée X', periode: '2022', isAltio: false }],
   competences: {
     techniques: ['React', 'TypeScript'],
     comportementales: ['Autonomie'],
@@ -70,7 +70,7 @@ describe('getHist', () => {
   });
 
   it('retourne [] si la valeur stockée est du JSON invalide', () => {
-    localStorage.setItem('talia_cv_hist', 'INVALID_JSON{{{');
+    localStorage.setItem('ALTIO_CV_hist', 'INVALID_JSON{{{');
     expect(getHist()).toEqual([]);
   });
 });

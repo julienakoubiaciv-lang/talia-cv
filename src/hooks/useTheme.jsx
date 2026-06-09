@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+﻿import React, { createContext, useContext, useState, useEffect } from 'react';
 import { THEME } from '@/lib/theme';
 
 const ThemeCtx = createContext({ t: THEME.light, mode: 'light', toggle: () => {} });
@@ -9,7 +9,7 @@ export function useTheme() {
 
 export function ThemeProvider({ children }) {
   const [mode, setMode] = useState(() =>
-    localStorage.getItem('talia_theme') || 'light'
+    localStorage.getItem('altio_theme') || 'light'
   );
 
   const t = THEME[mode] || THEME.light;
@@ -17,7 +17,7 @@ export function ThemeProvider({ children }) {
   const toggle = () => {
     const next = mode === 'light' ? 'dark' : 'light';
     setMode(next);
-    localStorage.setItem('talia_theme', next);
+    localStorage.setItem('altio_theme', next);
   };
 
   // Injecter les CSS variables + attribut data-theme sur <html>

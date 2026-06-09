@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { saveEditorState, PALETTES, colorForFormation } from '@/lib/cvData';
 import { getHistorySync, deleteHistory } from '@/lib/historySync';
@@ -370,8 +370,8 @@ function OnboardingTour({ onClose, onAction }) {
   const steps = [
     {
       emoji: '👋',
-      title: 'Bienvenue sur TaliaCV',
-      subtitle: 'Le générateur de CV intelligent pour Talia',
+      title: 'Bienvenue sur Altio CV',
+      subtitle: 'Le générateur de CV intelligent pour Altio',
       text: "Génère des CV professionnels en quelques clics — l'IA reformule, met en page et optimise pour l'alternance.",
       cta: 'Commencer la visite →',
       bg: 'linear-gradient(135deg, #1539B7, #1F4FE0)',
@@ -380,7 +380,7 @@ function OnboardingTour({ onClose, onAction }) {
       emoji: '✨',
       title: 'Créer un CV en 3 étapes',
       subtitle: 'Formation → Contenu → Génération',
-      text: "Choisis la formation Talia, dépose le CV du candidat (PDF/image) ou colle son texte, et laisse l'IA faire le reste. Un stepper visuel te guide à chaque étape.",
+      text: "Choisis la Formation Altio, dépose le CV du candidat (PDF/image) ou colle son texte, et laisse l'IA faire le reste. Un stepper visuel te guide à chaque étape.",
       cta: 'Étape suivante →',
       bg: 'linear-gradient(135deg, #1539B7, #7c3aed)',
     },
@@ -542,13 +542,13 @@ export default function Home() {
 
   // Première visite → ouvre le tour
   useEffect(() => {
-    if (!localStorage.getItem('talia_onboarding_done')) {
+    if (!localStorage.getItem('altio_onboarding_done')) {
       setTimeout(() => setTourOpen(true), 600);
     }
   }, []);
   const closeTour = () => {
     setTourOpen(false);
-    localStorage.setItem('talia_onboarding_done', '1');
+    localStorage.setItem('altio_onboarding_done', '1');
   };
 
   // ── Liste unique des formations présentes ──
@@ -708,7 +708,7 @@ export default function Home() {
           </div>
           {!isMobile && (
             <span style={{ fontSize: 17, fontWeight: 700, color: C.ink, letterSpacing: '-0.2px' }}>
-              Talia<span style={{ color: C.bluePrimary }}>CV</span>
+              Altio <span style={{ color: C.bluePrimary }}>CV</span>
             </span>
           )}
         </div>

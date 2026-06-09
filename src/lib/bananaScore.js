@@ -1,4 +1,4 @@
-// ─── BANANA SCORE — Gamification du CV ───────────────────────────────────────
+﻿// ─── BANANA SCORE — Gamification du CV ───────────────────────────────────────
 
 export const SCORE_RULES = [
   // Identité — 28 pts
@@ -28,8 +28,8 @@ export const SCORE_RULES = [
   },
 
   // Formations — 10 pts
-  { id:'formTalia',     pts:6,  check: d => (d.formations||[]).some(f => f.isTalia) },
-  { id:'formExtra',     pts:4,  check: d => (d.formations||[]).filter(f => !f.isTalia).length >= 1 },
+  { id:'formAltio',     pts:6,  check: d => (d.formations||[]).some(f => f.isAltio) },
+  { id:'formExtra',     pts:4,  check: d => (d.formations||[]).filter(f => !f.isAltio).length >= 1 },
 
   // Compétences — 15 pts
   { id:'compTech3',     pts:5,  check: d => (d.competences?.techniques||[]).length >= 3 },
@@ -57,7 +57,7 @@ const TIPS = {
   exp2:          'Une 2ème expérience renforce considérablement ton profil',
   expMissions:   'Décris au moins 2 missions concrètes par expérience',
   expPeriodes:   'Précise les dates de début et fin pour chaque poste',
-  formTalia:     'Assure-toi que ta formation Talia est bien renseignée',
+  formAltio:     'Assure-toi que ta Formation Altio est bien renseignée',
   formExtra:     'Ajoute ton diplôme précédent (Bac, BTS…)',
   compTech3:     'Liste tes compétences techniques (minimum 3)',
   compTech6:     'Enrichis tes compétences techniques (6+ idéalement)',

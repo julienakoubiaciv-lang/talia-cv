@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+﻿import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   FORMATIONS, DATES, POSTES, COMP_TECH, COMP_SOFT, PALETTES,
@@ -7,7 +7,6 @@ import {
 import { adaptPoste, renderCVFromData, escH } from '@/lib/cvTemplates';
 import { saveHistory } from '@/lib/historySync';
 import { getProfiles, buildProfileContext } from '@/lib/profileData';
-import { useSettings } from '@/hooks/useSettings.jsx';
 import { useAuth } from '@/hooks/useAuth.jsx';
 import { useCRMBridge } from '@/hooks/useCRMBridge.jsx';
 import { useCRMToken } from '@/hooks/useCRMToken';
@@ -88,48 +87,32 @@ function buildMockCvData({ formation, formationVal, poste, genre, comp, dateVal 
   const comportementales  = [...new Set([...comp.soft, ...softPool])].slice(0, 6);
 
   return {
-    prenom: 'Prénom',
-    nom: 'NOM',
-    telephone: '06 00 00 00 00',
-    email: 'prenom.nom@email.fr',
-    adresse: 'Ville (00)',
+    prenom: '',
+    nom: '',
+    telephone: '',
+    email: '',
+    adresse: '',
     dateNaissance: '',
-    poste: poste || (POSTES[formationVal]?.[0] || 'POSTE VISÉ').toUpperCase(),
-    accroche: `Actuellement en recherche d'alternance dans le cadre de la formation ${formation?.l || ''} au sein de l'école Talia, je suis motivé(e) à mettre mes compétences au service d'une entreprise dynamique. Rigoureux(se) et organisé(e), j'aspire à développer mes connaissances professionnelles dans un environnement stimulant.`,
+    poste: poste ? poste.toUpperCase() : '',
+    accroche: '',
     experiences: [
-      {
-        poste: 'Exemple de poste',
-        entreprise: 'Entreprise exemple',
-        lieu: 'Ville',
-        periode: 'Jan. 2024 – Août 2024',
-        missions: [
-          'Mission principale liée au poste occupé',
-          "Participation aux tâches de l'équipe",
-          'Gestion et suivi des dossiers courants',
-        ],
-      },
+      { poste: '', entreprise: '', lieu: '', periode: '', missions: [''] },
     ],
     formations: [
       {
-        titre: formation?.l || 'Formation Talia',
-        etablissement: 'Talia · France',
-        periode: (dateVal || 'Sept. 2024') + ' — ' + (formation?.d || '16 mois'),
-        isTalia: true,
-      },
-      {
-        titre: 'Baccalauréat Général',
-        etablissement: 'Lycée Exemple · Ville',
-        periode: '2023',
-        isTalia: false,
+        titre: formation?.l || 'Formation Altio',
+        etablissement: 'Altio · France',
+        periode: (dateVal || 'Sept.') + ' — ' + (formation?.d || ''),
+        isAltio: true,
       },
     ],
     competences: {
       techniques,
       comportementales,
-      outils: ['Pack Office', 'Google Workspace'],
+      outils: [],
     },
-    langues: [{ langue: 'Français', niveau: 'Natif' }, { langue: 'Anglais', niveau: 'B1' }],
-    centresInteret: ['Sport', 'Voyages', 'Culture générale'],
+    langues: [{ langue: 'Français', niveau: 'Natif' }],
+    centresInteret: [],
     lettreMotivation: '',
   };
 }
@@ -335,7 +318,7 @@ function GenerationOverlay({ visible, progress, progressText, stage, error, onCl
   if (!visible) return null;
   const stages = [
     { key:'extract',  label:'Lecture du CV',         icon: '📄', desc:'Extraction des informations…' },
-    { key:'enrich',   label:'Enrichissement IA',     icon: '✨', desc:'Adaptation au programme Talia…' },
+    { key:'enrich',   label:'Enrichissement IA',     icon: '✨', desc:'Adaptation au programme Altio…' },
     { key:'design',   label:'Mise en page',          icon: '🎨', desc:'Création du design premium…' },
     { key:'done',     label:'CV prêt',               icon: '✓',  desc:'Préparation de l\'éditeur…' },
   ];
@@ -373,7 +356,7 @@ function GenerationOverlay({ visible, progress, progressText, stage, error, onCl
           {error ? 'Une erreur est survenue' : stage === 3 ? 'CV généré !' : 'Génération en cours'}
         </h2>
         <p style={{ fontSize:13.5, color:C.mute, textAlign:'center', marginBottom:24, lineHeight:1.55 }}>
-          {error ? error : progressText || 'L\'IA Talia prépare ton CV…'}
+          {error ? error : progressText || 'L\'IA Altio prépare ton CV…'}
         </p>
 
         {/* Progress bar */}
@@ -613,8 +596,6 @@ export default function Home() {
   const { toasts, show: showToast, remove: removeToast } = useToast();
 
   // Migration V0 : la clé Anthropic est désormais serveur-side (Edge Function).
-  // On garde useSettings pour d'autres paramètres éventuels.
-  useSettings();
 
   // Auth : nécessaire pour appeler claude-proxy.
   // Si non-connecté → mode démo (mock) déclenché automatiquement.
@@ -623,14 +604,14 @@ export default function Home() {
   // Modal upgrade : ouverte quand un quota est dépassé
   const { open: openUpgrade } = useUpgradeModal();
 
-  // Bridge CRM (postMessage talia-saas ↔ talia-cv)
+  // Bridge CRM (postMessage altio-saas ↔ altio-cv)
   const { embedded, candidate: crmCandidate } = useCRMBridge();
   const { push: crmTokenPush } = useCRMToken();
 
   // Profils personnalité
   const [profiles] = useState(() => getProfiles());
   const [selectedProfileId, setSelectedProfileId] = useState(
-    () => localStorage.getItem('talia_cv_active_profile') || ''
+    () => localStorage.getItem('ALTIO_CV_active_profile') || ''
   );
   const selectedProfile = profiles.find(p => String(p.id) === String(selectedProfileId)) || null;
 
@@ -754,8 +735,8 @@ export default function Home() {
       setUploadedFile({ type: file.type === 'image' ? 'image' : 'pdf', base64: file.base64, mediaType: file.mediaType, name: file.name || 'CV depuis CRM' });
       showToast('CV reçu du CRM ✓', 'success');
     };
-    window.addEventListener('talia-crm-file-received', handler);
-    return () => window.removeEventListener('talia-crm-file-received', handler);
+    window.addEventListener('altio-crm-file-received', handler);
+    return () => window.removeEventListener('altio-crm-file-received', handler);
   }, [showToast]);
 
   // ── Formation change ──
@@ -820,7 +801,7 @@ export default function Home() {
     const formPostes   = POSTES[formationVal] || [];
 
     const profileCtxGenerate = buildProfileContext(selectedProfile);
-    const contextInfo = `\n---\nFormation Talia : ${formation.l} (${formation.d})\nDomaine : ${formDomain}\nNiveau : ${formation.n === 'tp' ? 'Bac / Bac+2' : formation.n === 'bachelor' ? 'Bac+3 (Bachelor)' : 'Bac+5 (Mastère)'}\nCompétences programme : ${formCompTech.join(', ')}\nSoft skills programme : ${formCompSoft.join(', ')}\nPostes types : ${formPostes.join(', ')}\nDate de rentrée : ${dateVal || 'Non précisée'}\nPoste visé : ${poste || 'Non précisé'}\nGenre : ${genre === 'F' ? 'Féminin' : genre === 'M' ? 'Masculin' : 'Non précisé'}\nCompétences techniques sélectionnées : ${comp.tech.join(', ') || 'Aucune'}\nCompétences comportementales sélectionnées : ${comp.soft.join(', ') || 'Aucune'}${profileCtxGenerate}${hasAnnonce ? '\n\n--- ANNONCE À MATCHER ---\n' + annonceText.slice(0, 3000) : ''}`;
+    const contextInfo = `\n---\nFormation Altio : ${formation.l} (${formation.d})\nDomaine : ${formDomain}\nNiveau : ${formation.n === 'tp' ? 'Bac / Bac+2' : formation.n === 'bachelor' ? 'Bac+3 (Bachelor)' : 'Bac+5 (Mastère)'}\nCompétences programme : ${formCompTech.join(', ')}\nSoft skills programme : ${formCompSoft.join(', ')}\nPostes types : ${formPostes.join(', ')}\nDate de rentrée : ${dateVal || 'Non précisée'}\nPoste visé : ${poste || 'Non précisé'}\nGenre : ${genre === 'F' ? 'Féminin' : genre === 'M' ? 'Masculin' : 'Non précisé'}\nCompétences techniques sélectionnées : ${comp.tech.join(', ') || 'Aucune'}\nCompétences comportementales sélectionnées : ${comp.soft.join(', ') || 'Aucune'}${profileCtxGenerate}${hasAnnonce ? '\n\n--- ANNONCE À MATCHER ---\n' + annonceText.slice(0, 3000) : ''}`;
 
     const annonceRules = hasAnnonce ? `\n\nADAPTATION À L'ANNONCE (RÈGLES STRICTES) :\n- REFORMULER les missions pour utiliser le vocabulaire de l'annonce quand pertinent et honnête\n- NE JAMAIS AJOUTER de compétences ou expériences que le candidat ne possède pas\n- Ajouter dans le JSON un champ "matchAnalysis" : { "matched": [], "missing": [], "score": 0..100, "adaptations": "", "formationFit": "" }` : '';
 
@@ -835,9 +816,9 @@ STRUCTURE JSON EXACTE :
   "adresse": "string ou vide",
   "dateNaissance": "JJ/MM/AAAA ou vide",
   "poste": "INTITULÉ EN MAJUSCULES",
-  "accroche": "4-6 lignes, 1ère personne, parcours réel, formation Talia, poste visé",
+  "accroche": "4-6 lignes, 1ère personne, parcours réel, Formation Altio, poste visé",
   "experiences": [{"poste":"","entreprise":"","lieu":"","periode":"","missions":[]}],
-  "formations": [{"titre":"","etablissement":"","periode":"","isTalia":false}],
+  "formations": [{"titre":"","etablissement":"","periode":"","isAltio":false}],
   "competences": {"techniques":[],"comportementales":[],"outils":[]},
   "langues": [{"langue":"","niveau":""}],
   "centresInteret": [],
@@ -849,7 +830,7 @@ RÈGLES :
 - CONSERVER TOUTES les expériences et formations (antéchronologique)
 - 3 à 5 missions par expérience avec verbes d'action
 - Fusionner compétences du CV avec celles sélectionnées, sans doublons
-- Formation Talia EN PREMIER dans formations avec isTalia:true
+- Formation Altio EN PREMIER dans formations avec isAltio:true
 - Si date de naissance fournie dans les paramètres, l'utiliser
 - Le poste doit être adapté au genre si précisé
 - Répondre UNIQUEMENT avec le JSON${annonceRules}${buildSectorPromptHook(sectorId)}`;
@@ -928,14 +909,14 @@ RÈGLES :
       if (poste && !cvData.poste) cvData.poste = poste.toUpperCase();
       if (cvData.poste) cvData.poste = cvData.poste.toUpperCase();
 
-      const hasTalia = cvData.formations?.some(f => f.isTalia);
-      if (!hasTalia) {
+      const hasAltio = cvData.formations?.some(f => f.isAltio);
+      if (!hasAltio) {
         cvData.formations = cvData.formations || [];
         cvData.formations.unshift({
           titre: formation.l,
-          etablissement: 'Talia · France',
+          etablissement: 'Altio · France',
           periode: (dateVal || 'Sept.') + ' — ' + formation.d,
-          isTalia: true,
+          isAltio: true,
         });
       }
       if (comp.tech.length) {
@@ -1080,7 +1061,7 @@ RÈGLES :
               <path d="M8 2L14 5.5V10.5L8 14L2 10.5V5.5L8 2Z" fill="white" fillOpacity="0.9"/>
             </svg>
           </div>
-          <span style={{ fontSize: 14, fontWeight: 800, color: C.ink, letterSpacing: '-0.3px' }}>TaliaCV</span>
+          <span style={{ fontSize: 14, fontWeight: 800, color: C.ink, letterSpacing: '-0.3px' }}>Altio CV</span>
         </div>
 
         {/* Breadcrumb center */}
@@ -1142,10 +1123,10 @@ RÈGLES :
               Nouveau CV
             </h1>
             <p style={{ fontSize: 15, color: C.ink2, fontWeight: 400, lineHeight: 1.6, marginBottom: 16 }}>
-              Génère un CV Talia professionnel en 3 étapes — formation, contenu, génération.
+              Génère un CV Altio professionnel en 3 étapes — formation, contenu, génération.
             </p>
 
-            {/* Promesse Talia — inline sous le sous-titre */}
+            {/* Promesse Altio — inline sous le sous-titre */}
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: 10,
               background: C.blueSoft, border: '1px solid ' + C.bluePrimary + '33',
@@ -1161,7 +1142,7 @@ RÈGLES :
                 </svg>
               </div>
               <p style={{ fontSize: 12, color: C.ink2, lineHeight: 1.5, margin: 0 }}>
-                <strong style={{ color: C.bluePrimary }}>Promesse Talia —</strong>{' '}
+                <strong style={{ color: C.bluePrimary }}>Promesse Altio —</strong>{' '}
                 Le CV est personnalisé au parcours réel du candidat. L'IA ne <strong>jamais invente</strong> d'expériences — elle restructure uniquement les informations fournies.
               </p>
             </div>
@@ -1449,6 +1430,20 @@ RÈGLES :
                 ? (genProgressText || 'Génération en cours…')
                 : user ? 'Générer mon CV Talia' : 'Tester en démo (connecte-toi pour générer)'}
             </button>
+
+            {/* Connexion requise pour l'IA réelle */}
+            {!user && !generating && (
+              <div style={{ marginTop: 10, fontSize: 12, color: C.mute, textAlign: 'center' }}>
+                Mode manuel : tu complètes ton CV à la main.{' '}
+                <span
+                  onClick={() => navigate('/auth')}
+                  style={{ color: C.bluePrimary, fontWeight: 600, cursor: 'pointer' }}
+                >
+                  Connecte-toi
+                </span>{' '}
+                pour la génération et l’assistance IA.
+              </div>
+            )}
 
             {/* Progress bar */}
             {genProgress > 0 && generating && (

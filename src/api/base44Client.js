@@ -1,6 +1,6 @@
-import { PHOTO_PLACEHOLDER } from '@/lib/cvData';
+﻿import { PHOTO_PLACEHOLDER } from '@/lib/cvData';
 
-const STORAGE_KEY = 'talia_cv_list';
+const STORAGE_KEY = 'ALTIO_CV_list';
 
 function getList() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
@@ -40,8 +40,8 @@ const MOCK_CV_HTML = (name, poste, palette) => `<!DOCTYPE html>
   .exp-missions{list-style:none;padding:0;margin:4px 0 0}
   .exp-missions li{font-size:9px;color:#374151;line-height:1.5;padding-left:10px;position:relative;margin-bottom:2px}
   .exp-missions li::before{content:"•";position:absolute;left:0;color:#F4A421;font-weight:700}
-  .form-talia{background:#EBF2FA;border-left:3px solid #1B4F8A;padding:8px 12px;border-radius:0 6px 6px 0;margin-bottom:10px}
-  .form-talia .form-title{font-size:10px;font-weight:700;color:#1B4F8A}
+  .form-altio{background:#EBF2FA;border-left:3px solid #1B4F8A;padding:8px 12px;border-radius:0 6px 6px 0;margin-bottom:10px}
+  .form-altio .form-title{font-size:10px;font-weight:700;color:#1B4F8A}
   .form-other .form-title{font-size:10px;font-weight:600;color:#111827}
   .form-sub{font-size:8.5px;color:#6b7280;margin-top:2px}
   .form-other{margin-bottom:8px}
@@ -52,7 +52,7 @@ const MOCK_CV_HTML = (name, poste, palette) => `<!DOCTYPE html>
     <div class="cv-logo">
       <svg width="90" height="28" viewBox="0 0 90 28" xmlns="http://www.w3.org/2000/svg">
         <rect width="90" height="28" rx="4" fill="white" fill-opacity="0.15"/>
-        <text x="8" y="20" font-family="Georgia,serif" font-size="18" font-weight="700" fill="white" letter-spacing="3">TALIA</text>
+        <text x="8" y="20" font-family="Georgia,serif" font-size="18" font-weight="700" fill="white" letter-spacing="3">ALTIO</text>
       </svg>
     </div>
     <div class="cv-photo">${PHOTO_PLACEHOLDER}</div>
@@ -85,7 +85,7 @@ const MOCK_CV_HTML = (name, poste, palette) => `<!DOCTYPE html>
     <div class="cv-header">
       <div class="cv-nom">${name}</div>
       <div class="cv-poste">${(poste || 'CANDIDAT(E) EN ALTERNANCE').toUpperCase()}</div>
-      <div class="cv-accroche">Motivé(e) et dynamique, je prépare actuellement mon entrée en alternance chez Talia, école spécialisée dans les formations digitales. Fort(e) d'une première expérience en entreprise, je souhaite mettre mes compétences au service d'une structure innovante tout en développant mon expertise dans le domaine visé. Je suis prêt(e) à m'investir pleinement dans ce nouveau challenge professionnel.</div>
+      <div class="cv-accroche">Motivé(e) et dynamique, je prépare actuellement mon entrée en alternance chez Altio, école spécialisée dans les formations digitales. Fort(e) d'une première expérience en entreprise, je souhaite mettre mes compétences au service d'une structure innovante tout en développant mon expertise dans le domaine visé. Je suis prêt(e) à m'investir pleinement dans ce nouveau challenge professionnel.</div>
     </div>
     <div class="cv-body">
       <div class="section-title">Expériences Professionnelles</div>
@@ -119,9 +119,9 @@ const MOCK_CV_HTML = (name, poste, palette) => `<!DOCTYPE html>
         </ul>
       </div>
       <div class="section-title">Formations</div>
-      <div class="form-talia">
-        <div class="form-title">Formation Talia — Alternance (en cours)</div>
-        <div class="form-sub">Talia, École Digitale · Paris · 2025 – en cours</div>
+      <div class="form-altio">
+        <div class="form-title">Formation Altio — Alternance (en cours)</div>
+        <div class="form-sub">Altio, École Digitale · Paris · 2025 – en cours</div>
       </div>
       <div class="form-other">
         <div class="form-title">Baccalauréat Général — Mention Bien</div>

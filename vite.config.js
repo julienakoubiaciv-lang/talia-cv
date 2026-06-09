@@ -15,11 +15,6 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/api/anthropic': {
-        target: 'https://api.anthropic.com',
-        changeOrigin: true,
-        rewrite: () => '/v1/messages',
-      },
       '/img-proxy': {
         target: 'https://images.unsplash.com',
         changeOrigin: true,

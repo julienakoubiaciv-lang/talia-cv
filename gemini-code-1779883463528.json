@@ -1,0 +1,764 @@
+[
+  {/* =========================================================================
+     TEST 2 : COMPÉTENCES — SECTEUR : MARKETING & COMMUNICATION
+     72 Questions réparties sur 3 niveaux (Bac+2, Bac+3, Mastère)
+     ========================================================================= */},
+
+  {/* -------------------------------------------------------------------------
+     NIVEAU 1 : BAC+2 (Community Management / Opérationnel) - 24 Questions
+     ------------------------------------------------------------------------- */},
+     
+  {/* --- MODULE A : RÉSOLUTION DE PROBLÈME (6 Questions) --- */}
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "bac+2", "module": "A", "timer_seconds": null,
+    "statement": "Vous publiez un post organique sur LinkedIn pour un événement d'entreprise. 10 minutes après, vous remarquez une énorme faute d'orthographe dans le titre principal. Le post a déjà 3 likes.",
+    "options": [
+      {"text": "Vous laissez le post tel quel pour ne pas perdre les 3 likes et l'algorithme.", "points": 0},
+      {"text": "Vous modifiez immédiatement le post via l'option 'Modifier' pour corriger la faute proprement.", "points": 3},
+      {"text": "Vous supprimez le post et tant pis, vous n'en republiez pas pour éviter la honte.", "points": 0},
+      {"text": "Vous écrivez un commentaire sous le post pour vous excuser de la faute.", "points": 1}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "bac+2", "module": "A", "timer_seconds": null,
+    "statement": "Un internaute poste un avis 1 étoile sur la page Facebook de la marque, insultant gratuitement le service client sans donner de détails précis sur son problème.",
+    "options": [
+      {"text": "Vous supprimez ou masquez immédiatement le commentaire pour protéger l'image de la marque.", "points": 0},
+      {"text": "Vous répondez poliment en public : 'Bonjour, nous regrettons votre déception. Pouvez-vous nous contacter en MP avec votre numéro de commande pour résoudre cela ?'.", "points": 3},
+      {"text": "Vous lui répondez de manière agressive pour défendre l'équipe du service client.", "points": 0},
+      {"text": "Vous ignorez totalement le commentaire en espérant qu'il soit noyé par d'autres avis.", "points": 1}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "bac+2", "module": "A", "timer_seconds": null,
+    "statement": "Vous lancez une story Instagram pour promouvoir un produit, mais vous réalisez après coup que le lien d'achat 'Swipe up / Sticker' renvoie vers une page d'erreur 404.",
+    "options": [
+      {"text": "Vous supprimez immédiatement la story, corrigez le lien et republiez la story corrigée.", "points": 3},
+      {"text": "Vous laissez la story en ligne, 24 heures c'est court, les gens oublieront vite.", "points": 0},
+      {"text": "Vous publiez une nouvelle story textuelle disant : 'Désolé, le lien d'avant ne marche pas, cherchez sur Google'.", "points": 1},
+      {"text": "Vous accusez l'équipe technique en public dans votre story suivante.", "points": 0}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "bac+2", "module": "A", "timer_seconds": null,
+    "statement": "Pour illustrer un article de blog rapide, vous avez besoin d'une photo de bureau. Vous trouvez une image parfaite sur Google Images.",
+    "options": [
+      {"text": "Vous la téléchargez et l'intégrez directement, personne ne vérifiera une simple image.", "points": 0},
+      {"text": "Vous filtrez sur Google pour trouver une image libre de droits ou vous utilisez une banque d'images gratuites (Unsplash, Pexels) pour respecter la loi.", "points": 3},
+      {"text": "Vous l'utilisez mais vous écrivez 'Source : Google' en tout petit en dessous.", "points": 1},
+      {"text": "Vous demandez un budget de 50€ à votre tuteur pour acheter les droits d'une photo premium.", "points": 1}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "bac+2", "module": "A", "timer_seconds": null,
+    "statement": "Le community manager senior est absent. Un influenceur avec 100k abonnés envoie un message privé pour proposer un partenariat gratuit contre l'envoi d'un produit. Il attend une réponse rapide.",
+    "options": [
+      {"text": "Vous acceptez immédiatement le partenariat et envoyez le produit sans l'accord de la hiérarchie.", "points": 1},
+      {"text": "Vous préparez une réponse polie en validant son intérêt, analysez rapidement ses engagements réels, et soumettez la fiche à votre tuteur dès son retour.", "points": 3},
+      {"text": "Vous refusez sèchement car vous n'avez pas reçu de consignes pour les partenariats.", "points": 0},
+      {"text": "Vous ignorez le message en vous disant que les influenceurs ne sont pas prioritaires.", "points": 0}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "bac+2", "module": "A", "timer_seconds": null,
+    "statement": "Vous devez programmer les publications de la semaine sur l'outil Meta Business Suite, mais l'outil bugge et refuse d'importer vos visuels ce matin.",
+    "options": [
+      {"text": "Vous abandonnez la programmation et attendez la semaine suivante que l'outil refonctionne.", "points": 0},
+      {"text": "Vous publiez manuellement les posts en direct jour après jour depuis l'application mobile ou passez par un autre outil d'essai gratuit (Hootsuite, Buffer).", "points": 3},
+      {"text": "Vous envoyez un e-mail de panique au support technique de Meta et attendez leur réponse sans rien faire.", "points": 1},
+      {"text": "Vous demandez au graphiste de refaire tous les visuels dans un autre format plus léger.", "points": 1}
+    ]
+  },
+
+  {/* --- MODULE B : INGÉNIOSITÉ & RESSOURCES LIMITÉES (6 Questions) --- */}
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "bac+2", "module": "B", "timer_seconds": null,
+    "statement": "Votre tuteur vous demande d'augmenter le nombre d'abonnés sur la page Instagram d'un commerce local, mais le budget publicitaire alloué pour ce mois est de 0€.",
+    "options": [
+      {"text": "Vous créez un jeu-concours simple en collaboration avec un autre commerce complémentaire de la ville pour croiser vos audiences organiquement.", "points": 3},
+      {"text": "Vous achetez un pack de 500 faux abonnés pour 10€ sur un site web pour gonfler artificiellement les chiffres.", "points": 0},
+      {"text": "Vous passez vos journées à vous abonner et vous désabonner des comptes des concurrents.", "points": 1},
+      {"text": "Vous expliquez à votre tuteur qu'il est impossible de gagner des abonnés sans budget publicitaire.", "points": 0}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "bac+2", "module": "B", "timer_seconds": null,
+    "statement": "Le taux d'engagement sur vos vidéos TikTok stagne. Vous manquez cruellement d'idées de contenus pour la semaine prochaine et n'avez pas de studio de tournage.",
+    "options": [
+      {"text": "Vous filmez les coulisses authentiques de l'entreprise (onboarding, bêtisier, journée type) avec votre simple smartphone en utilisant les musiques tendances du moment.", "points": 3},
+      {"text": "Vous arrêtez de publier des vidéos et vous vous contentez de relayer des articles de texte.", "points": 0},
+      {"text": "Vous copiez mot pour mot la dernière vidéo du concurrent le plus proche sans rien changer.", "points": 1},
+      {"text": "Vous passez 3 jours à rédiger un script de court-métrage de cinéma ultra-complexe.", "points": 1}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "bac+2", "module": "B", "timer_seconds": null,
+    "statement": "Vous devez suivre l'impact de vos actions sur les réseaux sociaux pour un rapport mensuel, mais l'entreprise n'a pas de logiciel payant d'analytics (comme Agorapulse).",
+    "options": [
+      {"text": "Vous inventez des chiffres approximatifs dans votre tableau Excel pour rendre un rapport complet.", "points": 0},
+      {"text": "Vous extrayez manuellement les données gratuites natives de chaque plateforme (Meta Business, LinkedIn Analytics) et centralisez le tout de façon propre.", "points": 3},
+      {"text": "Vous dites à votre responsable que sans outil payant, il est impossible de faire un suivi d'audience.", "points": 0},
+      {"text": "Vous passez des heures à compter un par un les likes de chaque post sur votre écran.", "points": 1}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "bac+2", "module": "B", "timer_seconds": null,
+    "statement": "Une vidéo YouTube d'entreprise datant d'un an a fait un flop complet (150 vues). Le sujet traité reste pourtant hyper intéressant et d'actualité pour vos clients.",
+    "options": [
+      {"text": "Vous supprimez définitivement la vidéo de la chaîne YouTube.", "points": 0},
+      {"text": "Vous découpez la vidéo longue en 4 capsules courtes au format vertical (Shorts/Reels) percutantes avec des sous-titres dynamiques pour lui donner une seconde vie.", "points": 3},
+      {"text": "Vous republiez exactement la même vidéo longue une deuxième fois sur la chaîne.", "points": 1},
+      {"text": "Vous payez des campagnes Google Ads avec votre propre argent pour augmenter les vues.", "points": 0}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "bac+2", "module": "B", "timer_seconds": null,
+    "statement": "Vous couvrez un événement de l'école en direct sur Instagram. La connexion Wi-Fi de la salle s'effondre et la 4G rame, rendant impossible la publication de vidéos lourdes.",
+    "options": [
+      {"text": "Vous arrêtez totalement la couverture de l'événement et rentrez chez vous.", "points": 0},
+      {"text": "Vous basculez sur des photos fixes légères accompagnées de textes courts textuels ou préparez vos contenus en local pour tout publier d'un coup dès le retour du réseau.", "points": 3},
+      {"text": "Vous essayez de forcer le passage des vidéos en boucle, quitte à bloquer l'application.", "points": 1},
+      {"text": "Vous allez vous plaindre auprès des organisateurs de l'événement à haute voix.", "points": 0}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "bac+2", "module": "B", "timer_seconds": null,
+    "statement": "On vous demande de créer un visuel pour fêter les 5 ans de la marque cet après-midi. Le graphiste attitré de la boîte est débordé et ne peut pas vous aider.",
+    "options": [
+      {"text": "Vous utilisez Canva ou un outil similaire en partant d'un template épuré respectant la charte graphique (couleurs, polices) de l'entreprise.", "points": 3},
+      {"text": "Vous dessinez le visuel à la main sur une feuille, la prenez en photo et la publiez.", "points": 0},
+      {"text": "Vous dites à votre responsable que ce ne sera pas fait car vous n'êtes pas graphiste de métier.", "points": 1},
+      {"text": "Vous utilisez Paint pour faire un montage rapide avec des cliparts rétro.", "points": 0}
+    ]
+  },
+
+  {/* --- MODULE C : GESTION DU STRESS & DOUBLE TÂCHE (6 Questions) --- */}
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "bac+2", "module": "C", "timer_seconds": 45,
+    "statement": "Il est 18h00, vous venez de publier la vidéo de lancement d'un produit. Un internaute repère une erreur factuelle et publie un commentaire moqueur très liké. Votre Directeur vous envoie un Teams : 'Supprime immédiatement !'.",
+    "options": [
+      {"text": "Vous cédez à la panique, supprimez le post et gâchez le reach du lancement.", "points": 1},
+      {"text": "Vous répondez au commentaire avec humour et transparence, et envoyez un message rassurant au Directeur pour lui expliquer votre stratégie de désamorçage.", "points": 3},
+      {"text": "Vous masquez le commentaire en faisant semblant de n'avoir rien vu.", "points": 1},
+      {"text": "Vous coupez les commentaires du compte pour bloquer toute discussion.", "points": 0}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "bac+2", "module": "C", "timer_seconds": 45,
+    "statement": "Vous gérez un live streaming de l'entreprise devant 300 personnes. Au bout de 5 minutes, votre micro se coupe et le chat s'affole : 'Pas de son !'.",
+    "options": [
+      {"text": "Vous coupez le live instantanément sans un mot d'explication.", "points": 0},
+      {"text": "Vous écrivez rapidement dans le chat : 'Petit souci technique, je règle le micro en 30 secondes !', gardez votre calme et vérifiez vos branchements logiels.", "points": 3},
+      {"text": "Vous continuez à parler normalement en ignorant les messages du chat.", "points": 0},
+      {"text": "Vous commencez à taper sur votre micro à l'écran en montrant des signes d'énervement.", "points": 1}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "bac+2", "module": "C", "timer_seconds": 45,
+    "statement": "Par inattention, vous publiez une story personnelle (une photo de votre chat ou de votre soirée) sur le compte Instagram officiel de l'entreprise. Vous vous en rendez compte 10 minutes après.",
+    "options": [
+      {"text": "Vous supprimez immédiatement la story, vérifiez les statistiques de vue, et si aucun client n'a réagi, vous restez discret tout en redoublant de vigilance sur les accès.", "points": 3},
+      {"text": "Vous laissez la story en ligne en vous disant que ça rend la marque humaine.", "points": 1},
+      {"text": "Vous supprimez l'application Instagram de votre téléphone pour ne plus faire de bêtises.", "points": 0},
+      {"text": "Vous envoyez un e-mail à toute la boîte en pleurant pour vous dénoncer de votre faute.", "points": 1}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "bac+2", "module": "C", "timer_seconds": 45,
+    "statement": "Un concurrent direct republie sur son compte LinkedIn exactement le même texte et le même visuel que vous avez créés et partagés la veille.",
+    "options": [
+      {"text": "Vous l'insultez publiquement dans les commentaires de sa publication pour plagiat.", "points": 0},
+      {"text": "Vous faites une capture d'écran pour preuve, prévenez votre responsable en interne, et posez un commentaire subtil et ironique sous leur post : 'Ravi de voir que notre travail vous inspire !'.", "points": 3},
+      {"text": "Vous supprimez votre propre post de la veille pour ne plus être associé à eux.", "points": 0},
+      {"text": "Vous ne faites rien du tout car copier fait partie des règles du web.", "points": 1}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "bac+2", "module": "C", "timer_seconds": 45,
+    "statement": "Vous êtes en train de rédiger la newsletter mensuelle de l'entreprise qui doit partir à midi. À 11h45, Instagram tombe en panne mondiale, bousculant tout votre planning de posts du jour.",
+    "options": [
+      {"text": "Vous arrêtez la newsletter pour aller lire les tweets concernant la panne d'Instagram.", "points": 1},
+      {"text": "Vous restez concentré sur la newsletter pour la finaliser et la programmer à temps, et vous gérerez le décalage des posts Instagram une fois l'outil rétabli.", "points": 3},
+      {"text": "La double urgence vous bloque, vous ratez l'envoi de la newsletter et ne publiez rien.", "points": 0},
+      {"text": "Vous envoyez un e-mail de panique à vos abonnés pour leur dire qu'Instagram ne marche plus.", "points": 0}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "bac+2", "module": "C", "timer_seconds": 45,
+    "statement": "Un client furieux publie sur son compte Twitter personnel une photo d'un produit défectueux en taguant votre marque. Son tweet commence à devenir viral (50 retweets en 1 heure).",
+    "options": [
+      {"text": "Vous signalez le tweet pour harcèlement afin d'essayer de le faire supprimer par Twitter.", "points": 0},
+      {"text": "Vous lui répondez rapidement avec le compte de la marque : 'Bonjour, nous sommes désolés pour ce problème. Contactez-nous en DM pour un échange express immédiat'.", "points": 3},
+      {"text": "Vous ignorez la situation en vous disant que la viralité va s'éteindre toute seule ce soir.", "points": 1},
+      {"text": "Vous créez un faux compte anonyme pour aller contredire le client dans les commentaires.", "points": 0}
+    ]
+  },
+
+  {/* --- MODULE D : COHÉRENCE MÉTIER (6 Questions) --- */}
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "bac+2", "module": "D", "timer_seconds": null,
+    "statement": "Comment calcule-t-on concrètement le taux d'engagement organique d'une publication sur les réseaux sociaux ?",
+    "options": [
+      {"text": "Le nombre de partages divisé par le nombre total d'abonnés de la page.", "points": 1},
+      {"text": "La somme des interactions (likes, commentaires, partages, clics) divisée par la portée (reach) ou les impressions de la publication, multipliée par 100.", "points": 3},
+      {"text": "Le nombre de vues de la publication multiplié par le prix du produit vendu.", "points": 0},
+      {"text": "Le nombre de nouveaux abonnés gagnés grâce à ce post spécifique.", "points": 1}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "bac+2", "module": "D", "timer_seconds": null,
+    "statement": "Sur les plateformes comme Instagram ou TikTok, quelle est la différence fondamentale entre la 'Portée' (Reach) et les 'Impressions' ?",
+    "options": [
+      {"text": "Le reach est le nombre d'utilisateurs uniques ayant vu le contenu, tandis que les impressions correspondent au nombre total de fois où le contenu a été affiché à l'écran.", "points": 3},
+      {"text": "Les impressions concernent uniquement les vidéos, le reach concerne les photos fixes.", "points": 0},
+      {"text": "Le reach mesure les clics publicitaires payants, les impressions mesurent l'organique.", "points": 1},
+      {"text": "Il n'y a aucune différence, ce sont deux mots synonymes pour désigner les likes.", "points": 0}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "bac+2", "module": "D", "timer_seconds": null,
+    "statement": "Dans le cadre d'une stratégie de contenu de marque, qu'est-ce que le contenu généré par les utilisateurs, ou 'UGC' (User Generated Content) ?",
+    "options": [
+      {"text": "Des publications créées par le service marketing interne pour imiter de vrais clients.", "points": 1},
+      {"text": "Des contenus (photos, vidéos, avis) créés et partagés spontanément par les clients finaux concernant les produits de la marque.", "points": 3},
+      {"text": "Des publicités payantes diffusées par des influenceurs stars du cinéma.", "points": 0},
+      {"text": "Les rapports de données statistiques générés par l'algorithme de Google.", "points": 0}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "bac+2", "module": "D", "timer_seconds": null,
+    "statement": "Quelle est l'utilité principale des hashtags (#) lors d'une publication de contenu sur Instagram ou LinkedIn ?",
+    "options": [
+      {"text": "Rendre le texte plus joli et coloré pour attirer l'œil de la Gen Z.", "points": 0},
+      {"text": "Catégoriser le contenu pour aider l'algorithme et les utilisateurs qui suivent ces mots-clés à découvrir la publication.", "points": 3},
+      {"text": "Masquer les fautes d'orthographe présentes dans les phrases du post.", "points": 0},
+      {"text": "Remplacer l'usage des émojis dans la description du produit.", "points": 1}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "bac+2", "module": "D", "timer_seconds": null,
+    "statement": "Pour optimiser l'impact d'une publication organique sur les réseaux sociaux, comment déterminez-vous l'heure idéale de publication ?",
+    "options": [
+      {"text": "Vous publiez toujours à minuit pile pour être le premier levé le matin.", "points": 0},
+      {"text": "Vous analysez les statistiques de la page pour identifier les pics d'activité et de connexion en ligne de votre communauté cible.", "points": 3},
+      {"text": "Vous publiez dès que vous avez fini de rédiger le texte, peu importe l'heure.", "points": 1},
+      {"text": "Vous suivez aveuglément les horaires imposés par les blogs américains de marketing.", "points": 1}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "bac+2", "module": "D", "timer_seconds": null,
+    "statement": "Si la charte éditoriale de votre entreprise impose un ton de communication chaleureux et de proximité, quelle formule de réponse convient le mieux pour un commentaire d'abonné ?",
+    "options": [
+      {"text": "Veuillez agréer, cher Monsieur, l'expression de nos salutations distinguées.", "points": 1},
+      {"text": "Merci pour ton retour au top @Jean ! Trop hâte de lire tes prochaines aventures avec notre produit. 🙌", "points": 3},
+      {"text": "La direction prend note de votre remarque textuelle sur notre réseau social.", "points": 0},
+      {"text": "Pas de problème. Cordialement. Service Communication.", "points": 1}
+    ]
+  },
+
+
+  {/* -------------------------------------------------------------------------
+     NIVEAU 2 : BAC+3 (Chargé de MarCom / Coordination) - 24 Questions
+     ------------------------------------------------------------------------- */},
+     
+  {/* --- MODULE A : RÉSOLUTION DE PROBLÈME (6 Questions) --- */}
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "bac+3", "module": "A", "timer_seconds": null,
+    "statement": "L'agence de création externe vous annonce qu'elle aura 4 jours de retard pour livrer le catalogue de Noël. Ce retard décale l'envoi à l'imprimeur et menace la date de lancement de la campagne.",
+    "options": [
+      {"text": "Vous annulez le contrat avec l'agence et cherchez un autre prestataire ce matin.", "points": 0},
+      {"text": "Vous organisez un point d'urgence pour identifier les pages prioritaires à livrer par blocs, et négociez en parallèle un calendrier d'impression partiel avec l'imprimeur.", "points": 3},
+      {"text": "Vous acceptez le retard sans rien faire et décalez le lancement de la campagne de deux semaines.", "points": 0},
+      {"text": "Vous harcelez l'agence par e-mail en les menaçant de poursuites judiciaires immédiates.", "points": 1}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "bac+3", "module": "A", "timer_seconds": null,
+    "statement": "Suite à l'envoi de votre newsletter mensuelle à 15 000 abonnés, le taux d'ouverture s'effondre à 8% contre 24% d'habitude. Vous remarquez que l'objet du mail contenait un caractère spécial mal encodé (ex: Ã© au lieu de é).",
+    "options": [
+      {"text": "Vous renvoyez immédiatement exactement le même mail à toute la liste avec des excuses.", "points": 1},
+      {"text": "Vous isolez le segment des 'non-ouvreurs', modifiez l'objet du mail avec une formulation propre/percutante, et planifiez un second envoi 48 heures plus tard.", "points": 3},
+      {"text": "Vous ignorez l'anomalie en vous disant que la newsletter du mois prochain fera un meilleur score.", "points": 0},
+      {"text": "Vous accusez la plateforme d'e-mailing (Mailchimp/Sendinblue) auprès de votre direction pour vous protéger.", "points": 0}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "bac+3", "module": "A", "timer_seconds": null,
+    "statement": "Vous validez le plan de communication d'un événement avec le Directeur Marketing. Le lendemain, le Directeur Commercial (votre autre référent) exige de tout modifier car il estime que l'axe choisi ne générera pas de leads.",
+    "options": [
+      {"text": "Vous suivez les ordres du Directeur Commercial et changez tout en secret.", "points": 1},
+      {"text": "Vous organisez une réunion tripartite de cadrage, présentez les arbitrages (Notoriété vs Conversion) et faites valider un compromis intégrant un bloc d'acquisition dédié aux leads dans le plan initial.", "points": 3},
+      {"text": "Vous refusez de travailler tant que les deux directeurs ne sont pas d'accord entre eux.", "points": 0},
+      {"text": "Vous appliquez le plan du Directeur Marketing en ignorant totalement les remarques du Commercial.", "points": 1}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "bac+3", "module": "A", "timer_seconds": null,
+    "statement": "Le traiteur engagé pour la soirée de lancement produit de l'entreprise (150 invités attendus) annule sa prestation pour cause de force majeure à 48 heures de l'événement.",
+    "options": [
+      {"text": "Vous annulez la soirée de lancement et prévenez tous les invités par e-mail.", "points": 0},
+      {"text": "Vous activez votre réseau, sollicitez des traiteurs alternatifs locaux, ou basculez sur une formule hybride premium (plateaux d'épicerie fine haut de gamme commandés en urgence) pour sauver l'événement.", "points": 3},
+      {"text": "Vous achetez des chips et des sodas au supermarché du coin pour faire des économies.", "points": 0},
+      {"text": "Vous passez les 48 heures à chercher à joindre l'assureur du traiteur pour obtenir un dédommagement.", "points": 1}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "bac+3", "module": "A", "timer_seconds": null,
+    "statement": "Vos campagnes publicitaires Google Ads affichent un excellent taux de clic (CTR), mais les données de Google Analytics montrent un taux de rebond de 85% sur la landing page du produit. Les gens partent immédiatement.",
+    "options": [
+      {"text": "Vous doublez le budget publicitaire Google Ads en pensant que c'est un problème de volume.", "points": 0},
+      {"text": "Vous analysez la cohérence entre la promesse de l'annonce et le contenu réel de la landing page (vitesse de chargement, clarté de l'offre, pertinence du CTA) pour corriger l'expérience utilisateur.", "points": 3},
+      {"text": "Vous coupez immédiatement toutes les campagnes de l'entreprise définitivement.", "points": 0},
+      {"text": "Vous changez les mots-clés de l'annonce sans toucher à la page de destination.", "points": 1}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "bac+3", "module": "A", "timer_seconds": null,
+    "statement": "Une rumeur infondée circule sur un forum sectoriel affirmant que votre entreprise va abandonner le support technique d'un de ses logiciels phares. Plusieurs clients s'inquiètent auprès du pôle comm.",
+    "options": [
+      {"text": "Vous publiez un démenti agressif sur les réseaux sociaux en menaçant le forum de procès.", "points": 1},
+      {"text": "Vous rédigez une note de clarification factuelle claire avec le chef de produit, l'envoyez aux clients concernés et publiez un court communiqué rassurant sur le blog officiel réaffirmant la roadmap.", "points": 3},
+      {"text": "Vous restez silencieux en appliquant l'adage 'Le silence est d'or'.", "points": 1},
+      {"text": "Vous créez de faux comptes sur le forum pour aller contredire anonymement les internautes.", "points": 0}
+    ]
+  },
+
+  {/* --- MODULE B : INGÉNIOSITÉ & RESSOURCES LIMITÉES (6 Questions) --- */}
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "bac+3", "module": "B", "timer_seconds": null,
+    "statement": "Vous devez organiser un webinaire de prospection crucial prévu dans 14 jours. L'objectif est d'obtenir 200 inscriptions qualifiées, mais la direction annonce un gel budgétaire surprise : votre budget d'acquisition passe de 1 500€ à 0€.",
+    "options": [
+      {"text": "Vous demandez le report du webinaire, estimant qu'il est impossible d'atteindre l'objectif sans budget.", "points": 0},
+      {"text": "Vous mobilisez l'interne : vous concevez un kit média (posts + visuels) et incitez les commerciaux et managers à partager l'événement sur leurs réseaux LinkedIn personnels via l'employee advocacy.", "points": 3},
+      {"text": "Vous passez vos journées à envoyer des messages privés un par un aux profils cibles sur LinkedIn de façon mécanique.", "points": 1},
+      {"text": "Vous contactez un influenceur du secteur pour lui demander d'animer gratuitement le webinaire avec vous.", "points": 2}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "bac+3", "module": "B", "timer_seconds": null,
+    "statement": "On vous demande d'améliorer le référencement naturel (SEO) du site web de l'entreprise en 1 mois sans pouvoir recruter une agence spécialisée ou acheter de logiciels payants (comme SEMrush).",
+    "options": [
+      {"text": "Vous utilisez des outils gratuits (Google Search Console, AnswerThePublic), analysez les requêtes réelles des utilisateurs et optimisez les balises et contenus des articles existants.", "points": 3},
+      {"text": "Vous copiez-collez des listes de 500 mots-clés cachés en blanc au fond de vos pages web.", "points": 0},
+      {"text": "Vous écrivez 50 petits articles de blog de 3 lignes générés à la chaîne par une IA sans relecture.", "points": 1},
+      {"text": "Vous déclarez que le SEO est un domaine d'expert impossible à travailler en interne.", "points": 0}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "bac+3", "module": "B", "timer_seconds": null,
+    "statement": "Pour une campagne d'influence, une créatrice de contenu parfaite pour votre cible demande un cachet de 2 000€, mais votre enveloppe maximum non négociable est fixée à 1 000€.",
+    "options": [
+      {"text": "Vous refusez la collaboration immédiatement et cherchez un autre profil moins pertinent.", "points": 1},
+      {"text": "Vous lui proposez un partenariat hybride : 1 000€ fixe + une dotation de produits à haute valeur perçue + un système d'affiliation basé sur un pourcentage de ventes générées par son code promo.", "points": 3},
+      {"text": "Vous acceptez son tarif à 2 000€ en prévoyant de rogner sur le budget du mois prochain en secret.", "points": 0},
+      {"text": "Vous essayez de la culpabiliser en lui expliquant que ses tarifs sont abusifs pour le marché.", "points": 0}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "bac+3", "module": "B", "timer_seconds": null,
+    "statement": "Vous devez concevoir un 'Lead Magnet' (contenu gratuit contre e-mail) attractif pour capturer des prospects B2B, mais vous n'avez pas le temps ni les ressources graphiques pour rédiger un livre blanc de 50 pages.",
+    "options": [
+      {"text": "Vous créez un modèle d'outil pratique prêt à l'emploi (un template Excel de pilotage ou une checklist de 3 pages ultra-visuelle) à forte valeur d'usage immédiate.", "points": 3},
+      {"text": "Vous volez le livre blanc d'un concurrent, changez le logo sur la couverture et le publiez.", "points": 0},
+      {"text": "Vous promettez un cadeau par tirage au sort sans jamais envoyer le lot aux participants.", "points": 0},
+      {"text": "Vous rédigez une simple page de texte brut sans aucune mise en forme graphique.", "points": 1}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "bac+3", "module": "B", "timer_seconds": null,
+    "statement": "Vous lancez une nouvelle marque de café éco-responsable. Votre budget ne vous permet pas de payer de grandes campagnes d'affichage dans la ville. Comment créez-vous du buzz localement ?",
+    "options": [
+      {"text": "Vous distribuez des tracts volants sur les pare-brises des voitures garées près du magasin.", "points": 1},
+      {"text": "Vous organisez une opération de 'street marketing' éphémère (dégustation gratuite dans un lieu insolite via un vélo-cargo stylisé) et incitez au partage sur les réseaux via un hashtag dédié.", "points": 3},
+      {"text": "Vous attendez que le bouche-à-oreille se fasse naturellement sans mener d'actions.", "points": 0},
+      {"text": "Vous envoyez des e-mails d'information standard aux mairies de la région.", "points": 1}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "bac+3", "module": "B", "timer_seconds": null,
+    "statement": "Votre direction veut analyser précisément le tunnel de conversion de votre site e-commerce, mais l'équipe technique refuse d'installer des tags de tracking complexes avant le trimestre prochain.",
+    "options": [
+      {"text": "Vous croisez les données basiques de Google Analytics (sessions uniques) avec les volumes de facturation de la comptabilité pour modéliser une approximation propre du funnel.", "points": 3},
+      {"text": "Vous déclarez l'analyse impossible et reportez le projet de trois mois.", "points": 0},
+      {"text": "Vous tentez d'insérer vous-même du code Javascript dans le serveur au risque de bloquer le site.", "points": 0},
+      {"text": "Vous interrogez les clients un par un au téléphone pour savoir par où ils sont passés.", "points": 1}
+    ]
+  },
+
+  {/* --- MODULE C : GESTION DU STRESS & DOUBLE TÂCHE (6 Questions) --- */}
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "bac+3", "module": "C", "timer_seconds": 45,
+    "statement": "Vous lancez une campagne publicitaire payante à 5 000€ à 9h00. À 9h15, le site web de l'entreprise s'effondre suite à un problème de serveur. Le budget publicitaire continue d'être consommé dans le vide.",
+    "options": [
+      {"text": "Vous coupez immédiatement toutes les campagnes publicitaires en cours sur les plateformes (Meta/Google Ads) pour stopper l'hémorragie financière, puis prévenez la technique.", "points": 3},
+      {"text": "Vous appelez l'hébergeur en hurlant au téléphone en laissant les campagnes tourner.", "points": 1},
+      {"text": "Vous attendez 12h00 pour voir si le site redémarre tout seul avant d'agir.", "points": 0},
+      {"text": "Vous envoyez un e-mail d'excuse général à tous les internautes qui ont cliqué sur la publicité.", "points": 0}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "bac+3", "module": "C", "timer_seconds": 45,
+    "statement": "Une influenceuse partenaire clé diffuse une story sponsorisée devant 200k personnes, mais elle s'est trompée dans le code promo exclusif (elle a écrit PROMO20 au lieu de MARQUE20). Le service client est assailli de messages d'erreur.",
+    "options": [
+      {"text": "Vous demandez au service client de refuser toutes les ventes utilisant ce code erroné.", "points": 0},
+      {"text": "Vous contactez immédiatement l'équipe e-commerce pour activer techniquement le code PROMO20 en urgence sur le site, puis envoyez un message sympa à l'influenceuse pour caler la suite.", "points": 3},
+      {"text": "Vous exigez de l'influenceuse qu'elle supprime sa story sur-le-champ en la menaçant de non-paiement.", "points": 1},
+      {"text": "Vous paniquez et coupez la boutique en ligne pendant deux heures pour bloquer les flux.", "points": 0}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "bac+3", "module": "C", "timer_seconds": 45,
+    "statement": "Vous venez de recevoir la livraison de 5 000 catalogues imprimés pour un salon qui démarre demain matin. Vous découvrez une erreur majeure sur le prix du produit phare en page 3.",
+    "options": [
+      {"text": "Vous jetez les 5 000 catalogues à la poubelle et vous présentez au salon sans support.", "points": 0},
+      {"text": "Vous faites imprimer en urgence des stickers correctifs élégants à coller sur la zone, ou vous créez un encart volant 'Erratum / Offre Spéciale Salon' à glisser dans chaque catalogue.", "points": 3},
+      {"text": "Vous distribuez les catalogues défectueux en espérant que les clients ne liront pas la page 3.", "points": 1},
+      {"text": "Vous annulez la participation de l'entreprise au salon professionnel.", "points": 0}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "bac+3", "module": "C", "timer_seconds": 45,
+    "statement": "Un communiqué de presse confidentiel contenant des données financières stratégiques de l'entreprise est partagé par erreur par un collaborateur à un journaliste 24 heures avant la date officielle de l'embargo.",
+    "options": [
+      {"text": "Vous niez l'authenticité du document auprès du journaliste en le traitant de menteur.", "points": 0},
+      {"text": "Vous contactez immédiatement le journaliste de façon pro pour valider l'embargo, prévenez la direction générale et préparez la mise en ligne anticipée de la note officielle pour garder le contrôle de la com.", "points": 3},
+      {"text": "Vous envoyez un e-mail incendiaire au collaborateur fautif en mettant toute la boîte en copie.", "points": 0},
+      {"text": "Vous éteignez votre téléphone pour ne pas répondre aux demandes de commentaires des autres médias.", "points": 0}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "bac+3", "module": "C", "timer_seconds": 45,
+    "statement": "Votre compte publicitaire Facebook Ads principal est bloqué par la plateforme pour 'non-respect des règles' (une erreur de l'algorithme Meta) en plein milieu du Black Friday.",
+    "options": [
+      {"text": "Vous abandonnez la campagne et attendez la fin du Black Friday pour faire appel.", "points": 0},
+      {"text": "Vous déposez immédiatement un recours officiel, et basculez en parallèle votre budget d'urgence sur un compte publicitaire de secours ou sur Google Ads/LinkedIn Ads pour maintenir les flux d'acquisition.", "points": 3},
+      {"text": "Vous créez 5 faux comptes personnels à la chaîne sur votre ordinateur pour relancer les pubs.", "points": 1},
+      {"text": "Vous écrivez un post de colère sur LinkedIn pour insulter publiquement le support de Meta.", "points": 1}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "bac+3", "module": "C", "timer_seconds": 45,
+    "statement": "Une vidéo TikTok parodique d'un utilisateur critiquant vivement l'emballage non recyclable de votre produit phare accumule 500k vues en 12 heures, créant un début de bad buzz 'écolo'.",
+    "options": [
+      {"text": "Vous demandez à toute l'équipe de signaler la vidéo en masse pour la faire supprimer.", "points": 0},
+      {"text": "Vous publiez une réponse vidéo transparente et constructive sur le compte de la marque, saluant l'humour de la parodie tout en présentant les chantiers réels de transition écologiques en cours sur vos packagings.", "points": 3},
+      {"text": "Vous publiez un communiqué juridique froid et menaçant rédigé en termes denses.", "points": 1},
+      {"text": "Vous ignorez la situation, estimant que TikTok est une plateforme d'enfants sans impact business.", "points": 0}
+    ]
+  },
+
+  {/* --- MODULE D : COHÉRENCE MÉTIER (6 Questions) --- */}
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "bac+3", "module": "D", "timer_seconds": null,
+    "statement": "Lors de l'analyse d'une campagne de marketing à la performance, comment calcule-t-on le Retour sur Investissement Publicitaire, ou 'ROAS' (Return on Ad Spend) ?",
+    "options": [
+      {"text": "Le chiffre d'affaires total de l'entreprise divisé par le nombre de clics publicitaires.", "points": 0},
+      {"text": "Le chiffre d'affaires généré directement par la campagne divisé par le montant total des dépenses publicitaires investies.", "points": 3},
+      {"text": "Le coût total de la campagne soustrait du nombre total de nouveaux abonnés.", "points": 0},
+      {"text": "Le nombre de conversions multiplié par le coût par clic moyen (CPC).", "points": 1}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "bac+3", "module": "D", "timer_seconds": null,
+    "statement": "Qu'est-ce que la pratique de l'A/B Testing apporte concrètement à l'optimisation d'une campagne de marketing digital (e-mail ou landing page) ?",
+    "options": [
+      {"text": "Tester deux versions (A et B) d'un contenu en modifiant un seul élément clé (ex: l'objet ou la couleur du bouton) auprès de deux échantillons d'audience pour identifier la plus performante.", "points": 3},
+      {"text": "Créer deux sites web totalement différents pour doubler vos chances de vendre sur Google.", "points": 0},
+      {"text": "Faire valider vos visuels par deux agences de communication concurrentes.", "points": 1},
+      {"text": "Diviser le prix de vente par deux pour analyser la réaction psychologique des acheteurs.", "points": 0}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "bac+3", "module": "D", "timer_seconds": null,
+    "statement": "Que signifie l'indicateur clé de performance 'CPA' (Coût par Action / Coût par Acquisition) dans le pilotage d'un budget marketing payant ?",
+    "options": [
+      {"text": "Le coût moyen facturé par l'agence de communication pour chaque post créé.", "points": 0},
+      {"text": "Le montant total investi divisé par le nombre d'actions spécifiques définies et atteintes (ex: un téléchargement, une inscription, un achat).", "points": 3},
+      {"text": "Le prix d'achat initial payé pour acquérir un logiciel de design graphique.", "points": 0},
+      {"text": "Le chiffre d'affaires moyen généré par un client tout au long de sa vie contractuelle.", "points": 1}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "bac+3", "module": "D", "timer_seconds": null,
+    "statement": "Quel élément est considéré comme le plus critique à optimiser pour maximiser le taux de conversion sur une landing page de capture de leads ?",
+    "options": [
+      {"text": "La présence d'un bouton d'action (CTA) clair, visible au-dessus de la ligne de flottaison, associé à une proposition de valeur limpide et un formulaire épuré.", "points": 3},
+      {"text": "L'intégration d'une vidéo de fond en haute définition de 10 minutes qui s'affiche automatiquement.", "points": 0},
+      {"text": "L'affichage des flux de vos publications Instagram en direct au milieu de la page.", "points": 1},
+      {"text": "L'écriture d'un texte de présentation historique de l'entreprise de 4 000 mots.", "points": 0}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "bac+3", "module": "D", "timer_seconds": null,
+    "statement": "Pourquoi la définition précise d'un 'Buyer Persona' (profil de client idéal) est-elle indispensable avant de concevoir un plan média ?",
+    "options": [
+      {"text": "Pour permettre au service juridique de vérifier l'identité légale des acheteurs.", "points": 0},
+      {"text": "Pour adapter précisément les messages, le ton de communication et le choix des canaux d'acquisition aux comportements réels de la cible.", "points": 3},
+      {"text": "Pour éliminer définitivement les clients qui n'ont pas de profil LinkedIn actif.", "points": 1},
+      {"text": "C'est une étape purement théorique obligatoire pour l'obtention des certifications d'école.", "points": 0}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "bac+3", "module": "D", "timer_seconds": null,
+    "statement": "Qu'est-ce qu'une campagne de marketing de 'Retargeting' (ou Reciblage publicitaire) dans l'écosystème digital ?",
+    "options": [
+      {"text": "Envoyer des e-mails tous les jours aux clients qui ont acheté un produit il y a 5 ans.", "points": 0},
+      {"text": "Diffuser des annonces publicitaires ciblées spécifiquement auprès des internautes ayant déjà visité votre site web ou interagi avec votre marque sans finaliser d'action.", "points": 3},
+      {"text": "Changer d'objectif au milieu d'une campagne de notoriété pour faire de la conversion.", "points": 1},
+      {"text": "Acheter des bannières publicitaires sur des sites d'actualités à forte audience internationale.", "points": 0}
+    ]
+  },
+
+
+  {/* -------------------------------------------------------------------------
+     NIVEAU 3 : MASTÈRE (Stratégie Marketing & Communication) - 24 Questions
+     ------------------------------------------------------------------------- */},
+     
+  {/* --- MODULE A : RÉSOLUTION DE PROBLÈME COMPLEXE (6 Questions) --- */}
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "master", "module": "A", "timer_seconds": null,
+    "statement": "Une marque de cosmétiques vendue en pharmacie subit une baisse de 18% de ses ventes sur les 18-25 ans face à un concurrent agile 100% éco-responsable sur TikTok. Le Board est divisé entre lancer une gamme 'Green' baclée en 3 mois ou refondre la marque sur 18 mois.",
+    "options": [
+      {"text": "Vous lancez la gamme 'Green' en 3 mois pour rassurer la finance, peu importe la sincérité de la démarche.", "points": 1},
+      {"text": "Vous proposez une stratégie hybride : lancer immédiatement une co-création transparente avec la communauté pour concevoir le futur produit (générant du reach court terme), tout en menant la refonte industrielle propre en coulisses sur 12 mois.", "points": 3},
+      {"text": "Vous soutenez le projet de refonte globale sur 18 mois en acceptant de perdre des parts de marché sans réagir dans l'intervalle.", "points": 1},
+      {"text": "Vous injectez l'intégralité du budget restant dans une campagne d'influence massive sur l'ancienne gamme pour forcer les ventes.", "points": 0}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "master", "module": "A", "timer_seconds": null,
+    "statement": "L'entreprise investit 500k€ par an dans un repositionnement de marque axé sur le haut de gamme. Après 6 mois, les études de marché indiquent que le grand public associe toujours votre nom à une marque discount. Les ventes premium ne décollent pas.",
+    "options": [
+      {"text": "Vous doublez immédiatement le budget d'affichage publicitaire traditionnel avec le même message.", "points": 1},
+      {"text": "Vous stoppez la campagne descendante, analysez les points de friction de l'expérience client globale (packaging, posture des vendeurs, SAV), et réorientez la communication sur des preuves concrètes de qualité (certifications, garanties exclusives).", "points": 3},
+      {"text": "Vous baissez les prix de la gamme premium pour vous aligner sur l'ancienne image perçue par le public.", "points": 0},
+      {"text": "Vous licenciez l'agence de communication externe pour faute lourde stratégique.", "points": 0}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "master", "module": "A", "timer_seconds": null,
+    "statement": "Votre entreprise B2B se fait attaquer en justice par un concurrent géant pour 'concurrence déloyale' suite à une campagne publicitaire comparative un peu trop agressive. L'information fuite dans un grand média économique.",
+    "options": [
+      {"text": "Vous refusez de répondre aux journalistes en appliquant un black-out de communication complet.", "points": 1},
+      {"text": "En accord avec le service juridique, vous publiez une déclaration factuelle réaffirmant vos engagements d'innovation et de transparence du marché, et transformez la crise en opportunité en illustrant la peur du leader historique face à votre croissance.", "points": 3},
+      {"text": "Vous publiez des excuses publiques immédiates en reconnaissant vos torts avant le procès.", "points": 0},
+      {"text": "Vous relancez une deuxième campagne encore plus agressive pour prouver que vous n'avez pas peur.", "points": 0}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "master", "module": "A", "timer_seconds": null,
+    "statement": "Lors de l'arbitrage budgétaire annuel, le Directeur Financier exige de couper 40% du budget de 'Branding / Notoriété' (jugé non mesurable) pour réallouer les fonds exclusivement au marketing de 'Performance / Acquisition' (Google Ads).",
+    "options": [
+      {"text": "Vous acceptez la coupe budgétaire sans broncher pour maintenir de bonnes relations en interne.", "points": 1},
+      {"text": "Vous démontrez mathématiquement (via des modèles d'attribution et des études d'impact) que la performance pure s'essouffle et coûte de plus en plus cher (hausse du CAC) si la marque n'est pas nourrie en notoriété en amont.", "points": 3},
+      {"text": "Vous menacez de démissionner si le budget branding est touché par la finance.", "points": 0},
+      {"text": "Vous trichez sur les rapports de performance futurs pour masquer l'usage des budgets notoriété.", "points": 0}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "master", "module": "A", "timer_seconds": null,
+    "statement": "Le lancement d'un nouveau produit technologique à forte valeur ajoutée est prévu dans 30 jours. L'équipe R&D vous annonce que la fonctionnalité clé ne sera pas stable au lancement et sera déployée 6 mois plus tard via une mise à jour.",
+    "options": [
+      {"text": "Vous maintenez la campagne initiale axée sur la fonction révolutionnaire en cachant le retard aux acheteurs.", "points": 0},
+      {"text": "Vous réorientez immédiatement la stratégie de communication du lancement sur l'agilité de la plateforme, la robustesse du socle initial et l'expérience d'évolution continue (roadmap transparente fournie à l'achat).", "points": 3},
+      {"text": "Vous annulez complètement le lancement produit et reportez le projet de 6 mois.", "points": 1},
+      {"text": "Vous rejetez publiquement la faute sur l'équipe technique dans votre communiqué de presse.", "points": 0}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "master", "module": "A", "timer_seconds": null,
+    "statement": "Une polémique sociétale ou politique majeure éclate dans les médias. Le Directeur Général veut absolument faire prendre position à la marque sur Twitter via un hashtag militant pour faire le buzz.",
+    "options": [
+      {"text": "Vous obéissez immédiatement et rédigez un tweet engagé et clivant.", "points": 0},
+      {"text": "Vous analysez la cohérence de cette prise de position avec la mission, les valeurs historiques et la sensibilité réelle de votre base client, et conseillez au DG une communication prudente ou un engagement par des actions concrètes (dons, charte interne) plutôt qu'un tweet opportuniste à haut risque de retour de bâton.", "points": 3},
+      {"text": "Vous refusez catégoriquement d'aborder le sujet en bloquant l'accès aux réseaux de l'entreprise.", "points": 1},
+      {"text": "Vous publiez un message ironique pour vous moquer de la polémique en cours.", "points": 0}
+    ]
+  },
+
+  {/* --- MODULE B : INGÉNIOSITÉ STRATÉGIQUE (6 Questions) --- */}
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "master", "module": "B", "timer_seconds": null,
+    "statement": "Le trafic organique global de votre site d'entreprise stagne depuis 12 mois malgré la publication de 3 articles de blog par semaine. Vos concurrents progressent sur vos mots-clés historiques.",
+    "options": [
+      {"text": "Vous augmentez la cadence en passant à 6 articles de blog par semaine avec les mêmes méthodes.", "points": 1},
+      {"text": "Vous pilotez un audit sémantique complet, basculez d'une stratégie de volume vers une logique de 'Topic Clusters' (piliers de contenus denses) et lancez une campagne d'acquisition de backlinks qualifiés (Netlinking).", "points": 3},
+      {"text": "Vous achetez des milliers de liens de mauvaise qualité sur des sites étrangers pour manipuler Google.", "points": 0},
+      {"text": "Vous décidez de couper le blog et de transférer l'intégralité du budget sur des bannières publicitaires.", "points": 0}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "master", "module": "B", "timer_seconds": null,
+    "statement": "Vous lancez un service d'abonnement premium B2B avec un panier moyen très élevé (15k€/an). Les campagnes marketing classiques sur LinkedIn génèrent des clics mais aucun rendez-vous qualifié avec des décideurs du CAC 40.",
+    "options": [
+      {"text": "Vous passez sur une stratégie d'Account-Based Marketing (ABM) : vous identifiez 50 comptes cibles, concevez des contenus ultra-personnalisés répondant spécifiquement à leurs enjeux sectoriels, et coordonnez des actions marketing/ventes conjointes.", "points": 3},
+      {"text": "Vous baissez le prix de l'abonnement de 50% pour attirer des structures plus petites.", "points": 1},
+      {"text": "Vous lancez des campagnes de masse automatiques d'e-mailing sur des listes achetées d'annuaires.", "points": 0},
+      {"text": "Vous achetez des spots publicitaires à la télévision en espérant que les grands directeurs les voient.", "points": 1}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "master", "module": "B", "timer_seconds": null,
+    "statement": "Un concurrent direct lance un produit quasi identique au vôtre, copiant vos fonctionnalités, mais affiché à un tarif inférieur de 40% grâce à une production délocalisée.",
+    "options": [
+      {"text": "Vous baissez immédiatement vos prix de 45% pour rester le moins cher du marché.", "points": 1},
+      {"text": "Vous accentuez l'ingénierie de marque : vous communiquez massivement sur vos engagements RSE locaux, la transparence de votre chaîne de valeur, la qualité supérieure vérifiable du service client et des garanties, transformant le prix élevé en indicateur de valeur réelle.", "points": 3},
+      {"text": "Vous portez plainte pour plagiat intellectuel sans modifier votre stratégie de communication actuelle.", "points": 1},
+      {"text": "Vous arrêtez la commercialisation de ce produit pour vous concentrer sur le reste de la gamme.", "points": 0}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "master", "module": "B", "timer_seconds": null,
+    "statement": "L'évolution des règles de confidentialité (fin des cookies tiers, RGPD strict) fait exploser le coût d'acquisition (CAC) de vos campagnes de reciblage publicitaire classiques.",
+    "options": [
+      {"text": "Vous continuez à investir sur les mêmes canaux en acceptant la baisse continue de rentabilité.", "points": 0},
+      {"text": "Vous restructurez la stratégie marketing autour de la capture de la 'First-Party Data' : vous déployez des stratégies d'Inbound performantes (médias propriétaires, newsletters thématiques expertes, outils gratuits) pour posséder votre propre base de données qualifiée.", "points": 3},
+      {"text": "Vous contournez la loi informatique secrètement en achetant des données non conformes.", "points": 0},
+      {"text": "Vous coupez l'intégralité du budget digital pour revenir à de la prospection par courrier papier.", "points": 1}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "master", "module": "B", "timer_seconds": null,
+    "statement": "Vous devez déployer la stratégie marketing de l'entreprise dans 4 pays européens simultanément. Le budget total disponible ne permet pas de recruter des agences locales dans chaque pays.",
+    "options": [
+      {"text": "Vous traduisez la campagne française via un traducteur automatique et diffusez exactement les mêmes visuels partout.", "points": 1},
+      {"text": "Vous centralisez la création de la structure de campagne (Core Strategy) en interne, et recrutez des créateurs de contenu natifs indépendants (micro-influenceurs locaux) dans chaque pays pour adapter les messages aux spécificités culturelles à moindre coût.", "points": 3},
+      {"text": "Vous lancez la campagne uniquement dans le pays le plus proche et abandonnez les trois autres marchés.", "points": 0},
+      {"text": "Vous demandez aux stagiaires de l'école de gérer bénévolement la communication internationale.", "points": 0}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "master", "module": "B", "timer_seconds": null,
+    "statement": "Votre entreprise de services veut se positionner comme le leader de la transition écologique sur son secteur. Vos process internes sont corrects mais ne sont pas parfaits.",
+    "options": [
+      {"text": "Vous lancez une campagne de communication massive en affirmant que l'entreprise est '100% verte / zéro carbone'.", "points": 0},
+      {"text": "Vous adoptez une communication de 'progrès et de transparence' : vous publiez votre bilan carbone réel, affichez des objectifs chiffrés d'amélioration à 3 ans et documentez honnêtement les étapes et difficultés de la transition.", "points": 3},
+      {"text": "Vous attendez d'être parfait à 100% dans 10 ans avant de commencer à communiquer sur le sujet.", "points": 1},
+      {"text": "Vous achetez des crédits carbone douteux à l'étranger pour afficher un label de neutralité factice.", "points": 0}
+    ]
+  },
+
+  {/* --- MODULE C : GESTION DU STRESS STRATÉGIQUE (6 Questions) --- */}
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "master", "module": "C", "timer_seconds": 45,
+    "statement": "Un groupe militant lance un appel au boycott massif de votre marque sur les réseaux sociaux suite à une mauvaise interprétation d'une campagne. Le hashtag associé est en top tendance France ce matin.",
+    "options": [
+      {"text": "Vous publiez une réponse ironique pour vous moquer des militants en espérant calmer le jeu.", "points": 0},
+      {"text": "Vous activez la cellule de crise : vous analysez l'impact réel sur l'activité, préparez un communiqué factuel et sincère réexpliquant l'intention de la campagne, retirez les visuels ambigus et briefez les porte-paroles et le service client.", "points": 3},
+      {"text": "Vous coupez immédiatement tous les serveurs et les réseaux de l'entreprise pendant 3 jours.", "points": 0},
+      {"text": "Vous capitulez immédiatement en licenciant le créatif qui a conçu la campagne pour donner un coupable aux médias.", "points": 1}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "master", "module": "C", "timer_seconds": 45,
+    "statement": "Le Directeur Général commet un énorme dérapage verbal lors d'une interview en direct sur une grande chaîne de télévision économique. Le cours de l'action ou la réputation B2B s'effondre en direct.",
+    "options": [
+      {"text": "Vous envoyez un e-mail officiel affirmant que les propos du DG ont été modifiés par l'intelligence artificielle.", "points": 0},
+      {"text": "Vous cadrez une déclaration rectificative officielle dissociant la vision stratégique et les valeurs de l'institution des propos individuels spontanés, et planifiez une prise de parole écrite cadrée du board sous 2 heures.", "points": 3},
+      {"text": "Vous demandez au service juridique de porter plainte contre la chaîne de télévision pour complot.", "points": 0},
+      {"text": "Vous conseillez au Directeur Général de se cacher et de ne plus faire d'apparitions publiques pendant un an.", "points": 1}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "master", "module": "C", "timer_seconds": 45,
+    "statement": "Un changement d'algorithme brutal sur Google ou Meta fait s'effondrer le trafic ou le volume de conversions de l'entreprise de 50% en 48 heures, mettant en danger le chiffre d'affaires du mois.",
+    "options": [
+      {"text": "Vous paniquez et triplez les enchères publicitaires financières pour forcer l'acquisition à perte.", "points": 1},
+      {"text": "Vous posez un diagnostic technique froid, isolez les campagnes touchées, et activez immédiatement vos canaux de repli (campagnes e-mails sur votre base propriétaire, marketing d'influence, partenariats directs) pour stabiliser le CA.", "points": 3},
+      {"text": "Vous écrivez une lettre de réclamation officielle aux ingénieurs de Google ou Meta.", "points": 0},
+      {"text": "Vous coupez tous les budgets marketing de l'entreprise pour réduire les pertes financières de la semaine.", "points": 0}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "master", "module": "C", "timer_seconds": 45,
+    "statement": "Un membre influent du Conseil d'Administration exige au milieu d'un comité d'interrompre immédiatement une campagne de marque de 2 millions d'euros car sa fille a trouvé le visuel principal 'laid'.",
+    "options": [
+      {"text": "Vous arrêtez la campagne sur-le-champ pour complaire à ce membre du conseil.", "points": 0},
+      {"text": "Vous défendez fermement le projet en vous appuyant exclusivement sur les données de performance chiffrées de la phase de test (A/B testing, taux de clic, mémorisation) menée auprès du vrai public cible.", "points": 3},
+      {"text": "Vous vous disputez violemment avec lui au milieu de la réunion en insultant ses goûts familiaux.", "points": 0},
+      {"text": "Vous acceptez de modifier tout le design graphique de la campagne en 24 heures sans tests préalables.", "points": 1}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "master", "module": "C", "timer_seconds": 45,
+    "statement": "L'agence de relations presse internationale gérant votre introduction en bourse fait faillite soudainement à deux semaines de l'échéance stratégique majeure de l'entreprise.",
+    "options": [
+      {"text": "Vous demandez le report de l'introduction en bourse à l'année prochaine.", "points": 0},
+      {"text": "Vous reprenez le contrôle des listings de journalistes et des communiqués en interne, mobilisez votre équipe MarCom senior en mode commando, et contractualisez une pige d'urgence avec un consultant RP expert indépendant pour piloter les relations médias.", "points": 3},
+      {"text": "Vous attaquez l'agence en faillite au tribunal pour obtenir des dommages et intérêts immédiats.", "points": 1},
+      {"text": "Vous tentez de gérer seul les appels de 50 médias internationaux sans aucun outil ni process.", "points": 1}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "master", "module": "C", "timer_seconds": 45,
+    "statement": "Une faille de sécurité logicielle a exposé des données clients. La technique gère le bug, mais la presse commence à appeler. Le Board exige un plan de communication de crise complet en 45 minutes.",
+    "options": [
+      {"text": "Vous préparez un document flou pour minimiser l'incident et gagner du temps.", "points": 1},
+      {"text": "Vous appliquez une stratégie de transparence radicale : vous formalisez une note claire (faits, volume de données touchées, correctif appliqué, mesures de protection pour les clients) et organisez le déploiement multi-canal simultané.", "points": 3},
+      {"text": "Vous refusez de communiquer tant que l'enquête de police n'est pas totalement terminée dans 6 mois.", "points": 0},
+      {"text": "Vous rejetez l'intégralité de la faute sur le Directeur Technique lors de votre conférence de presse.", "points": 0}
+    ]
+  },
+
+  {/* --- MODULE D : COHÉRENCE MÉTIER STRATÉGIQUE (6 Questions) --- */}
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "master", "module": "D", "timer_seconds": null,
+    "statement": "Quelle est la définition exacte du concept de 'Brand Equity' (Capital de marque) et son utilité dans la stratégie de croissance d'une entreprise ?",
+    "options": [
+      {"text": "La valeur comptable totale des ordinateurs et bureaux du service de communication.", "points": 0},
+      {"text": "La valeur financière ajoutée qu'une marque apporte à un produit ou service, mesurée par la capacité à vendre plus cher, capter plus de parts de marché et fidéliser grâce à la seule force du nom de marque.", "points": 3},
+      {"text": "Le montant total des dépenses publicitaires investies depuis la création de l'entreprise.", "points": 1},
+      {"text": "Le nombre exact de followers cumulés sur l'ensemble des réseaux sociaux officiels.", "points": 0}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "master", "module": "D", "timer_seconds": null,
+    "statement": "Dans le cadre d'un modèle d'attribution marketing complexe, quelle est la limite principale d'un modèle d'attribution basé sur le 'Dernier Clic' (Last-Click Interaction) ?",
+    "options": [
+      {"text": "Il sur-valorise le dernier point de contact (ex: une recherche Google de marque) et ignore totalement l'impact des actions de notoriété en amont (Display, Social Ads, Contenus) qui ont initié le besoin.", "points": 3},
+      {"text": "Il ralentit la vitesse d'affichage des pages de destination sur les mobiles.", "points": 0},
+      {"text": "Il empêche le calcul du budget de conversion global de l'entreprise.", "points": 1},
+      {"text": "Il ne fonctionne pas si l'utilisateur utilise un bloqueur de publicité.", "points": 0}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "master", "module": "D", "timer_seconds": null,
+    "statement": "Comment orchestrez-vous de façon optimale une stratégie d'Inbound Marketing par rapport à vos campagnes de marketing d'Outbound (Publicité payante) ?",
+    "options": [
+      {"text": "Couper toutes les publicités payantes pour ne faire que du contenu gratuit sur le blog.", "points": 1},
+      {"text": "Utiliser l'Outbound comme un accélérateur tactique pour propulser et tester vos contenus Inbound performants (lead magnets, études) et capter des flux qualifiés, tout en construisant des actifs organiques durables en fond de roulement.", "points": 3},
+      {"text": "Faire gérer l'Inbound par le marketing et l'Outbound par le service commercial sans aucun point de contact entre eux.", "points": 0},
+      {"text": "Considérer que l'Inbound est réservé aux marchés B2C et l'Outbound aux marchés complexes B2B.", "points": 1}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "master", "module": "D", "timer_seconds": null,
+    "statement": "Quelle est la différence fondamentale entre une stratégie de communication 'Omnicanale' et une approche 'Multicanale' ?",
+    "options": [
+      {"text": "L'approche multicanale utilise plusieurs canaux indépendants, tandis que l'omnicanal fusionne et synchronise l'intégralité des points de contact (physiques et digitaux) pour offrir une expérience fluide, continue et personnalisée au client.", "points": 3},
+      {"text": "Le multicanal est payant, l'omnicanal est entièrement gratuit pour l'entreprise.", "points": 0},
+      {"text": "L'omnicanal concerne uniquement les lancements de produits à l'international.", "points": 1},
+      {"text": "Il n'y a aucune différence technique, ce sont deux termes inventés par les agences.", "points": 0}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "master", "module": "D", "timer_seconds": null,
+    "statement": "Dans le pilotage stratégique d'une marque, comment l'indicateur du 'Net Promoter Score' (NPS) doit-il être exploité par le directeur marketing ?",
+    "options": [
+      {"text": "Comme un simple outil comptable pour évaluer le montant des primes de l'équipe produit.", "points": 0},
+      {"text": "Comme une métrique centrale de satisfaction et de fidélité pour identifier vos clients ambassadeurs (à engager dans des stratégies UGC/Parrainage) et vos détracteurs (à traiter en urgence pour limiter le churn).", "points": 3},
+      {"text": "Pour mesurer la vitesse de traitement des e-mails par le service après-vente.", "points": 1},
+      {"text": "Pour calculer le coût de revient unitaire de la fabrication d'un produit physique.", "points": 0}
+    ]
+  },
+  {
+    "type": "skills", "macro_sector_id": "[UUID_MARCOM]", "level": "master", "module": "D", "timer_seconds": null,
+    "statement": "Lors de la phase de cadrage d'un projet de rebranding global d'une entreprise établie, quelle action doit impérativement précéder le travail créatif sur le nouveau logo et l'identité visuelle ?",
+    "options": [
+      {"text": "Choisir la typographie et la palette de couleurs tendance sur Pinterest.", "points": 0},
+      {"text": "Définir la plateforme de marque (mission, vision, valeurs, positionnement unique) issue d'une phase de diagnostic approfondi (audits internes, analyses concurrentielles, études clients).", "points": 3},
+      {"text": "Acheter des espaces publicitaires d'affichage dans le métro pour la fin de l'année.", "points": 1},
+      {"text": "Demander l'avis subjectif de l'intégralité des salariés de l'entreprise via un vote anonyme.", "points": 1}
+    ]
+  }
+]

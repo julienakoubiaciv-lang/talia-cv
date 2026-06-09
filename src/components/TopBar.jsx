@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { History, Plus } from 'lucide-react';
 
@@ -18,7 +18,7 @@ export default function TopBar() {
             <span className="text-white font-display font-bold text-sm tracking-wider">T</span>
           </div>
           <div className="flex flex-col leading-none">
-            <span className="font-display font-bold text-primary text-base tracking-wide">TALIA</span>
+            <span className="font-display font-bold text-primary text-base tracking-wide">ALTIO</span>
             <span className="text-[9px] text-muted-foreground font-medium tracking-widest uppercase">CV Generator</span>
           </div>
         </button>

@@ -1,10 +1,10 @@
-/* ─── profileData.js ───────────────────────────────────────────────────────
+﻿/* ─── profileData.js ───────────────────────────────────────────────────────
    Gestion des profils personnalité en localStorage.
    Un profil capture QUI est la personne (ton, style, contexte) pour orienter
    les reformulations IA — indépendamment des données brutes du CV.
    ───────────────────────────────────────────────────────────────────────── */
 
-const KEY = 'talia_cv_profiles';
+const KEY = 'ALTIO_CV_profiles';
 
 /* ── Structure d'un profil ─────────────────────────────────────────────── */
 // {

@@ -208,11 +208,11 @@ export const PALETTES = [
 
 // â”€â”€â”€ HISTORIQUE (localStorage) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export function getHist() {
-  try { return JSON.parse(localStorage.getItem('talia_cv_hist')||'[]'); }
+  try { return JSON.parse(localStorage.getItem('ALTIO_CV_hist')||'[]'); }
   catch { return []; }
 }
 export function setHist(arr) {
-  localStorage.setItem('talia_cv_hist', JSON.stringify(arr));
+  localStorage.setItem('ALTIO_CV_hist', JSON.stringify(arr));
 }
 export function updateHist(id, patch) {
   let hist = getHist();
@@ -256,7 +256,7 @@ const MAX_VERSIONS = 10;
 
 export function saveVersion(histId, data, label) {
   if (!histId || !data) return;
-  const key = `talia_versions_${histId}`;
+  const key = `altio_versions_${histId}`;
   let versions = [];
   try { versions = JSON.parse(localStorage.getItem(key) || '[]'); } catch {}
   const now = Date.now();
@@ -276,13 +276,13 @@ export function saveVersion(histId, data, label) {
 
 export function getVersions(histId) {
   if (!histId) return [];
-  try { return JSON.parse(localStorage.getItem(`talia_versions_${histId}`) || '[]'); }
+  try { return JSON.parse(localStorage.getItem(`altio_versions_${histId}`) || '[]'); }
   catch { return []; }
 }
 
 export function deleteVersions(histId) {
   if (!histId) return;
-  localStorage.removeItem(`talia_versions_${histId}`);
+  localStorage.removeItem(`altio_versions_${histId}`);
 }
 
 // Temps relatif pour les labels de version
@@ -323,21 +323,21 @@ export function saveBulkSession(groups) {
     ...g,
     jobs: g.jobs.map(({ file, base64, mediaType, ...rest }) => rest),
   }));
-  try { localStorage.setItem('talia_bulk_session', JSON.stringify({ groups: slim, savedAt: Date.now() })); }
+  try { localStorage.setItem('altio_bulk_session', JSON.stringify({ groups: slim, savedAt: Date.now() })); }
   catch (e) { console.warn('Bulk session save failed', e); }
 }
 export function loadBulkSession() {
-  try { const r = localStorage.getItem('talia_bulk_session'); return r ? JSON.parse(r) : null; }
+  try { const r = localStorage.getItem('altio_bulk_session'); return r ? JSON.parse(r) : null; }
   catch { return null; }
 }
 export function clearBulkSession() {
-  localStorage.removeItem('talia_bulk_session');
+  localStorage.removeItem('altio_bulk_session');
 }
 
 // â”€â”€â”€ EDITOR STATE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export function saveEditorState(state) {
-  try { localStorage.setItem('talia_editor_state', JSON.stringify(state)); } catch {}
+  try { localStorage.setItem('altio_editor_state', JSON.stringify(state)); } catch {}
 }
 export function loadEditorState() {
-  try { return JSON.parse(localStorage.getItem('talia_editor_state')||'null'); } catch { return null; }
+  try { return JSON.parse(localStorage.getItem('altio_editor_state')||'null'); } catch { return null; }
 }

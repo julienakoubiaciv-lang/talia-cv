@@ -1,30 +1,30 @@
 /**
  * useOrg — Tier de parrainage organisation (école/entreprise).
  *
- * Au login : consomme une éventuelle invitation en attente, puis lit le tier
- * effectif côté serveur. Expose `tier` (le tier effectif serveur) ou null
- * (hors-ligne / non connecté → l'app retombe sur le tier perso).
+ * Au montage (et au login) : consomme une éventuelle invitation en attente,
+ * puis lit le tier de parrainage. Fonctionne aussi en mode démo (sans auth).
+ * Expose `tier` (parrainage) ou null, et `orgName`.
  */
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth.jsx';
-import { redeemPendingInvite, fetchEffectiveTier } from '@/lib/orgAccess';
+import { redeemPendingInvite, fetchEffectiveTier, getOrgName } from '@/lib/orgAccess';
 
 export function useOrg() {
   const { user } = useAuth();
   const [tier, setTier] = useState(null);
+  const [orgName, setOrgName] = useState(() => getOrgName());
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!user) { setTier(null); return; }
     let alive = true;
     setLoading(true);
     (async () => {
-      await redeemPendingInvite();          // rejoint l'org si lien en attente
-      const t = await fetchEffectiveTier();  // max(perso, parrainage)
-      if (alive) { setTier(t); setLoading(false); }
+      await redeemPendingInvite();           // rejoint l'org si lien en attente
+      const t = await fetchEffectiveTier();   // tier de parrainage
+      if (alive) { setTier(t); setOrgName(getOrgName()); setLoading(false); }
     })();
     return () => { alive = false; };
   }, [user]);
 
-  return { tier, loading };
+  return { tier, orgName, loading };
 }

@@ -21,7 +21,7 @@ import { PLANS, betterTier } from '@/lib/planConfig';
 export function useEntitlements() {
   const plan = usePlan();
   const { isStaff, role, loading } = useRole();
-  const { tier: orgTier } = useOrg();
+  const { tier: orgTier, orgName } = useOrg();
 
   // Tier effectif = max(perso, parrainage org)
   const tier = betterTier(plan.tier, orgTier);
@@ -42,6 +42,7 @@ export function useEntitlements() {
     isBusiness: tier === 'business',
     isSchool: tier === 'school',
     sponsoredTier: orgTier || null,
+    orgName: orgName || null,
     role,
     roleLoading: loading,
     isStaff,

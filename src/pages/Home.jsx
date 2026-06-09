@@ -12,6 +12,7 @@ import { CheckoutSuccessBanner } from '@/components/CheckoutSuccessBanner.jsx';
 import { useCheckoutSuccess } from '@/hooks/useCheckoutSuccess';
 import { getOverallCompletion } from '@/lib/interviewProgress';
 import { isDemoMode, setDemoMode } from '@/lib/demoMode';
+import { getJoinNotice, clearJoinNotice } from '@/lib/orgAccess';
 import { alpha } from '@/lib/gameTheme';
 import { useTheme } from '@/hooks/useTheme.jsx';
 import EnergyBar from '@/components/EnergyBar';
@@ -531,7 +532,7 @@ export default function Home() {
   const { user, signOut } = useAuth();
   const isMobile = useIsMobile();
   const { crmLink, isLinked: isCRMLinked, linkFromURL, unlink: unlinkCRM } = useCRMToken();
-  const { isFree, plan, canCV, remainingCVs, canBulk, nextPlan, upgrade } = useEntitlements();
+  const { isFree, plan, canCV, remainingCVs, canBulk, nextPlan, upgrade, isSchool, orgName } = useEntitlements();
 
   // Taux de complétion global du simulateur d'entretien (localStorage)
   const interviewPct = getOverallCompletion();
@@ -550,7 +551,10 @@ export default function Home() {
   const [groupByBulk, setGroupByBulk] = useState(false);
   const [tourOpen, setTourOpen] = useState(false);
   const [demoOn, setDemoOn] = useState(() => isDemoMode());
+  const [joinNotice, setJoinNotice] = useState(() => getJoinNotice());
   const { mode, toggle: toggleTheme } = useTheme();
+  // Rafraîchit la notice de bienvenue une fois le rattachement école résolu.
+  useEffect(() => { const n = getJoinNotice(); if (n) setJoinNotice(n); }, [orgName, isSchool]);
   const [leadSentIds, setLeadSentIds] = useState(new Set()); // IDs déjà envoyés au CRM
 
   useEffect(() => { setCvList(getHistorySync()); }, []);
@@ -802,6 +806,15 @@ export default function Home() {
           </button>
         )}
 
+        {/* Parrainage école (accès offert) */}
+        {isSchool && (
+          <span title={orgName ? `Accès offert par ${orgName}` : 'Accès offert par ton école'}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 800,
+              color: C.ok, background: alpha(C.ok, 12), padding: '5px 11px', borderRadius: 99, whiteSpace: 'nowrap', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            🎓 {orgName || 'École'}
+          </span>
+        )}
+
         {/* Énergie IA du jour */}
         <EnergyBar variant="pill" />
 
@@ -838,6 +851,28 @@ export default function Home() {
 
       {/* ── Main content ─────────────────────────────────────────────────── */}
       <main style={{ maxWidth: 1180, margin: '0 auto', padding: isMobile ? '24px 16px 60px' : '56px 64px 80px' }}>
+
+        {/* Bienvenue après rattachement à une école (one-shot) */}
+        {joinNotice && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 12,
+            padding: isMobile ? '13px 15px' : '15px 20px',
+            background: alpha(C.ok, 12), border: `1px solid ${alpha(C.ok, 34)}`,
+            borderRadius: 14, marginBottom: isMobile ? 18 : 24,
+          }}>
+            <span style={{ fontSize: isMobile ? 22 : 26 }}>🎓</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: isMobile ? 14 : 15.5, fontWeight: 800, color: C.ink }}>
+                Bienvenue ! Tu as rejoint {joinNotice} 🎉
+              </div>
+              <div style={{ fontSize: isMobile ? 12 : 13, color: C.ink2, lineHeight: 1.45 }}>
+                Ton accès aux fonctionnalités est offert par ton école — pas d'abonnement à payer.
+              </div>
+            </div>
+            <button onClick={() => { clearJoinNotice(); setJoinNotice(null); }}
+              style={{ flexShrink: 0, background: 'transparent', border: 'none', color: C.mute, fontSize: 20, cursor: 'pointer', lineHeight: 1 }}>×</button>
+          </div>
+        )}
 
         {/* Bandeau Mode démo — IA simulée en local (en attendant le backend) */}
         {demoOn && (

@@ -512,6 +512,18 @@ function OnboardingTour({ onClose, onAction }) {
 }
 
 /* ─── Main ───────────────────────────────────────────────────────────────── */
+const HOME_MODULES = [
+  { route: '/parcours',         emoji: '🧗', accent: '#1539B7', title: "Ton chemin vers l'emploi",  desc: "Suis ta progression : CV, métier, entretien. Gagne de l'XP et des badges.", cta: 'Mon parcours' },
+  { route: '/entretien',        emoji: '🎤', accent: '#0CA678', title: "Simulateur d'entretien",     desc: "Mises en situation réelles, feedback immédiat. Entraîne-toi avant le jour J.", cta: "S'entraîner" },
+  { route: '/metiers',          emoji: '🧭', accent: '#1098AD', title: 'Décrypte les métiers',       desc: 'Les compétences clés attendues pour chaque poste, en mode jeu.', cta: 'Explorer' },
+  { route: '/diagnostic',       emoji: '🧪', accent: '#7048E8', title: "Mon bilan d'employabilité",  desc: "Ton score global, tes forces et ce qu'il reste à travailler.", cta: 'Mon bilan' },
+  { route: '/analyse',          emoji: '🔍', accent: '#1F4FE0', title: 'Analyse CV ↔ offre',         desc: 'Score de correspondance, mots-clés manquants et compatibilité ATS.', cta: 'Analyser' },
+  { route: '/codes',            emoji: '🏢', accent: '#E8590C', title: "Les codes de l'entreprise",  desc: 'Savoir-être en poste : la meilleure réaction face à des situations réelles.', cta: "S'entraîner" },
+  { route: '/lettre',           emoji: '✉️', accent: '#C2255C', title: 'Kit de candidature IA',      desc: 'Lettre de motivation, mail de relance ou de remerciement, depuis ton CV.', cta: 'Rédiger' },
+  { route: '/entretien-oral',   emoji: '🗣️', accent: '#0CA678', title: "Entretien à l'oral IA",      desc: 'Réponds à voix haute : le coach évalue le fond, la structure et la clarté.', cta: "S'entraîner" },
+  { route: '/test-recrutement', emoji: '🧩', accent: '#7048E8', title: 'Test de recrutement IA',     desc: "Aptitudes, métier et mises en situation, adaptés à ton CV et à l'annonce.", cta: 'Passer le test' },
+];
+
 export default function Home() {
   const navigate = useNavigate();
   const { embedded, notifyCreateLead } = useCRMBridge();
@@ -851,291 +863,39 @@ export default function Home() {
           </div>
         )}
 
-        {/* Bannière Parcours — colonne vertébrale gamifiée vers l'emploi */}
-        <div
-          onClick={() => navigate('/parcours')}
-          style={{
-            display: 'flex', alignItems: 'center', gap: isMobile ? 12 : 18,
-            padding: isMobile ? '14px 16px' : '18px 24px',
-            background: 'linear-gradient(110deg, #1539B7 0%, #2ED3A8 160%)',
-            borderRadius: 16, marginBottom: isMobile ? 12 : 16, cursor: 'pointer',
-            color: '#fff', boxShadow: '0 10px 30px rgba(21,57,183,.22)',
-            transition: 'transform .15s', animation: 'fadeIn .6s ease both',
-          }}
-          onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
-          onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}>
-          <div style={{ fontSize: isMobile ? 30 : 38, flexShrink: 0 }}>🧗</div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: isMobile ? 15 : 17, fontWeight: 800, letterSpacing: '-0.3px', marginBottom: 2 }}>
-              Ton chemin vers l'emploi
-            </div>
-            <div style={{ fontSize: isMobile ? 12 : 13.5, color: 'rgba(255,255,255,0.85)', lineHeight: 1.45 }}>
-              Suis ta progression : CV, métier, entretien. Gagne de l'XP et débloque des badges.
-            </div>
-          </div>
-          <div style={{
-            flexShrink: 0, padding: isMobile ? '8px 14px' : '10px 18px',
-            background: C.card, color: C.bluePrimary, borderRadius: 99,
-            fontSize: isMobile ? 12.5 : 13.5, fontWeight: 700, whiteSpace: 'nowrap',
-          }}>
-            {isMobile ? 'Voir' : '🧗 Mon parcours'}
-          </div>
-        </div>
-
-        {/* Bannière Simulateur d'entretien — accroche vers le jeu */}
-        <div
-          onClick={() => navigate('/entretien')}
-          style={{
-            display: 'flex', alignItems: 'center', gap: isMobile ? 12 : 18,
-            padding: isMobile ? '14px 16px' : '18px 24px',
-            background: 'linear-gradient(100deg, #0B1638 0%, #1C2D6B 100%)',
-            borderRadius: 16, marginBottom: isMobile ? 20 : 28, cursor: 'pointer',
-            color: '#fff', boxShadow: '0 10px 30px rgba(11,22,56,.18)',
-            transition: 'transform .15s', animation: 'fadeIn .6s ease both',
-          }}
-          onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
-          onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}>
-          <div style={{ fontSize: isMobile ? 30 : 38, flexShrink: 0 }}>🎤</div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: isMobile ? 15 : 17, fontWeight: 800, letterSpacing: '-0.3px', marginBottom: 2 }}>
-              Simulateur d'entretien
-            </div>
-            <div style={{ fontSize: isMobile ? 12 : 13.5, color: '#B9C2DA', lineHeight: 1.45 }}>
-              Des mises en situation réelles, feedback immédiat. Entraîne-toi avant le jour J.
-            </div>
-            {interviewPct > 0 && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
-                <div style={{ flex: 1, maxWidth: 180, height: 6, background: 'rgba(255,255,255,0.18)', borderRadius: 99, overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: `${interviewPct}%`, background: '#6E8BFF', borderRadius: 99 }} />
+        {/* Modules — grille 5 par ligne */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(5, 1fr)',
+          gap: isMobile ? 10 : 14,
+          marginBottom: isMobile ? 24 : 36,
+        }}>
+          {HOME_MODULES.map((m, i) => (
+            <div key={m.route} onClick={() => navigate(m.route)}
+              style={{
+                display: 'flex', flexDirection: 'column', gap: 7,
+                background: C.card, border: `1px solid ${C.rule}`,
+                borderRadius: 16, padding: isMobile ? '13px 13px' : '16px 16px 14px',
+                cursor: 'pointer', boxShadow: '0 4px 18px rgba(11,22,56,.05)',
+                transition: 'transform .15s, box-shadow .15s',
+                animation: 'fadeIn .6s ease both', animationDelay: `${i * 0.04}s`,
+              }}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 10px 26px rgba(11,22,56,.10)'; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 18px rgba(11,22,56,.05)'; }}>
+              <div style={{ width: 42, height: 42, borderRadius: 12, display: 'grid', placeItems: 'center', fontSize: 22, background: alpha(m.accent, 14), color: m.accent }}>{m.emoji}</div>
+              <div style={{ fontSize: 14, fontWeight: 800, letterSpacing: '-0.3px', color: C.ink, lineHeight: 1.25 }}>{m.title}</div>
+              <div style={{ fontSize: 11.5, color: C.mute, lineHeight: 1.4, flex: 1, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{m.desc}</div>
+              {m.route === '/entretien' && interviewPct > 0 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <div style={{ flex: 1, height: 5, background: C.track, borderRadius: 99, overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${interviewPct}%`, background: m.accent, borderRadius: 99 }} />
+                  </div>
+                  <span style={{ fontSize: 10.5, fontWeight: 700, color: C.mute }}>{interviewPct}%</span>
                 </div>
-                <span style={{ fontSize: 11.5, fontWeight: 700, color: '#fff' }}>{interviewPct}% maîtrisé</span>
-              </div>
-            )}
-          </div>
-          <div style={{
-            flexShrink: 0, padding: isMobile ? '8px 14px' : '10px 18px',
-            background: C.card, color: C.ink, borderRadius: 99,
-            fontSize: isMobile ? 12.5 : 13.5, fontWeight: 700, whiteSpace: 'nowrap',
-          }}>
-            {isMobile ? '▶ Jouer' : '▶ S\'entraîner'}
-          </div>
-        </div>
-
-        {/* Bannière Décrypte les métiers — comprendre les compétences clés par poste */}
-        <div
-          onClick={() => navigate('/metiers')}
-          style={{
-            display: 'flex', alignItems: 'center', gap: isMobile ? 12 : 18,
-            padding: isMobile ? '14px 16px' : '18px 24px',
-            background: C.card, border: `1px solid ${C.rule}`,
-            borderRadius: 16, marginBottom: isMobile ? 20 : 28, cursor: 'pointer',
-            boxShadow: '0 4px 18px rgba(11,22,56,.05)',
-            transition: 'transform .15s', animation: 'fadeIn .6s ease both',
-          }}
-          onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
-          onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}>
-          <div style={{ fontSize: isMobile ? 30 : 38, flexShrink: 0 }}>🧭</div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: isMobile ? 15 : 17, fontWeight: 800, letterSpacing: '-0.3px', marginBottom: 2, color: C.ink }}>
-              Décrypte les métiers
+              )}
+              <div style={{ fontSize: 12.5, fontWeight: 800, color: m.accent, marginTop: 2 }}>{m.cta} →</div>
             </div>
-            <div style={{ fontSize: isMobile ? 12 : 13.5, color: C.mute, lineHeight: 1.45 }}>
-              Les compétences clés que les recruteurs attendent pour chaque poste, en mode jeu.
-            </div>
-          </div>
-          <div style={{
-            flexShrink: 0, padding: isMobile ? '8px 14px' : '10px 18px',
-            background: C.bluePrimary, color: '#fff', borderRadius: 99,
-            fontSize: isMobile ? 12.5 : 13.5, fontWeight: 700, whiteSpace: 'nowrap',
-          }}>
-            {isMobile ? 'Explorer' : '🧭 Explorer'}
-          </div>
-        </div>
-
-        {/* Bannière Bilan d'employabilité */}
-        <div
-          onClick={() => navigate('/diagnostic')}
-          style={{
-            display: 'flex', alignItems: 'center', gap: isMobile ? 12 : 18,
-            padding: isMobile ? '14px 16px' : '18px 24px',
-            background: C.card, border: `1px solid ${C.rule}`,
-            borderRadius: 16, marginBottom: isMobile ? 12 : 16, cursor: 'pointer',
-            boxShadow: '0 4px 18px rgba(11,22,56,.05)',
-            transition: 'transform .15s', animation: 'fadeIn .6s ease both',
-          }}
-          onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
-          onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}>
-          <div style={{ fontSize: isMobile ? 30 : 38, flexShrink: 0 }}>🧪</div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: isMobile ? 15 : 17, fontWeight: 800, letterSpacing: '-0.3px', marginBottom: 2, color: C.ink }}>
-              Mon bilan d'employabilité
-            </div>
-            <div style={{ fontSize: isMobile ? 12 : 13.5, color: C.mute, lineHeight: 1.45 }}>
-              Ton score global, tes forces et ce qu'il reste à travailler pour décrocher un poste.
-            </div>
-          </div>
-          <div style={{
-            flexShrink: 0, padding: isMobile ? '8px 14px' : '10px 18px',
-            background: C.bluePrimary, color: '#fff', borderRadius: 99,
-            fontSize: isMobile ? 12.5 : 13.5, fontWeight: 700, whiteSpace: 'nowrap',
-          }}>
-            {isMobile ? 'Voir' : '🧪 Mon bilan'}
-          </div>
-        </div>
-
-        {/* Bannière Analyse d'offre (matching CV + ATS) */}
-        <div
-          onClick={() => navigate('/analyse')}
-          style={{
-            display: 'flex', alignItems: 'center', gap: isMobile ? 12 : 18,
-            padding: isMobile ? '14px 16px' : '18px 24px',
-            background: C.card, border: `1px solid ${C.rule}`,
-            borderRadius: 16, marginBottom: isMobile ? 12 : 16, cursor: 'pointer',
-            boxShadow: '0 4px 18px rgba(11,22,56,.05)',
-            transition: 'transform .15s', animation: 'fadeIn .6s ease both',
-          }}
-          onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
-          onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}>
-          <div style={{ fontSize: isMobile ? 30 : 38, flexShrink: 0 }}>🔍</div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: isMobile ? 15 : 17, fontWeight: 800, letterSpacing: '-0.3px', marginBottom: 2, color: C.ink }}>
-              Analyse ton CV face à une offre
-            </div>
-            <div style={{ fontSize: isMobile ? 12 : 13.5, color: C.mute, lineHeight: 1.45 }}>
-              Score de correspondance, mots-clés manquants et compatibilité ATS.
-            </div>
-          </div>
-          <div style={{
-            flexShrink: 0, padding: isMobile ? '8px 14px' : '10px 18px',
-            background: C.bluePrimary, color: '#fff', borderRadius: 99,
-            fontSize: isMobile ? 12.5 : 13.5, fontWeight: 700, whiteSpace: 'nowrap',
-          }}>
-            {isMobile ? 'Analyser' : '🔍 Analyser'}
-          </div>
-        </div>
-
-        {/* Bannière Codes de l'entreprise (SJT savoir-être) */}
-        <div
-          onClick={() => navigate('/codes')}
-          style={{
-            display: 'flex', alignItems: 'center', gap: isMobile ? 12 : 18,
-            padding: isMobile ? '14px 16px' : '18px 24px',
-            background: C.card, border: `1px solid ${C.rule}`,
-            borderRadius: 16, marginBottom: isMobile ? 12 : 16, cursor: 'pointer',
-            boxShadow: '0 4px 18px rgba(11,22,56,.05)',
-            transition: 'transform .15s', animation: 'fadeIn .6s ease both',
-          }}
-          onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
-          onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}>
-          <div style={{ fontSize: isMobile ? 30 : 38, flexShrink: 0 }}>🏢</div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: isMobile ? 15 : 17, fontWeight: 800, letterSpacing: '-0.3px', marginBottom: 2, color: C.ink }}>
-              Les codes de l'entreprise
-            </div>
-            <div style={{ fontSize: isMobile ? 12 : 13.5, color: C.mute, lineHeight: 1.45 }}>
-              Savoir-être en poste : choisis la meilleure réaction face à des situations réelles.
-            </div>
-          </div>
-          <div style={{
-            flexShrink: 0, padding: isMobile ? '8px 14px' : '10px 18px',
-            background: C.bluePrimary, color: '#fff', borderRadius: 99,
-            fontSize: isMobile ? 12.5 : 13.5, fontWeight: 700, whiteSpace: 'nowrap',
-          }}>
-            {isMobile ? 'Jouer' : '🏢 S\'entraîner'}
-          </div>
-        </div>
-
-        {/* Bannière Kit de candidature IA */}
-        <div
-          onClick={() => navigate('/lettre')}
-          style={{
-            display: 'flex', alignItems: 'center', gap: isMobile ? 12 : 18,
-            padding: isMobile ? '14px 16px' : '18px 24px',
-            background: C.card, border: `1px solid ${C.rule}`,
-            borderRadius: 16, marginBottom: isMobile ? 20 : 28, cursor: 'pointer',
-            boxShadow: '0 4px 18px rgba(11,22,56,.05)',
-            transition: 'transform .15s', animation: 'fadeIn .6s ease both',
-          }}
-          onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
-          onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}>
-          <div style={{ fontSize: isMobile ? 30 : 38, flexShrink: 0 }}>✉️</div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: isMobile ? 15 : 17, fontWeight: 800, letterSpacing: '-0.3px', marginBottom: 2, color: C.ink }}>
-              Kit de candidature IA
-            </div>
-            <div style={{ fontSize: isMobile ? 12 : 13.5, color: C.mute, lineHeight: 1.45 }}>
-              Lettre de motivation, mail de relance ou de remerciement, généré depuis ton CV.
-            </div>
-          </div>
-          <div style={{
-            flexShrink: 0, padding: isMobile ? '8px 14px' : '10px 18px',
-            background: C.bluePrimary, color: '#fff', borderRadius: 99,
-            fontSize: isMobile ? 12.5 : 13.5, fontWeight: 700, whiteSpace: 'nowrap',
-          }}>
-            {isMobile ? 'Rédiger' : '✉️ Rédiger'}
-          </div>
-        </div>
-
-        {/* Bannière Entretien à l'oral IA */}
-        <div
-          onClick={() => navigate('/entretien-oral')}
-          style={{
-            display: 'flex', alignItems: 'center', gap: isMobile ? 12 : 18,
-            padding: isMobile ? '14px 16px' : '18px 24px',
-            background: C.card, border: `1px solid ${C.rule}`,
-            borderRadius: 16, marginBottom: isMobile ? 20 : 28, cursor: 'pointer',
-            boxShadow: '0 4px 18px rgba(11,22,56,.05)',
-            transition: 'transform .15s', animation: 'fadeIn .6s ease both',
-          }}
-          onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
-          onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}>
-          <div style={{ fontSize: isMobile ? 30 : 38, flexShrink: 0 }}>🎤</div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: isMobile ? 15 : 17, fontWeight: 800, letterSpacing: '-0.3px', marginBottom: 2, color: C.ink }}>
-              Entretien à l'oral IA
-            </div>
-            <div style={{ fontSize: isMobile ? 12 : 13.5, color: C.mute, lineHeight: 1.45 }}>
-              Réponds à voix haute : le coach évalue le fond, la structure et la clarté.
-            </div>
-          </div>
-          <div style={{
-            flexShrink: 0, padding: isMobile ? '8px 14px' : '10px 18px',
-            background: C.bluePrimary, color: '#fff', borderRadius: 99,
-            fontSize: isMobile ? 12.5 : 13.5, fontWeight: 700, whiteSpace: 'nowrap',
-          }}>
-            {isMobile ? 'S\'entraîner' : '🎤 S\'entraîner'}
-          </div>
-        </div>
-
-        {/* Bannière Test de recrutement IA */}
-        <div
-          onClick={() => navigate('/test-recrutement')}
-          style={{
-            display: 'flex', alignItems: 'center', gap: isMobile ? 12 : 18,
-            padding: isMobile ? '14px 16px' : '18px 24px',
-            background: C.card, border: `1px solid ${C.rule}`,
-            borderRadius: 16, marginBottom: isMobile ? 20 : 28, cursor: 'pointer',
-            boxShadow: '0 4px 18px rgba(11,22,56,.05)',
-            transition: 'transform .15s', animation: 'fadeIn .6s ease both',
-          }}
-          onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
-          onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}>
-          <div style={{ fontSize: isMobile ? 30 : 38, flexShrink: 0 }}>🧩</div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: isMobile ? 15 : 17, fontWeight: 800, letterSpacing: '-0.3px', marginBottom: 2, color: C.ink }}>
-              Test de recrutement IA
-            </div>
-            <div style={{ fontSize: isMobile ? 12 : 13.5, color: C.mute, lineHeight: 1.45 }}>
-              Aptitudes, métier et mises en situation, adaptés à ton CV et à l'annonce.
-            </div>
-          </div>
-          <div style={{
-            flexShrink: 0, padding: isMobile ? '8px 14px' : '10px 18px',
-            background: C.bluePrimary, color: '#fff', borderRadius: 99,
-            fontSize: isMobile ? 12.5 : 13.5, fontWeight: 700, whiteSpace: 'nowrap',
-          }}>
-            {isMobile ? 'Tester' : '🧩 Passer le test'}
-          </div>
+          ))}
         </div>
 
         {/* Hero — titre de la liste des CV (placé sous les modules) */}

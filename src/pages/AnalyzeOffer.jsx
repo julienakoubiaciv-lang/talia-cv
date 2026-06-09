@@ -16,11 +16,15 @@ import { optimizeCvForOffer } from '@/lib/cvOptimize';
 import { QuotaError } from '@/lib/claudeClient';
 import { getHist, saveEditorState, loadEditorState } from '@/lib/cvData';
 import { useEntitlements } from '@/hooks/useEntitlements';
+import { useEnergy } from '@/hooks/useEnergy';
+import { EnergyError } from '@/lib/aiEnergy';
+import EnergyBar from '@/components/EnergyBar';
 import { track } from '@/lib/monitoring';
 
 export default function AnalyzeOffer() {
   const navigate = useNavigate();
   const { proLocked } = useEntitlements();
+  const energy = useEnergy();
   const latest = useMemo(() => { try { return getHist()[0] || null; } catch { return null; } }, []);
   const cvData = latest?.data || null;
 
@@ -43,13 +47,17 @@ export default function AnalyzeOffer() {
     if (proLocked) { navigate('/pricing'); return; }
     setAiLoading(true); setAiError(null);
     try {
+      energy.ensure();
       const optimized = await optimizeCvForOffer({ cvData, offerText: offer, missing: result?.match?.missing || [] });
+      energy.spend();
       track('cv_optimized', { missing: (result?.match?.missing || []).length });
       openEditorWith(optimized);
     } catch (err) {
-      setAiError(err instanceof QuotaError
-        ? 'Quota d\'optimisations atteint. Reviens plus tard ou passe à un plan supérieur.'
-        : (err?.message || 'L\'optimisation a échoué. Réessaie.'));
+      setAiError(err instanceof EnergyError
+        ? err.message
+        : err instanceof QuotaError
+          ? 'Quota d\'optimisations atteint. Reviens plus tard ou passe à un plan supérieur.'
+          : (err?.message || 'L\'optimisation a échoué. Réessaie.'));
     } finally {
       setAiLoading(false);
     }
@@ -169,6 +177,8 @@ export default function AnalyzeOffer() {
             </div>
 
             {aiError && <div style={S.errBox}>⚠️ {aiError}</div>}
+
+            {!proLocked && <div style={{ marginBottom: 10 }}><EnergyBar variant="card" /></div>}
 
             {/* Optimisation IA (PRO) — réécrit accroche + missions avec les mots-clés */}
             <button

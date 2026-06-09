@@ -28,6 +28,9 @@ import {
 } from '@/lib/interviewProgress';
 import { generateInterviewSession } from '@/lib/interviewAI';
 import { QuotaError } from '@/lib/claudeClient';
+import { useEnergy } from '@/hooks/useEnergy';
+import { EnergyError } from '@/lib/aiEnergy';
+import EnergyBar from '@/components/EnergyBar';
 import { getHist } from '@/lib/cvData';
 import { useEntitlements } from '@/hooks/useEntitlements';
 import SamFeedback from '@/components/game/SamFeedback';
@@ -57,6 +60,7 @@ const PICK_TRANSLATOR = -2;
 export default function Interview() {
   const navigate = useNavigate();
   const { proLocked } = useEntitlements();
+  const energy = useEnergy();
   const [phase, setPhase]   = useState('intro'); // intro | ai | play | result
   const [mode, setMode]     = useState('training');
   const [session, setSession] = useState([]);
@@ -114,14 +118,18 @@ export default function Interview() {
   async function runAISession({ cvData, offerText }) {
     setAiLoading(true); setAiError(null);
     try {
+      energy.ensure();
       const s = await generateInterviewSession({ cvData, offerText, count: SESSION_SIZE });
+      energy.spend();
       setSession(s); setLastGroup('ai'); setIsDemo(false); setIsAI(true);
       setSector('general'); setMode('training');
       resetRun();
       setPhase('play');
       track('interview_session_start', { sector: 'general', group: 'ai', size: s.length, mode: 'training', ai: true });
     } catch (err) {
-      if (err instanceof QuotaError) {
+      if (err instanceof EnergyError) {
+        setAiError({ type: 'energy', message: err.message });
+      } else if (err instanceof QuotaError) {
         setAiError({ type: 'quota', message: 'Tu as atteint ton quota de sessions IA. Reviens plus tard ou passe à un plan supérieur.' });
       } else {
         setAiError({ type: 'error', message: err?.message || 'La génération a échoué. Réessaie dans un instant.' });
@@ -613,6 +621,8 @@ function AISetup({ isFree, loading, error, onGenerate, onUpsell, onBack }) {
               )}
             </div>
 
+            {!isFree && <div style={{ marginBottom: 12 }}><EnergyBar variant="card" /></div>}
+
             <div style={S.sectionLabel}>Offre visée (optionnel)</div>
             <textarea
               style={S.aiTextarea}
@@ -624,9 +634,9 @@ function AISetup({ isFree, loading, error, onGenerate, onUpsell, onBack }) {
             />
 
             {error && (
-              <div style={{ ...S.aiError, background: error.type === 'quota' ? C.blueSoft : C.redSoft, color: error.type === 'quota' ? C.blue : C.red }}>
-                <span>{error.type === 'quota' ? '⏳ ' : '⚠️ '}{error.message}</span>
-                {error.type === 'quota' && <button style={S.aiErrorBtn} onClick={onUpsell}>Voir les offres</button>}
+              <div style={{ ...S.aiError, background: error.type === 'energy' ? C.amberSoft : error.type === 'quota' ? C.blueSoft : C.redSoft, color: error.type === 'energy' ? C.amber : error.type === 'quota' ? C.blue : C.red }}>
+                <span>{error.type === 'energy' ? '⚡ ' : error.type === 'quota' ? '⏳ ' : '⚠️ '}{error.message}</span>
+                {(error.type === 'quota' || error.type === 'energy') && <button style={S.aiErrorBtn} onClick={onUpsell}>Voir les offres</button>}
               </div>
             )}
 

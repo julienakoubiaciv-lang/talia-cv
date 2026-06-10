@@ -67,6 +67,7 @@ footer{border-top:1px solid #E6EAF1;margin-top:40px;padding:24px 0;color:#8390A6
 .mcard .e{font-size:26px}
 .mcard .n{font-weight:800;color:#0B1638;margin-top:8px}
 .mcard .s{font-size:13px;color:#8390A6;margin-top:2px}
+.note{background:#E6F8F1;border:1px solid #0CA67833;border-radius:12px;padding:11px 15px;color:#0B1638;font-size:14px;margin-top:12px}
 @media(max-width:600px){h1{font-size:27px}}
 `;
 
@@ -124,6 +125,7 @@ function metierPage(job, slug) {
     <span class="eyebrow">${esc(job.sector || 'Métier')}</span>
     <h1>${esc(job.label)} : compétences clés, CV et entretien</h1>
     <p class="lead">${esc(job.pitch || '')}</p>
+    ${job.trend ? `<p class="note">📈 <b>Tendance 2026 :</b> ${esc(job.trend)}</p>` : ''}
   </div>
 
   <h2>Les compétences clés pour ce poste</h2>
@@ -137,6 +139,8 @@ function metierPage(job, slug) {
 
   ${hard ? `<h2>Compétences techniques attendues</h2><div class="tags">${hard}</div>` : ''}
   ${soft ? `<h2>Qualités &amp; savoir-être</h2><div class="tags">${soft}</div>` : ''}
+
+  ${job.profile ? `<h2>Profil recherché</h2><div class="card"><p>${esc(job.profile)}</p></div>` : ''}
 
   <div class="cta">
     <h3>Prêt à décrocher ce poste ?</h3>

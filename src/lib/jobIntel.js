@@ -137,6 +137,176 @@ export const JOB_INTEL = {
       { situation: "Ton manager te demande où tu en es de tes objectifs.", skill: 'Orientation résultats' },
     ],
   },
+
+  // ── Ressources Humaines — Chargé de recrutement ─────────────────────────────
+  'rh-charge-recrutement': {
+    label: 'Chargé de recrutement',
+    sector: 'Ressources Humaines',
+    emoji: '🧲',
+    profile: 'Bac+4/5 — Master RH ou École de Commerce.',
+    trend: "Face à la pénurie de talents, le recrutement s'appuie sur l'IA pour le sourcing et sur la marque employeur (LinkedIn).",
+    pitch: "Tu trouves les bons profils et tu donnes envie de rejoindre l'entreprise : sourcing augmenté par l'IA, entretiens, marque employeur. Tu es la première image que le candidat a de la boîte.",
+    keySkills: [
+      { name: 'Sourcing & approche directe', why: "Les meilleurs profils ne postulent pas : il faut aller les chercher (CVthèques, LinkedIn, Boolean search)." },
+      { name: "Recrutement augmenté par l'IA", why: "Trier et qualifier les candidatures plus vite, sans perdre en qualité." },
+      { name: 'Expérience candidat', why: "Un candidat bien traité, même refusé, parle en bien de l'entreprise : c'est la marque employeur." },
+      { name: 'Communication & marque employeur', why: "Des contenus qui valorisent la vie de l'entreprise attirent les candidatures spontanées." },
+    ],
+    recruiterLooksFor: [
+      "Une vraie curiosité pour les outils (ATS, IA, LinkedIn Recruiter)",
+      "Le sens de la confidentialité et de l'éthique",
+      "De l'aisance à l'oral pour les pré-entretiens",
+      "Le souci du détail dans les feedbacks candidats",
+    ],
+    pitfalls: [
+      "Trier uniquement sur le diplôme et passer à côté de bons profils atypiques",
+      "Laisser des candidats sans réponse (ça abîme la marque employeur)",
+      "Diffuser la même offre partout sans l'optimiser",
+    ],
+    situations: [
+      { situation: "Tu as 80 candidatures pour une offre et 2 jours pour présélectionner.", skill: "Recrutement augmenté par l'IA" },
+      { situation: "Le poste est difficile à pourvoir, personne ne postule.", skill: 'Sourcing & approche directe' },
+      { situation: "Un candidat refusé demande pourquoi sa candidature n'a pas abouti.", skill: 'Expérience candidat' },
+    ],
+    hard: ['ATS (Welcome to the Jungle, Teamtailor)', 'LinkedIn Recruiter', 'Boolean search', 'Sourcing assisté par IA', 'Canva'],
+    soft: ['Écoute active', 'Aisance orale et écrite', 'Curiosité technologique', 'Sens de la confidentialité'],
+  },
+
+  // ── Marketing — Growth marketer / Chef de projet digital ────────────────────
+  'mkt-growth': {
+    label: 'Growth marketer / Chef de projet digital',
+    sector: 'Marketing & Communication',
+    emoji: '🚀',
+    profile: 'Bac+3 à Bac+5 — BUT TC, Master Marketing Digital ou École de Commerce.',
+    trend: "Le marketing traditionnel s'efface au profit du Growth : générer des leads qualifiés en combinant créativité et data.",
+    pitch: "Tu fais grandir l'entreprise en attirant des prospects : publicité en ligne, SEO, contenu, automation… et tu mesures tout. Créativité ET obsession du résultat.",
+    keySkills: [
+      { name: 'Acquisition de trafic (paid & SEO)', why: "Sans visiteurs qualifiés, pas de prospects ni de ventes." },
+      { name: 'Marketing automation', why: "Des scénarios d'emailing nourrissent les prospects jusqu'à l'achat, automatiquement." },
+      { name: "Création de contenu (avec l'IA)", why: "Articles, visuels, vidéos courtes : produire plus et plus vite grâce aux prompts." },
+      { name: 'Analyse de données (analytics)', why: "Lire les tunnels de vente pour savoir quoi optimiser, pas au feeling." },
+    ],
+    recruiterLooksFor: [
+      "Une obsession du ROI et des chiffres",
+      "La culture du test (A/B testing)",
+      "De l'autonomie et de la curiosité sur les outils",
+      "Un esprit créatif autant qu'analytique",
+    ],
+    pitfalls: [
+      "Lancer des campagnes sans objectif mesurable",
+      "Créer du contenu sans regarder ce qui convertit",
+      "Se disperser sur tous les canaux à la fois",
+    ],
+    situations: [
+      { situation: "Ta campagne Meta Ads coûte cher et ne convertit pas.", skill: 'Analyse de données (analytics)' },
+      { situation: "Tu dois produire 8 posts et 2 vidéos cette semaine.", skill: "Création de contenu (avec l'IA)" },
+      { situation: "Les prospects s'inscrivent mais n'achètent jamais.", skill: 'Marketing automation' },
+    ],
+    hard: ['Google Ads', 'Meta / LinkedIn Ads', 'GA4', 'Looker Studio', 'HubSpot / Brevo', 'SEO', 'ChatGPT / Midjourney', 'WordPress / Webflow'],
+    soft: ['Esprit analytique', 'Créativité', 'Culture du test', 'Autonomie'],
+  },
+
+  // ── Administratif — Office manager ──────────────────────────────────────────
+  'admin-office-manager': {
+    label: 'Office manager',
+    sector: 'Administratif',
+    emoji: '🗂️',
+    profile: 'Bac+2 à Bac+3 — BTS GPME, SAM ou BUT GEA.',
+    trend: "L'assistant administratif devient le moteur de l'organisation en mode hybride : il fluidifie et automatise.",
+    pitch: "Tu fais tourner l'entreprise au quotidien : organisation, logistique, support à la direction, et tu automatises les tâches répétitives pour faire gagner du temps à tout le monde.",
+    keySkills: [
+      { name: 'Organisation & priorités', why: "Tout passe par toi : sans méthode, l'entreprise s'enraye." },
+      { name: 'Support à la direction', why: "Agendas complexes, déplacements, réunions : tu fais gagner du temps aux décideurs." },
+      { name: 'Digitalisation des process', why: "Automatiser les tâches chronophages (Notion, Zapier) libère toute l'équipe." },
+      { name: 'Sens du service & diplomatie', why: "Tu es l'interface entre tous : gérer les demandes et les imprévus avec tact." },
+    ],
+    recruiterLooksFor: [
+      "Une organisation à toute épreuve",
+      "De la réactivité face aux imprévus",
+      "De la diplomatie et de la discrétion",
+      "Le goût des outils qui font gagner du temps",
+    ],
+    pitfalls: [
+      "Tout faire à la main au lieu d'automatiser",
+      "Oublier de prioriser et se laisser déborder",
+      "Manquer de discrétion sur des informations sensibles",
+    ],
+    situations: [
+      { situation: "Trois personnes te demandent une urgence en même temps.", skill: 'Organisation & priorités' },
+      { situation: "La même tâche administrative te prend 2 h chaque semaine.", skill: 'Digitalisation des process' },
+      { situation: "Le dirigeant a un agenda surchargé et un déplacement à organiser.", skill: 'Support à la direction' },
+    ],
+    hard: ['Office 365 / Google Workspace', 'Notion / Trello / Asana', 'Zapier / Make', 'Pennylane / Sellsy'],
+    soft: ['Sens du service', 'Ultra-organisé', 'Diplomatie', 'Réactivité'],
+  },
+
+  // ── Finance & Gestion — Assistant contrôleur de gestion ─────────────────────
+  'fin-controle-gestion': {
+    label: 'Assistant contrôleur de gestion',
+    sector: 'Finance & Gestion',
+    emoji: '📊',
+    profile: 'Bac+3 à Bac+5 — DCG, Master Finance / Contrôle de gestion ou École de Commerce.',
+    trend: "La finance ne saisit plus les chiffres, elle les fait parler : la Business Intelligence aide la direction à décider en temps réel.",
+    pitch: "Tu transformes les chiffres en décisions : clôtures, analyse des écarts budget/réel, tableaux de bord. Tu aides la direction à piloter l'entreprise.",
+    keySkills: [
+      { name: 'Analyse des écarts budget / réel', why: "Repérer les dérives tôt permet de réagir avant qu'il soit trop tard." },
+      { name: 'Reporting & fiabilité des données', why: "Une décision ne vaut que si les chiffres derrière sont justes." },
+      { name: 'Business Intelligence (tableaux de bord)', why: "Des dashboards clairs font gagner un temps fou à la direction." },
+      { name: 'Vulgarisation des chiffres', why: "Expliquer simplement à des non-financiers, c'est ce qui rend l'analyse utile." },
+    ],
+    recruiterLooksFor: [
+      "Une vraie rigueur et de l'esprit de synthèse",
+      "L'aisance sur Excel (et l'envie d'apprendre Power BI)",
+      "La capacité à alerter et à argumenter",
+      "De la curiosité pour le business, pas que les chiffres",
+    ],
+    pitfalls: [
+      "Produire des chiffres sans les expliquer ni alerter",
+      "Faire confiance à une donnée sans la fiabiliser",
+      "Se noyer dans Excel au lieu d'automatiser",
+    ],
+    situations: [
+      { situation: "Les dépenses d'un service dépassent largement le budget prévu.", skill: 'Analyse des écarts budget / réel' },
+      { situation: "La direction veut un suivi clair de la rentabilité chaque mois.", skill: 'Business Intelligence (tableaux de bord)' },
+      { situation: "Un manager non-financier ne comprend pas ton tableau.", skill: 'Vulgarisation des chiffres' },
+    ],
+    hard: ['Excel (Power Query, macros)', 'Power BI / Tableau', 'ERP (SAP, Sage, Dynamics)', 'Comptabilité analytique'],
+    soft: ['Esprit de synthèse', 'Rigueur', 'Pédagogie', "Esprit d'analyse"],
+  },
+
+  // ── Commerce / Vente — Business developer / Inside sales (B2B) ───────────────
+  'com-business-developer': {
+    label: 'Business developer / Inside sales',
+    sector: 'Commerce / Vente',
+    emoji: '💼',
+    profile: 'Bac+3 à Bac+5 — BTS NDRC, BUT TC, Master Commerce ou École de Commerce.',
+    trend: "Le commerce moderne repose sur le social selling et l'analyse des données pour cibler le bon client au bon moment.",
+    pitch: "Tu vas chercher les clients : prospection multicanale, social selling, rendez-vous de découverte. Mental d'acier et goût du résultat.",
+    keySkills: [
+      { name: 'Prospection multicanale', why: "Cold-call, emails, LinkedIn : multiplier les contacts pour décrocher des rendez-vous." },
+      { name: 'Social selling', why: "Être visible sur LinkedIn fait venir les prospects à toi (inbound)." },
+      { name: 'Découverte & qualification', why: "Comprendre le vrai besoin avant de pitcher, sinon on vend à côté." },
+      { name: 'Pilotage du CRM & des KPIs', why: "Tracer ses échanges et lire son taux de conversion pour progresser." },
+    ],
+    recruiterLooksFor: [
+      "Une résilience à toute épreuve face au refus",
+      "Le goût du défi et des objectifs chiffrés",
+      "Une excellente communication orale",
+      "De la rigueur dans le suivi (CRM)",
+    ],
+    pitfalls: [
+      "Pitcher la solution avant d'avoir cerné le besoin",
+      "Lâcher après un premier « non »",
+      "Négliger la traçabilité dans le CRM",
+    ],
+    situations: [
+      { situation: "Tu enchaînes les « non » depuis ce matin au téléphone.", skill: 'Prospection multicanale' },
+      { situation: "Un prospect te dit « envoyez-moi une doc » pour t'éviter.", skill: 'Découverte & qualification' },
+      { situation: "Ton manager te demande ton taux de conversion du mois.", skill: 'Pilotage du CRM & des KPIs' },
+    ],
+    hard: ['CRM (Salesforce, HubSpot)', 'Sales Navigator', 'Dropcontact / Lusha', 'SPIN Selling / MEDDIC'],
+    soft: ['Résilience', 'Goût du défi', 'Communication orale', 'Écoute active'],
+  },
 };
 
 /** Profil métier complet (intel + données cvData fusionnées), ou null si non couvert. */

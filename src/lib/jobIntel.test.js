@@ -1,13 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { JOB_INTEL, getJob, listJobs, listJobsBySector, listPostesBySector, fixMojibake } from './jobIntel.js';
-import { FORMATIONS, COMP_TECH, COMP_SOFT } from './cvData.js';
 
 describe('jobIntel — intégrité des fiches métier', () => {
-  it('chaque métier couvert a un parcours et des compétences sources (hard + soft)', () => {
+  it('chaque métier expose assez de compétences (hard + soft, via cvData ou la fiche)', () => {
     for (const v of Object.keys(JOB_INTEL)) {
-      expect(FORMATIONS.find((f) => f.v === v), `formation ${v}`).toBeTruthy();
-      expect((COMP_TECH[v] || []).length, `hard ${v}`).toBeGreaterThanOrEqual(4);
-      expect((COMP_SOFT[v] || []).length, `soft ${v}`).toBeGreaterThanOrEqual(4);
+      const job = getJob(v);
+      expect(job, v).toBeTruthy();
+      expect(job.hard.length, `hard ${v}`).toBeGreaterThanOrEqual(4);
+      expect(job.soft.length, `soft ${v}`).toBeGreaterThanOrEqual(4);
     }
   });
 

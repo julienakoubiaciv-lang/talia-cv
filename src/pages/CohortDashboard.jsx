@@ -8,19 +8,19 @@
  * Actions encadrant : inviter des élèves (lien), relancer un décrocheur,
  * ouvrir la fiche élève (bilan détaillé). En démo : cohorte simulée + personas.
  */
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { C, FONT, alpha } from '@/lib/gameTheme';
 import { useNavigate } from 'react-router-dom';
 import { useCohort } from '@/hooks/useCohort';
 import { studentPillars, needsFollowup } from '@/lib/demoCohort';
-import { createDemoInvite } from '@/lib/demoOrg';
+import { rosterToCSV, downloadCSV } from '@/lib/cohortServer';
 
 const scoreColor = (s) => (s >= 70 ? C.green : s >= 40 ? C.amber : C.red);
 const initials = (name = '') => name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
 
 export default function CohortDashboard() {
   const navigate = useNavigate();
-  const { loading, viewer, students, conseillers, orgName, reassign, isDemo, persona, switchPersona } = useCohort();
+  const { loading, viewer, students, conseillers, orgName, reassign, isDemo, persona, switchPersona, makeInvite, nudge } = useCohort();
   const isAdmin = viewer?.role === 'admin';
   const nameOf = (id) => conseillers.find((c) => c.id === id)?.name || '—';
 
@@ -29,7 +29,12 @@ export default function CohortDashboard() {
   const [toast, setToast] = useState('');
 
   const flash = (msg) => { setToast(msg); setTimeout(() => setToast(''), 2600); };
-  const relancer = (s) => flash(`Relance envoyée à ${s.name} 📨`);
+  const relancer = (s) => { nudge(s); flash(`Relance envoyée à ${s.name} 📨`); };
+  const exportCSV = () => {
+    const csv = rosterToCSV(students, nameOf);
+    downloadCSV(`cohorte-${new Date().toISOString().slice(0, 10)}.csv`, csv);
+    flash('Export CSV téléchargé ⬇');
+  };
 
   const stats = useMemo(() => {
     if (!students.length) return { n: 0, avg: 0, active: 0, risk: 0 };
@@ -55,6 +60,7 @@ export default function CohortDashboard() {
             <span style={S.eyebrow}>{orgName || 'Espace encadrant'}</span>
             <h1 style={S.h1}>{isAdmin ? 'Tous les élèves' : 'Mes élèves'}</h1>
           </div>
+          <button style={S.ghostBtn} onClick={exportCSV} disabled={!students.length}>⬇ Export</button>
           <button style={S.inviteBtn} onClick={() => setInvite(true)}>➕ Inviter</button>
         </div>
 
@@ -118,7 +124,7 @@ export default function CohortDashboard() {
       </div>
 
       {fiche && <FicheModal student={fiche} conseiller={nameOf(fiche.manager)} onClose={() => setFiche(null)} onRelance={() => { relancer(fiche); }} />}
-      {invite && <InviteModal viewer={viewer} conseillers={conseillers} isAdmin={isAdmin} isDemo={isDemo} orgName={orgName} onClose={() => setInvite(false)} />}
+      {invite && <InviteModal viewer={viewer} conseillers={conseillers} isAdmin={isAdmin} makeInvite={makeInvite} onClose={() => setInvite(false)} />}
       {toast && <div style={S.toast}>{toast}</div>}
     </div>
   );
@@ -176,18 +182,20 @@ function FicheModal({ student, conseiller, onClose, onRelance }) {
 }
 
 // ── Inviter des élèves (lien) ─────────────────────────────────────────────────
-function InviteModal({ viewer, conseillers, isAdmin, isDemo, orgName, onClose }) {
+function InviteModal({ viewer, conseillers, isAdmin, makeInvite, onClose }) {
   const [mgr, setMgr] = useState(isAdmin ? (conseillers[0]?.id || '') : (viewer?.id || ''));
+  const [token, setToken] = useState('');
   const [copied, setCopied] = useState(false);
 
-  const token = useMemo(() => {
-    if (!isDemo) return 'TOKEN-RÉEL-CÔTÉ-SERVEUR';
+  useEffect(() => {
+    let alive = true;
     const m = conseillers.find((c) => c.id === mgr);
-    return createDemoInvite({ managerId: mgr, managerName: m?.name, orgName });
-  }, [mgr, isDemo, conseillers, orgName]);
+    makeInvite(mgr, m?.name).then((t) => { if (alive) setToken(t || ''); });
+    return () => { alive = false; };
+  }, [mgr, makeInvite, conseillers]);
 
-  const link = `${window.location.origin}/?org_invite=${token}`;
-  const copy = () => { try { navigator.clipboard.writeText(link); setCopied(true); setTimeout(() => setCopied(false), 1600); } catch { /* */ } };
+  const link = token ? `${window.location.origin}/?org_invite=${token}` : 'Génération du lien…';
+  const copy = () => { if (!token) return; try { navigator.clipboard.writeText(link); setCopied(true); setTimeout(() => setCopied(false), 1600); } catch { /* */ } };
 
   return (
     <div style={S.overlay} onClick={onClose}>
@@ -215,9 +223,8 @@ function InviteModal({ viewer, conseillers, isAdmin, isDemo, orgName, onClose })
           <button style={S.copyBtn} onClick={copy}>{copied ? '✓ Copié' : 'Copier'}</button>
         </div>
         <p style={S.hint}>
-          {isDemo
-            ? 'Démo : ce lien fonctionne — ouvre-le dans un autre onglet pour voir un élève rejoindre.'
-            : 'En réel, le lien est généré côté serveur (sièges, expiration, conseiller pré-assigné).'}
+          L'élève qui ouvre ce lien rejoint le groupe du conseiller, sans payer.
+          (Sièges, expiration et email peuvent être gérés côté école.)
         </p>
       </div>
     </div>
@@ -235,6 +242,7 @@ const S = {
   eyebrow: { display: 'inline-block', fontSize: 11, fontWeight: 800, letterSpacing: 1.4, textTransform: 'uppercase', color: C.blue, marginBottom: 10 },
   h1: { fontSize: 30, fontWeight: 800, letterSpacing: -1, lineHeight: 1.1, margin: 0 },
   inviteBtn: { flexShrink: 0, background: C.blue, color: '#fff', border: 'none', borderRadius: 12, padding: '11px 16px', fontSize: 13.5, fontWeight: 700, cursor: 'pointer', fontFamily: FONT },
+  ghostBtn: { flexShrink: 0, background: C.card, color: C.ink2, border: `1px solid ${C.line}`, borderRadius: 12, padding: '11px 14px', fontSize: 13.5, fontWeight: 700, cursor: 'pointer', fontFamily: FONT },
 
   personaRow: { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', background: alpha(C.amber, 10), border: `1px solid ${alpha(C.amber, 30)}`, borderRadius: 12, padding: '10px 12px', marginBottom: 16 },
   personaLabel: { fontSize: 12, fontWeight: 700, color: C.ink2 },

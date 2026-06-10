@@ -15,6 +15,7 @@
  */
 import { supabase, supabaseReady } from './supabase';
 import { getCurrentUserId, isAuthenticated } from './currentUser';
+import { getDiagnostic } from './employability';
 
 /** Clés localStorage qui constituent la progression (PAS les préférences). */
 export const PROGRESS_KEYS = [
@@ -153,8 +154,10 @@ export async function pushProgress() {
   try {
     const data = snapshotLocal();
     const { xp, day_streak } = progressStats(data);
+    let employability = 0;
+    try { employability = getDiagnostic().global || 0; } catch { employability = 0; }
     const { error } = await supabase.from('user_progress').upsert({
-      user_id: getCurrentUserId(), data, xp, day_streak, updated_at: new Date().toISOString(),
+      user_id: getCurrentUserId(), data, xp, day_streak, employability, updated_at: new Date().toISOString(),
     });
     if (error) { console.warn('[progressSync] push:', error.message); return false; }
     return true;

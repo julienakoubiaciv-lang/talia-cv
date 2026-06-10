@@ -12,10 +12,11 @@ import {
   getVisibleRoster, getViewer, reassignStudent, setPersona as setDemoPersona,
   getPersona, DEMO_CONSEILLERS, DEMO_ORG_NAME,
 } from '@/lib/demoCohort';
+import { createInvite, nudgeStudent } from '@/lib/cohortServer';
 
 export function useCohort() {
   const [tick, setTick] = useState(0);
-  const [state, setState] = useState({ loading: true, viewer: null, students: [], conseillers: [], orgName: '' });
+  const [state, setState] = useState({ loading: true, viewer: null, students: [], conseillers: [], orgName: '', orgId: null });
 
   const refresh = useCallback(() => setTick((t) => t + 1), []);
 
@@ -26,7 +27,7 @@ export function useCohort() {
     if (isDemoMode()) {
       const viewer = getViewer();
       setState({
-        loading: false, viewer, orgName: DEMO_ORG_NAME,
+        loading: false, viewer, orgName: DEMO_ORG_NAME, orgId: 'demo-paris',
         students: getVisibleRoster(),
         conseillers: DEMO_CONSEILLERS,
       });
@@ -46,10 +47,11 @@ export function useCohort() {
         setState({
           loading: false,
           viewer: { role, label: role === 'admin' ? 'Direction' : 'Conseiller' },
-          orgName: '',
+          orgName: '', orgId: me?.org_id || null,
           students: (rows || []).map((r) => ({
             id: r.user_id, name: r.email || r.user_id, email: r.email || '',
-            manager: r.manager_id, employability: null,
+            manager: r.manager_id,
+            employability: typeof r.employability === 'number' ? r.employability : null,
             xp: r.xp || 0, streak: r.day_streak || 0,
             lastActive: r.updated_at ? new Date(r.updated_at).toLocaleDateString('fr-FR') : '—',
           })),
@@ -70,5 +72,12 @@ export function useCohort() {
 
   const switchPersona = useCallback((p) => { setDemoPersona(p); refresh(); }, [refresh]);
 
-  return { ...state, reassign, refresh, switchPersona, persona: isDemoMode() ? getPersona() : null, isDemo: isDemoMode() };
+  const makeInvite = useCallback(async (managerId, managerName) => {
+    const res = await createInvite({ orgId: state.orgId, managerId, managerName, orgName: state.orgName });
+    return res?.token || null;
+  }, [state.orgId, state.orgName]);
+
+  const nudge = useCallback((student) => nudgeStudent({ studentId: student?.id, orgId: state.orgId }), [state.orgId]);
+
+  return { ...state, reassign, refresh, switchPersona, makeInvite, nudge, persona: isDemoMode() ? getPersona() : null, isDemo: isDemoMode() };
 }

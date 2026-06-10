@@ -13,6 +13,7 @@ import { useCheckoutSuccess } from '@/hooks/useCheckoutSuccess';
 import { getOverallCompletion } from '@/lib/interviewProgress';
 import { getTotalXp, levelForXp, getDailyStreak } from '@/lib/playerProfile';
 import { getDiagnostic } from '@/lib/employability';
+import { useSeo } from '@/lib/seo';
 import { isDemoMode, setDemoMode } from '@/lib/demoMode';
 import { getJoinNotice, clearJoinNotice } from '@/lib/orgAccess';
 import { alpha } from '@/lib/gameTheme';
@@ -602,6 +603,8 @@ export default function Home() {
   const [section, setSection] = useState('home'); // home | cv | prep | encadrement | account
   const [showOnboard, setShowOnboard] = useState(() => { try { return !localStorage.getItem('talia_onboarded'); } catch { return false; } });
   const { mode, toggle: toggleTheme } = useTheme();
+  useSeo({ title: 'Altio CV — Générateur de CV gratuit & préparation à l\'emploi', description: 'Crée ton CV gratuitement et entraîne-toi à décrocher ton poste : entretien, tests de recrutement, oral, lettre de motivation. Gagne en employabilité, étape par étape.' });
+
   // Rafraîchit la notice de bienvenue une fois le rattachement école résolu.
   useEffect(() => { const n = getJoinNotice(); if (n) setJoinNotice(n); }, [orgName, isSchool]);
 

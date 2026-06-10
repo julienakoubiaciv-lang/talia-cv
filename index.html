@@ -3,13 +3,73 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Altio CV</title>
+
+    <!-- ── SEO ──────────────────────────────────────────────────────────── -->
+    <title>Altio CV — Générateur de CV gratuit & préparation à l'emploi</title>
+    <meta name="description" content="Crée un CV professionnel gratuit et prépare-toi à décrocher ton poste : entraînement à l'entretien, tests de recrutement, oral, lettre de motivation. Gagne en employabilité, étape par étape. Idéal alternance & jeunes." />
+    <meta name="keywords" content="générateur de CV gratuit, créer un CV, CV alternance, préparation entretien d'embauche, test de recrutement, lettre de motivation, employabilité, jeunes, recherche d'emploi" />
+    <meta name="author" content="Altio" />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#1539B7" />
+    <link rel="canonical" href="https://cv.talia.fr/" />
+
+    <!-- Favicon (SVG inline, marque « A ») -->
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231539B7'/%3E%3Ctext x='16' y='23' font-family='Arial,sans-serif' font-size='20' font-weight='bold' fill='white' text-anchor='middle'%3EA%3C/text%3E%3C/svg%3E" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Altio CV" />
+    <meta property="og:title" content="Altio CV — Générateur de CV gratuit & préparation à l'emploi" />
+    <meta property="og:description" content="Crée ton CV gratuitement et entraîne-toi à l'entretien, aux tests de recrutement et à l'oral. Gagne en employabilité, étape par étape." />
+    <meta property="og:url" content="https://cv.talia.fr/" />
+    <meta property="og:locale" content="fr_FR" />
+    <meta property="og:image" content="https://cv.talia.fr/og.png" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Altio CV — Générateur de CV gratuit & préparation à l'emploi" />
+    <meta name="twitter:description" content="Crée ton CV gratuitement et entraîne-toi à décrocher ton poste : entretien, tests, oral, lettre de motivation." />
+    <meta name="twitter:image" content="https://cv.talia.fr/og.png" />
+
+    <!-- Données structurées -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebApplication",
+          "name": "Altio CV",
+          "url": "https://cv.talia.fr/",
+          "applicationCategory": "BusinessApplication",
+          "operatingSystem": "Web",
+          "description": "Générateur de CV et plateforme de préparation à l'emploi : entretien, tests de recrutement, oral, lettre de motivation, bilan d'employabilité.",
+          "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
+          "inLanguage": "fr-FR"
+        },
+        {
+          "@type": "Organization",
+          "name": "Altio",
+          "url": "https://cv.talia.fr/",
+          "logo": "https://cv.talia.fr/og.png"
+        }
+      ]
+    }
+    </script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Manrope:wght@500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
   </head>
   <body>
-    <div id="root"></div>
+    <!-- Contenu de repli pour les robots (remplacé par l'app au chargement) -->
+    <div id="root">
+      <noscript>
+        Altio CV — générateur de CV gratuit et préparation à l'emploi (entretien,
+        tests de recrutement, oral, lettre de motivation). Activez JavaScript pour
+        utiliser l'application.
+      </noscript>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

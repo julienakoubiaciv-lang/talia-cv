@@ -14,6 +14,7 @@ import { C, FONT } from '@/lib/gameTheme';
 import { useAuth } from '@/hooks/useAuth';
 import { useEntitlements } from '@/hooks/useEntitlements';
 import { supabase, supabaseReady } from '@/lib/supabase';
+import { useSeo } from '@/lib/seo';
 import { track, captureError } from '@/lib/monitoring';
 
 const PRICE_IDS = {
@@ -90,6 +91,7 @@ export default function Pricing() {
   const { user } = useAuth();
   const { tier, isSchool, orgName } = useEntitlements();
   const [annual, setAnnual] = useState(true);
+  useSeo({ title: 'Tarifs : gratuit, Personnel, Cowork, École', description: 'Des tarifs pensés pour les jeunes : l\'essentiel gratuit pour toujours, Personnel à 4,99 €/mois. Offres Cowork (coach) et École (parrainage des élèves).' });
   const [loading, setLoading] = useState(null);
   const [error, setError] = useState('');
   const checkout = params.get('checkout');

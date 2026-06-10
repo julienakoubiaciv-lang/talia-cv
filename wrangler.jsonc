@@ -1,0 +1,13 @@
+{
+  // Cloudflare Workers (Static Assets) — héberge le SPA Vite + une petite logique /api/pdf.
+  // Build : `npm run build` (génère ./dist) puis `npx wrangler deploy`.
+  // Si le nom de ton Worker dans le dashboard diffère, remplace "altio-cv" ci-dessous.
+  "name": "altio-cv",
+  "main": "worker/index.js",
+  "compatibility_date": "2026-06-01",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application"
+  }
+}

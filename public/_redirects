@@ -1,4 +1,0 @@
-# Cloudflare Pages — SPA fallback (React Router)
-# Les Pages Functions (/functions/*) et les fichiers statiques ont la priorité ;
-# tout le reste retombe sur index.html pour le routage côté client.
-/*    /index.html   200

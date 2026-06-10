@@ -33,3 +33,6 @@ talia-cv-v*.html
 talia-dashboard*.html
 talia-app.html
 talia-generateur.html
+
+# Lock retiré : Cloudflare utilise npm install (évite les désyncs npm ci entre OS)
+package-lock.json

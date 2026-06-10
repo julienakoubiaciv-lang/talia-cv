@@ -10,4 +10,4 @@ Disallow: /profils
 Disallow: /history
 Disallow: /bulk
 
-Sitemap: https://cv.talia.fr/sitemap.xml
+Sitemap: https://www.cv.altio-wave.com/sitemap.xml

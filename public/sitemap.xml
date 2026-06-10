@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://cv.talia.fr/</loc>
+    <loc>https://www.cv.altio-wave.com/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://cv.talia.fr/pricing</loc>
+    <loc>https://www.cv.altio-wave.com/pricing</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://cv.talia.fr/generate</loc>
+    <loc>https://www.cv.altio-wave.com/generate</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>

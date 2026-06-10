@@ -1,0 +1,5 @@
+# Cloudflare Pages — routing.
+# Les assets statiques sont servis en priorité (dont les pages SEO générées :
+# /metier/*, /guide/*, /guides, /guides-metiers). Tout le reste retombe sur
+# l'app (SPA React Router) via /index.html en 200 (rewrite, pas de redirection).
+/*    /index.html    200

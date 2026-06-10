@@ -11,6 +11,7 @@ import { writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { listJobs } from '../src/lib/jobIntel.js';
+import { GUIDES } from '../src/content/guides.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = resolve(ROOT, 'dist');
@@ -92,7 +93,7 @@ ${jsonld ? `<script type="application/ld+json">${JSON.stringify(jsonld)}</script
   <a class="btn" href="${SITE}/generate">Créer mon CV</a>
 </div></header>
 ${body}
-<footer><div class="wrap">© ${new Date().getFullYear()} ${APP} — Générateur de CV gratuit & préparation à l'emploi · <a href="${SITE}/">Accueil</a> · <a href="${SITE}/guides-metiers">Tous les métiers</a></div></footer>
+<footer><div class="wrap">© ${new Date().getFullYear()} ${APP} — Générateur de CV gratuit & préparation à l'emploi · <a href="${SITE}/">Accueil</a> · <a href="${SITE}/guides">Guides</a> · <a href="${SITE}/guides-metiers">Tous les métiers</a></div></footer>
 </body></html>`;
 }
 
@@ -186,12 +187,58 @@ function hubPage(jobs) {
   return shell({ title, description, canonical: url, body });
 }
 
+// ── Guide pilier ──────────────────────────────────────────────────────────────
+function guidePage(g) {
+  const url = `${SITE}/guide/${g.slug}`;
+  const abs = (h) => (h.startsWith('/') ? SITE + h : h);
+  const sections = g.sections.map((s) => `<h2>${esc(s.h2)}</h2>\n${s.html}`).join('\n');
+  const faq = (g.faq || []).length
+    ? `<h2>Questions fréquentes</h2>\n${g.faq.map((f) => `<div class="card"><b>${esc(f.q)}</b><p>${esc(f.a)}</p></div>`).join('')}`
+    : '';
+  const ctaLinks = g.cta.links.map((l) => `<a class="btn${l.primary ? '' : ' ghost'}" href="${abs(l.href)}">${esc(l.label)}</a>`).join('');
+  const jsonld = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      { '@type': 'Article', headline: g.title, description: g.description, inLanguage: 'fr-FR', mainEntityOfPage: url, image: `${SITE}/og.png`, author: { '@type': 'Organization', name: 'Altio' } },
+      { '@type': 'BreadcrumbList', itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Accueil', item: `${SITE}/` },
+        { '@type': 'ListItem', position: 2, name: 'Guides', item: `${SITE}/guides` },
+        { '@type': 'ListItem', position: 3, name: g.h1, item: url },
+      ] },
+      ...((g.faq || []).length ? [{ '@type': 'FAQPage', mainEntity: g.faq.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })) }] : []),
+    ],
+  };
+  const body = `<main class="wrap">
+  <div class="hero"><span class="eyebrow">${esc(g.eyebrow)}</span><h1>${esc(g.h1)}</h1><p class="lead">${esc(g.intro)}</p></div>
+  ${sections}
+  ${faq}
+  <div class="cta"><h3>${esc(g.cta.title)}</h3><p>${esc(g.cta.text)}</p><div class="row">${ctaLinks}</div></div>
+  <p><a href="${SITE}/guides">← Tous les guides</a></p>
+</main>`;
+  return shell({ title: g.title, description: g.description, canonical: url, body, jsonld });
+}
+
+function guidesHub(guides) {
+  const url = `${SITE}/guides`;
+  const title = `Guides emploi : CV, entretien, lettre & alternance — ${APP}`;
+  const description = "Nos guides gratuits pour réussir ta recherche d'emploi : faire un CV, réussir son entretien, écrire une lettre de motivation et décrocher une alternance.";
+  const cards = guides.map((g) => `<a class="mcard" href="${SITE}/guide/${g.slug}"><span class="e">📘</span><div class="n">${esc(g.h1)}</div><div class="s">${esc(g.eyebrow)}</div></a>`).join('');
+  const body = `<main class="wrap">
+  <div class="hero"><span class="eyebrow">Guides</span><h1>Tout pour décrocher ton poste</h1><p class="lead">Des guides clairs et actionnables : CV, entretien, lettre de motivation, alternance — et un renvoi direct vers les outils pour passer à l'action.</p></div>
+  <div class="grid">${cards}</div>
+  <p style="margin-top:18px"><a href="${SITE}/guides-metiers">→ Voir aussi les fiches métiers</a></p>
+</main>`;
+  return shell({ title, description, canonical: url, body });
+}
+
 // ── Sitemap ───────────────────────────────────────────────────────────────────
-function sitemap(jobs) {
+function sitemap(jobs, guides) {
   const urls = [
     { loc: `${SITE}/`, p: '1.0', f: 'weekly' },
     { loc: `${SITE}/pricing`, p: '0.8', f: 'monthly' },
+    { loc: `${SITE}/guides`, p: '0.9', f: 'weekly' },
     { loc: `${SITE}/guides-metiers`, p: '0.8', f: 'weekly' },
+    ...guides.map((g) => ({ loc: `${SITE}/guide/${g.slug}`, p: '0.8', f: 'monthly' })),
     ...jobs.map((j) => ({ loc: `${SITE}/metier/${j.slug}`, p: '0.7', f: 'monthly' })),
   ];
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
@@ -207,5 +254,9 @@ if (!existsSync(DIST)) {
 const jobs = listJobs().map((j) => ({ ...j, slug: slugify(j.label) }));
 for (const j of jobs) write(`metier/${j.slug}/index.html`, metierPage(j, j.slug));
 write('guides-metiers/index.html', hubPage(jobs));
-writeFileSync(resolve(DIST, 'sitemap.xml'), sitemap(jobs), 'utf8');
-console.log(`[gen-metiers] ${jobs.length} pages métier + hub + sitemap générés.`);
+
+for (const g of GUIDES) write(`guide/${g.slug}/index.html`, guidePage(g));
+write('guides/index.html', guidesHub(GUIDES));
+
+writeFileSync(resolve(DIST, 'sitemap.xml'), sitemap(jobs, GUIDES), 'utf8');
+console.log(`[gen-metiers] ${jobs.length} métiers + ${GUIDES.length} guides + hubs + sitemap générés.`);

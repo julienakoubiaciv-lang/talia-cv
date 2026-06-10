@@ -16,7 +16,7 @@
   },
   "rewrites": [
     {
-      "source": "/((?!api/|metier/|guides-metiers).*)",
+      "source": "/((?!api/|metier/|guide).*)",
       "destination": "/index.html"
     }
   ],

@@ -1,174 +1,157 @@
 /**
- * claude-proxy — Edge Function unique pour tous les appels Claude
+ * claude-proxy — Supabase Edge Function
  *
- * Responsabilités :
- *   1. Authentification JWT Supabase obligatoire
- *   2. Vérification quota via RPC check_quota (bypass owner/admin)
- *   3. Appel Anthropic avec prompt caching activé
- *   4. Log des usage_events (tokens + coût)
+ * Proxy sécurisé vers l'API Anthropic.
+ * - Vérifie le quota de l'utilisateur avant chaque appel
+ * - Enregistre l'usage (tokens + coût estimé) dans usage_events
+ * - La clé ANTHROPIC_API_KEY n'est jamais exposée au client
  *
- * Variables d'environnement requises :
- *   ANTHROPIC_API_KEY        — clé secrète Claude
- *   SUPABASE_URL             — URL projet
- *   SUPABASE_SERVICE_ROLE_KEY — clé service (pour insert usage_events)
+ * POST /functions/v1/claude-proxy
+ * Headers : Authorization: Bearer <supabase_jwt>
+ * Body    : { action: string, messages: object[], model?: string, system?: string, max_tokens?: number }
  *
- * Body attendu :
- *   {
- *     action:      'generate_cv' | 'smart_match' | 'coach' | 'multilingual' | 'photo_ai',
- *     model?:      'claude-haiku-4-5' | 'claude-sonnet-4-5',  // défaut haiku
- *     system?:     string,                                     // prompt système (sera cacheable)
- *     messages:    [{ role, content }],
- *     max_tokens?: number,                                     // défaut 4096
- *     metadata?:   object,                                     // logué tel quel
- *   }
- *
- * Réponses :
- *   200 → JSON Anthropic standard
- *   401 → { error: 'unauthorized' }
- *   429 → { error: 'quota_exceeded', used, limit, tier }
- *   500 → { error: 'internal_error', detail }
+ * Secrets requis :
+ *   ANTHROPIC_API_KEY       — sk-ant-...
+ *   SUPABASE_SERVICE_ROLE_KEY
  */
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import Anthropic from 'https://esm.sh/@anthropic-ai/sdk@0.32';
 
-// ── Tarifs Anthropic en $/M tokens (à mettre à jour si Anthropic change les prix) ──
-const PRICING: Record<string, { input: number; cached: number; output: number }> = {
-  'claude-haiku-4-5':  { input: 1.0, cached: 0.10, output: 5.0  },
-  'claude-sonnet-4-5': { input: 3.0, cached: 0.30, output: 15.0 },
-};
+const ANTHROPIC_API = 'https://api.anthropic.com/v1/messages';
+const DEFAULT_MODEL  = 'claude-sonnet-4-6';
 
-const CORS = {
+const corsHeaders = {
   'Access-Control-Allow-Origin':  '*',
-  'Access-Control-Allow-Headers': 'authorization, content-type, x-client-info, apikey',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-function jsonResponse(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...CORS, 'Content-Type': 'application/json' },
-  });
+// Coût estimé en USD pour 1M tokens (entrée / sortie)
+const MODEL_PRICING: Record<string, { input: number; output: number }> = {
+  'claude-haiku-4-5-20251001': { input: 0.25,  output: 1.25  },
+  'claude-sonnet-4-6':         { input: 3.00,  output: 15.00 },
+  'claude-opus-4-7':           { input: 15.00, output: 75.00 },
+};
+
+function estimateCost(model: string, inputTokens: number, cachedTokens: number, outputTokens: number): number {
+  const pricing = MODEL_PRICING[model] ?? MODEL_PRICING[DEFAULT_MODEL];
+  const billableInput = Math.max(0, inputTokens - cachedTokens);
+  return (billableInput * pricing.input + outputTokens * pricing.output) / 1_000_000;
 }
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response(null, { headers: CORS });
-  if (req.method !== 'POST')    return jsonResponse({ error: 'method_not_allowed' }, 405);
-
-  // ── 1. Authentification ─────────────────────────────────────────────────
-  const authHeader = req.headers.get('Authorization');
-  if (!authHeader?.startsWith('Bearer ')) {
-    return jsonResponse({ error: 'unauthorized' }, 401);
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
   }
 
-  const supabase = createClient(
+  const supabaseUser = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-    { global: { headers: { Authorization: authHeader } } }
+    Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+    { global: { headers: { Authorization: req.headers.get('Authorization') ?? '' } } }
+  );
+  const supabaseAdmin = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
   );
 
-  const { data: userData, error: userErr } = await supabase.auth.getUser();
-  if (userErr || !userData?.user) {
-    return jsonResponse({ error: 'unauthorized', detail: userErr?.message }, 401);
-  }
-  const user = userData.user;
-
-  // ── 2. Parsing body ─────────────────────────────────────────────────────
-  let payload: any;
   try {
-    payload = await req.json();
-  } catch {
-    return jsonResponse({ error: 'invalid_json' }, 400);
-  }
+    // ── Auth ──────────────────────────────────────────────────
+    const { data: { user }, error: authErr } = await supabaseUser.auth.getUser();
+    if (authErr || !user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
-  const action     = payload.action     as string;
-  const model      = (payload.model     as string) || 'claude-haiku-4-5';
-  const system     = payload.system     as string | undefined;
-  const messages   = payload.messages   as Array<{ role: string; content: any }>;
-  const maxTokens  = (payload.max_tokens as number) || 4096;
-  const metadata   = payload.metadata   ?? {};
+    const body = await req.json();
+    const { action, messages, system, max_tokens = 2048 } = body;
+    const model = body.model ?? DEFAULT_MODEL;
 
-  if (!action || !Array.isArray(messages) || messages.length === 0) {
-    return jsonResponse({ error: 'invalid_payload', detail: 'action et messages requis' }, 400);
-  }
+    if (!action || !messages?.length) {
+      return new Response(JSON.stringify({ error: 'action et messages requis' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
-  // ── 3. Vérification quota ───────────────────────────────────────────────
-  const { data: quotaRows, error: quotaErr } = await supabase.rpc('check_quota', {
-    p_user_id: user.id,
-    p_action:  action,
-  });
+    // ── Vérification quota (fail-closed) ───────────────────────
+    const { data: quota, error: quotaErr } = await supabaseAdmin
+      .rpc('check_quota', { p_user_id: user.id, p_action: action });
 
-  if (quotaErr) {
-    console.error('[claude-proxy] quota check failed:', quotaErr.message);
-    return jsonResponse({ error: 'quota_check_failed', detail: quotaErr.message }, 500);
-  }
+    // Si la vérification de quota échoue, on BLOQUE (fail-closed) :
+    // mieux vaut refuser un appel légitime que laisser filer la dépense.
+    if (quotaErr || !quota) {
+      console.error('[claude-proxy] check_quota error:', quotaErr);
+      return new Response(JSON.stringify({ error: 'quota_check_failed' }), {
+        status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
-  const quota = quotaRows?.[0];
-  if (!quota?.allowed) {
-    return jsonResponse({
-      error: 'quota_exceeded',
-      action,
-      used:  quota?.used  ?? 0,
-      limit: quota?.limit ?? 0,
-      tier:  quota?.tier  ?? 'free',
-    }, 429);
-  }
+    const quotaRow = quota?.[0];
+    // Pas de ligne de quota exploitable → on bloque (fail-closed).
+    if (!quotaRow) {
+      console.error('[claude-proxy] check_quota: aucune ligne retournée', { action, user: user.id });
+      return new Response(JSON.stringify({ error: 'quota_check_failed' }), {
+        status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    if (!quotaRow.allowed) {
+      return new Response(JSON.stringify({
+        error: 'quota_exceeded',
+        used:  quotaRow.used,
+        limit: quotaRow.limit,
+        tier:  quotaRow.tier,
+      }), {
+        status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
-  // ── 4. Appel Anthropic avec prompt caching ──────────────────────────────
-  const anthropic = new Anthropic({ apiKey: Deno.env.get('ANTHROPIC_API_KEY') ?? '' });
+    // ── Appel Anthropic ────────────────────────────────────────
+    const anthropicBody: Record<string, unknown> = { model, messages, max_tokens };
+    if (system) anthropicBody.system = system;
 
-  // Construction du système avec cache_control
-  const systemBlocks = system
-    ? [{ type: 'text' as const, text: system, cache_control: { type: 'ephemeral' as const } }]
-    : undefined;
-
-  let response;
-  try {
-    response = await anthropic.messages.create({
-      model,
-      max_tokens: maxTokens,
-      ...(systemBlocks && { system: systemBlocks }),
-      messages: messages as any,
+    const anthropicRes = await fetch(ANTHROPIC_API, {
+      method: 'POST',
+      headers: {
+        'x-api-key':         Deno.env.get('ANTHROPIC_API_KEY') ?? '',
+        'anthropic-version': '2023-06-01',
+        'content-type':      'application/json',
+      },
+      body: JSON.stringify(anthropicBody),
     });
-  } catch (err: any) {
-    console.error('[claude-proxy] anthropic error:', err?.message);
-    return jsonResponse({
-      error: 'anthropic_error',
-      detail: err?.message ?? String(err),
-      status: err?.status,
-    }, 502);
+
+    if (!anthropicRes.ok) {
+      const errText = await anthropicRes.text();
+      console.error('[claude-proxy] Anthropic error:', anthropicRes.status, errText);
+      return new Response(JSON.stringify({ error: 'anthropic_error', detail: errText }), {
+        status: anthropicRes.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const result = await anthropicRes.json();
+
+    // ── Enregistrement usage ───────────────────────────────────
+    const usage       = result.usage ?? {};
+    const inputTokens  = usage.input_tokens   ?? 0;
+    const cachedTokens = usage.cache_read_input_tokens ?? 0;
+    const outputTokens = usage.output_tokens  ?? 0;
+    const costUsd      = estimateCost(model, inputTokens, cachedTokens, outputTokens);
+
+    await supabaseAdmin.from('usage_events').insert({
+      user_id:       user.id,
+      action,
+      model,
+      input_tokens:  inputTokens,
+      cached_tokens: cachedTokens,
+      output_tokens: outputTokens,
+      cost_usd:      costUsd,
+    });
+
+    return new Response(JSON.stringify(result), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+
+  } catch (err) {
+    console.error('[claude-proxy]', err);
+    return new Response(JSON.stringify({ error: err.message }), {
+      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
-
-  // ── 5. Log usage_events ─────────────────────────────────────────────────
-  const usage     = response.usage as any;
-  const pricing   = PRICING[model] ?? PRICING['claude-haiku-4-5'];
-  const inputT    = usage.input_tokens ?? 0;
-  const cachedT   = usage.cache_read_input_tokens ?? 0;
-  const outputT   = usage.output_tokens ?? 0;
-  const cost      = ((inputT - cachedT) * pricing.input
-                  + cachedT * pricing.cached
-                  + outputT * pricing.output) / 1_000_000;
-
-  const { error: logErr } = await supabase.from('usage_events').insert({
-    user_id:       user.id,
-    action,
-    model,
-    input_tokens:  inputT,
-    cached_tokens: cachedT,
-    output_tokens: outputT,
-    cost_usd:      cost,
-    metadata,
-  });
-
-  if (logErr) {
-    console.error('[claude-proxy] usage log failed:', logErr.message);
-    // Non-bloquant : on retourne quand même la réponse Claude
-  }
-
-  console.log(
-    `[claude-proxy] ${action} | model=${model} | ` +
-    `in=${inputT} cached=${cachedT} out=${outputT} | ` +
-    `cost=$${cost.toFixed(6)} | user=${user.email}`
-  );
-
-  return jsonResponse(response, 200);
 });

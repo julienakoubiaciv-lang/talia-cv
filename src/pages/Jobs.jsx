@@ -13,6 +13,7 @@
  */
 import React, { useState, useMemo } from 'react';
 import { C, FONT, alpha } from '@/lib/gameTheme';
+import ModuleTopBar from '@/components/ModuleTopBar';
 import { useNavigate } from 'react-router-dom';
 import { listJobsBySector, getJob, detectTargetJob } from '@/lib/jobIntel';
 import { shuffle } from '@/lib/interviewBank';
@@ -121,10 +122,7 @@ function Browse({ bySector, targetV, onOpen, onHome }) {
   return (
     <div style={S.shell}>
       <div style={S.wrap}>
-        <div style={S.top}>
-          <button style={S.backBtn} onClick={onHome}>← Accueil</button>
-          <span style={S.brandTag}>ALTIO · Métiers</span>
-        </div>
+        <ModuleTopBar label="Métiers" onBack={onHome} />
 
         <div style={S.header}>
           <span style={S.eyebrow}>Comprendre les postes</span>

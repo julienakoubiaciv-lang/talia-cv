@@ -7,6 +7,7 @@
  */
 import React, { useState, useMemo } from 'react';
 import { C, FONT } from '@/lib/gameTheme';
+import ModuleTopBar from '@/components/ModuleTopBar';
 import { useNavigate } from 'react-router-dom';
 import {
   generateRecruitTest, listTestCategories, TEST_CATEGORIES,
@@ -267,10 +268,7 @@ function Shell({ children, onHome }) {
   return (
     <div style={S.shell}>
       <div style={S.wrap}>
-        <div style={S.top}>
-          <button style={S.backBtn} onClick={onHome}>← Accueil</button>
-          <span style={S.brandTag}>ALTIO · Recrutement</span>
-        </div>
+        <ModuleTopBar label="Recrutement" onBack={onHome} />
         {children}
       </div>
     </div>

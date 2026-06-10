@@ -10,6 +10,7 @@
  */
 import React, { useMemo, useState, useEffect } from 'react';
 import { C, FONT, alpha } from '@/lib/gameTheme';
+import ModuleTopBar from '@/components/ModuleTopBar';
 import { useNavigate } from 'react-router-dom';
 import { useCohort } from '@/hooks/useCohort';
 import { studentPillars, needsFollowup } from '@/lib/demoCohort';
@@ -50,10 +51,7 @@ export default function CohortDashboard() {
   return (
     <div style={S.shell}>
       <div style={S.wrap}>
-        <div style={S.top}>
-          <button style={S.backBtn} onClick={() => navigate('/')}>← Accueil</button>
-          <span style={S.brandTag}>ALTIO · Encadrement</span>
-        </div>
+        <ModuleTopBar label="Encadrement" />
 
         <div style={S.header}>
           <div style={{ flex: 1, minWidth: 0 }}>

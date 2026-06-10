@@ -7,6 +7,7 @@
  */
 import React, { useMemo } from 'react';
 import { C, FONT, alpha } from '@/lib/gameTheme';
+import ModuleTopBar from '@/components/ModuleTopBar';
 import { useNavigate } from 'react-router-dom';
 import { getJourney } from '@/lib/journey';
 
@@ -20,10 +21,7 @@ export default function Journey() {
   return (
     <div style={S.shell}>
       <div style={S.wrap}>
-        <div style={S.top}>
-          <button style={S.backBtn} onClick={() => navigate('/')}>← Accueil</button>
-          <span style={S.brandTag}>ALTIO · Parcours</span>
-        </div>
+        <ModuleTopBar label="Parcours" />
 
         <div style={S.header}>
           <span style={S.eyebrow}>Ta progression</span>

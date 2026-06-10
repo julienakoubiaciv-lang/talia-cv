@@ -7,6 +7,7 @@
  */
 import React, { useState, useCallback } from 'react';
 import { C, FONT, alpha } from '@/lib/gameTheme';
+import ModuleTopBar from '@/components/ModuleTopBar';
 import { useNavigate } from 'react-router-dom';
 import { getDiagnostic } from '@/lib/employability';
 
@@ -21,10 +22,7 @@ export default function Diagnostic() {
   return (
     <div style={S.shell}>
       <div style={S.wrap}>
-        <div style={S.top}>
-          <button style={S.backBtn} onClick={() => navigate('/')}>← Accueil</button>
-          <span style={S.brandTag}>ALTIO · Bilan</span>
-        </div>
+        <ModuleTopBar label="Bilan" />
 
         <div style={S.header}>
           <span style={S.eyebrow}>Où en es-tu ?</span>

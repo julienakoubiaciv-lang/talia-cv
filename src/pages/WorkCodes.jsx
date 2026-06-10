@@ -8,6 +8,7 @@
  */
 import React, { useState, useMemo } from 'react';
 import { C, FONT } from '@/lib/gameTheme';
+import ModuleTopBar from '@/components/ModuleTopBar';
 import { useNavigate } from 'react-router-dom';
 import {
   CODE_THEMES, listCodeThemes, buildCodesSession,
@@ -147,10 +148,7 @@ function Intro({ themes, onStart, onHome }) {
   return (
     <div style={S.shell}>
       <div style={S.wrap}>
-        <div style={S.top}>
-          <button style={S.backBtn} onClick={onHome}>← Accueil</button>
-          <span style={S.brandTag}>ALTIO · Codes</span>
-        </div>
+        <ModuleTopBar label="Codes" onBack={onHome} />
         <div style={S.header}>
           <span style={S.eyebrow}>Savoir-être en entreprise</span>
           <h1 style={S.h1}>Les codes de l'entreprise</h1>

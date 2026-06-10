@@ -8,6 +8,7 @@
  */
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { C, FONT, alpha } from '@/lib/gameTheme';
+import ModuleTopBar from '@/components/ModuleTopBar';
 import { useNavigate } from 'react-router-dom';
 import {
   generateOralQuestions, evaluateOralAnswer, analyzeDelivery,
@@ -305,10 +306,7 @@ function Shell({ children, onHome }) {
   return (
     <div style={S.shell}>
       <div style={S.wrap}>
-        <div style={S.top}>
-          <button style={S.backBtn} onClick={onHome}>← Accueil</button>
-          <span style={S.brandTag}>ALTIO · Oral</span>
-        </div>
+        <ModuleTopBar label="Oral" onBack={onHome} />
         {children}
       </div>
     </div>

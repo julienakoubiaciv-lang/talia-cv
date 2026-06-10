@@ -7,6 +7,7 @@
  */
 import React, { useState, useMemo } from 'react';
 import { C, FONT, alpha } from '@/lib/gameTheme';
+import ModuleTopBar from '@/components/ModuleTopBar';
 import { useNavigate } from 'react-router-dom';
 import {
   generateCoverLetter, markLetterGenerated, LETTER_FORMATS, LETTER_TONES, MESSAGE_TYPES,
@@ -95,10 +96,7 @@ export default function LetterWriter() {
   return (
     <div style={S.shell}>
       <div style={S.wrap}>
-        <div style={S.top}>
-          <button style={S.backBtn} onClick={() => navigate('/')}>← Accueil</button>
-          <span style={S.brandTag}>ALTIO · Candidature</span>
-        </div>
+        <ModuleTopBar label="Candidature" />
 
         <div style={S.header}>
           <span style={S.eyebrow}>Kit de candidature · PRO ✨</span>

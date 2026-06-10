@@ -10,6 +10,7 @@
  */
 import React, { useState, useMemo } from 'react';
 import { C, FONT, alpha } from '@/lib/gameTheme';
+import ModuleTopBar from '@/components/ModuleTopBar';
 import { useNavigate } from 'react-router-dom';
 import { analyzeMatch, atsCheck } from '@/lib/smartMatcher';
 import { optimizeCvForOffer } from '@/lib/cvOptimize';
@@ -76,10 +77,7 @@ export default function AnalyzeOffer() {
   return (
     <div style={S.shell}>
       <div style={S.wrap}>
-        <div style={S.top}>
-          <button style={S.backBtn} onClick={() => navigate('/')}>← Accueil</button>
-          <span style={S.brandTag}>ALTIO · Analyse</span>
-        </div>
+        <ModuleTopBar label="Analyse" />
 
         <div style={S.header}>
           <span style={S.eyebrow}>Décroche plus d'entretiens</span>

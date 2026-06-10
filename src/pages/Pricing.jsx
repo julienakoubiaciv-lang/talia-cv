@@ -106,10 +106,10 @@ export default function Pricing() {
   async function subscribe(p) {
     if (p.id === 'free') { navigate(user ? '/' : '/auth'); return; }
     track('upgrade_clicked', { targetTier: p.id, annual, contactSales: !!p.contactSales });
-    if (p.contactSales) { window.location.href = 'mailto:hello@talia.fr?subject=Altio CV — Offre École'; return; }
+    if (p.contactSales) { window.location.href = 'mailto:hello@altio-wave.com?subject=Altio CV — Offre École'; return; }
     if (!user) { navigate('/auth?tab=inscription&redirect=/pricing'); return; }
     if (!supabaseReady || !supabase || !p.priceId) {
-      setError('Le paiement en ligne arrive bientôt. Laisse-nous ton email à hello@talia.fr pour être prévenu.');
+      setError('Le paiement en ligne arrive bientôt. Laisse-nous ton email à hello@altio-wave.com pour être prévenu.');
       return;
     }
     setLoading(p.id); setError('');
@@ -217,7 +217,7 @@ export default function Pricing() {
 
         <p style={S.foot}>
           Paiement sécurisé · sans engagement · annulation à tout moment.
-          Une question ? <a href="mailto:hello@talia.fr" style={{ color: C.blue, fontWeight: 700, textDecoration: 'none' }}>hello@talia.fr</a>
+          Une question ? <a href="mailto:hello@altio-wave.com" style={{ color: C.blue, fontWeight: 700, textDecoration: 'none' }}>hello@altio-wave.com</a>
         </p>
       </div>
     </div>

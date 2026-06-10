@@ -69,6 +69,10 @@ footer{border-top:1px solid #E6EAF1;margin-top:40px;padding:24px 0;color:#8390A6
 .mcard .n{font-weight:800;color:#0B1638;margin-top:8px}
 .mcard .s{font-size:13px;color:#8390A6;margin-top:2px}
 .note{background:#E6F8F1;border:1px solid #0CA67833;border-radius:12px;padding:11px 15px;color:#0B1638;font-size:14px;margin-top:12px}
+.rel{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;margin-top:6px}
+.rel a{display:block;background:#fff;border:1px solid #E6EAF1;border-radius:12px;padding:13px 15px;font-weight:700;color:#0B1638;font-size:14px;transition:border-color .15s}
+.rel a:hover{border-color:#1539B7}
+.rel a span{display:block;font-weight:500;color:#8390A6;font-size:12.5px;margin-top:2px}
 @media(max-width:600px){h1{font-size:27px}}
 `;
 
@@ -97,8 +101,10 @@ ${body}
 </body></html>`;
 }
 
+const relLinks = (items) => `<div class="rel">${items.map((i) => `<a href="${i.href}">${esc(i.label)}<span>${esc(i.sub)}</span></a>`).join('')}</div>`;
+
 // ── Page métier ───────────────────────────────────────────────────────────────
-function metierPage(job, slug) {
+function metierPage(job, slug, guides) {
   const url = `${SITE}/metier/${slug}`;
   const title = `${job.label} : compétences, CV et entretien — ${APP}`;
   const description = `Tout pour décrocher un poste de ${job.label} : compétences clés, ce que recherchent les recruteurs, questions d'entretien type et modèle de CV. Crée ton CV gratuitement avec ${APP}.`;
@@ -142,6 +148,8 @@ function metierPage(job, slug) {
   ${soft ? `<h2>Qualités &amp; savoir-être</h2><div class="tags">${soft}</div>` : ''}
 
   ${job.profile ? `<h2>Profil recherché</h2><div class="card"><p>${esc(job.profile)}</p></div>` : ''}
+
+  ${(guides || []).length ? `<h2>Guides pour décrocher ce poste</h2>${relLinks(guides.map((g) => ({ href: `${SITE}/guide/${g.slug}`, label: g.h1, sub: g.eyebrow })))}` : ''}
 
   <div class="cta">
     <h3>Prêt à décrocher ce poste ?</h3>
@@ -188,8 +196,13 @@ function hubPage(jobs) {
 }
 
 // ── Guide pilier ──────────────────────────────────────────────────────────────
-function guidePage(g) {
+function guidePage(g, guides) {
   const url = `${SITE}/guide/${g.slug}`;
+  const others = (guides || []).filter((x) => x.slug !== g.slug);
+  const related = relLinks([
+    ...others.map((x) => ({ href: `${SITE}/guide/${x.slug}`, label: x.h1, sub: x.eyebrow })),
+    { href: `${SITE}/guides-metiers`, label: 'Toutes les fiches métiers', sub: 'Compétences par métier' },
+  ]);
   const abs = (h) => (h.startsWith('/') ? SITE + h : h);
   const sections = g.sections.map((s) => `<h2>${esc(s.h2)}</h2>\n${s.html}`).join('\n');
   const faq = (g.faq || []).length
@@ -212,6 +225,7 @@ function guidePage(g) {
   <div class="hero"><span class="eyebrow">${esc(g.eyebrow)}</span><h1>${esc(g.h1)}</h1><p class="lead">${esc(g.intro)}</p></div>
   ${sections}
   ${faq}
+  <h2>À lire aussi</h2>${related}
   <div class="cta"><h3>${esc(g.cta.title)}</h3><p>${esc(g.cta.text)}</p><div class="row">${ctaLinks}</div></div>
   <p><a href="${SITE}/guides">← Tous les guides</a></p>
 </main>`;
@@ -252,10 +266,10 @@ if (!existsSync(DIST)) {
   process.exit(0);
 }
 const jobs = listJobs().map((j) => ({ ...j, slug: slugify(j.label) }));
-for (const j of jobs) write(`metier/${j.slug}/index.html`, metierPage(j, j.slug));
+for (const j of jobs) write(`metier/${j.slug}/index.html`, metierPage(j, j.slug, GUIDES));
 write('guides-metiers/index.html', hubPage(jobs));
 
-for (const g of GUIDES) write(`guide/${g.slug}/index.html`, guidePage(g));
+for (const g of GUIDES) write(`guide/${g.slug}/index.html`, guidePage(g, GUIDES));
 write('guides/index.html', guidesHub(GUIDES));
 
 writeFileSync(resolve(DIST, 'sitemap.xml'), sitemap(jobs, GUIDES), 'utf8');

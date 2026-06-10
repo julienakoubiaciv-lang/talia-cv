@@ -18,6 +18,7 @@ import { getJoinNotice, clearJoinNotice } from '@/lib/orgAccess';
 import { alpha } from '@/lib/gameTheme';
 import { useTheme } from '@/hooks/useTheme.jsx';
 import EnergyBar from '@/components/EnergyBar';
+import GameOnboarding from '@/components/GameOnboarding';
 
 /* ─── Design tokens ─────────────────────────────────────────────────────── */
 const C = {
@@ -599,6 +600,7 @@ export default function Home() {
   const [demoOn, setDemoOn] = useState(() => isDemoMode());
   const [joinNotice, setJoinNotice] = useState(() => getJoinNotice());
   const [section, setSection] = useState('home'); // home | cv | prep | encadrement | account
+  const [showOnboard, setShowOnboard] = useState(() => { try { return !localStorage.getItem('talia_onboarded'); } catch { return false; } });
   const { mode, toggle: toggleTheme } = useTheme();
   // Rafraîchit la notice de bienvenue une fois le rattachement école résolu.
   useEffect(() => { const n = getJoinNotice(); if (n) setJoinNotice(n); }, [orgName, isSchool]);
@@ -751,6 +753,8 @@ export default function Home() {
 
   return (
     <div style={{ minHeight: '100vh', background: C.bg, fontFamily: FONT }}>
+      {showOnboard && <GameOnboarding onDone={() => { try { localStorage.setItem('talia_onboarded', '1'); } catch { /* */ } setShowOnboard(false); }} />}
+
       {/* ── Bandeau retour Stripe ── */}
       <CheckoutSuccessBanner
         checkoutState={checkoutState}

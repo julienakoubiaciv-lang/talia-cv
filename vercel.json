@@ -1,5 +1,7 @@
 {
-  "regions": ["cdg1"],
+  "regions": [
+    "cdg1"
+  ],
   "functions": {
     "api/anthropic.js": {
       "maxDuration": 30
@@ -14,8 +16,9 @@
   },
   "rewrites": [
     {
-      "source": "/((?!api/).*)",
+      "source": "/((?!api/|metier/|guides-metiers).*)",
       "destination": "/index.html"
     }
-  ]
+  ],
+  "cleanUrls": true
 }

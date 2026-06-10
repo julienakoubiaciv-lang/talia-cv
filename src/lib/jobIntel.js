@@ -307,6 +307,171 @@ export const JOB_INTEL = {
     hard: ['CRM (Salesforce, HubSpot)', 'Sales Navigator', 'Dropcontact / Lusha', 'SPIN Selling / MEDDIC'],
     soft: ['Résilience', 'Goût du défi', 'Communication orale', 'Écoute active'],
   },
+
+  // ── Ressources Humaines — Assistant RH ──────────────────────────────────────
+  'rh-assistant': {
+    label: 'Assistant RH',
+    sector: 'Ressources Humaines',
+    emoji: '📋',
+    profile: 'Bac+2 à Bac+3 — BTS SAM, Licence Pro RH ou BUT GEA.',
+    pitch: "Tu es le bras droit de l'équipe RH au quotidien : contrats, dossiers du personnel, congés, paie, recrutement. La rigueur et la discrétion sont ta marque de fabrique.",
+    keySkills: [
+      { name: 'Administration du personnel', why: "Contrats, DPAE, dossiers salariés : une erreur ici peut coûter cher à l'entreprise." },
+      { name: 'Gestion des temps & absences', why: "Congés, arrêts, éléments variables de paie : tout doit être suivi sans rien oublier." },
+      { name: 'Support au recrutement', why: "Publier, trier, planifier : tu fais avancer les recrutements concrètement." },
+      { name: 'Bases en droit du travail', why: "Connaître le cadre légal évite les erreurs et sécurise l'entreprise." },
+    ],
+    recruiterLooksFor: [
+      "Une rigueur et un sens du détail irréprochables",
+      "La discrétion absolue sur des données sensibles",
+      "Le sens de l'accueil et du service",
+      "De l'aisance avec Excel et Word",
+    ],
+    pitfalls: [
+      "Laisser traîner une déclaration (DPAE) ou un contrat",
+      "Parler d'informations confidentielles en dehors du service",
+      "Saisir les éléments de paie sans double-vérifier",
+    ],
+    situations: [
+      { situation: "Un nouveau salarié arrive lundi : il faut son contrat et sa DPAE.", skill: 'Administration du personnel' },
+      { situation: "Plusieurs demandes de congés se chevauchent dans l'équipe.", skill: 'Gestion des temps & absences' },
+      { situation: "Le responsable te demande de présélectionner 20 CV pour demain.", skill: 'Support au recrutement' },
+    ],
+    hard: ['Pack Office (Word, Excel)', 'Bases en droit du travail', 'Jobboards', 'Gestion administrative', 'OPCO'],
+    soft: ['Rigueur', 'Discrétion', "Sens de l'accueil", 'Organisation'],
+  },
+
+  // ── Marketing — Assistant marketing & communication ─────────────────────────
+  'mkt-assistant-com': {
+    label: 'Assistant marketing & communication',
+    sector: 'Marketing & Communication',
+    emoji: '📣',
+    profile: 'Bac+2 à Bac+3 — BTS Communication, BTS MCO ou BUT TC.',
+    pitch: "Tu donnes vie au plan de com : supports, événements, newsletter, réseaux. Polyvalence et créativité au service de la marque.",
+    keySkills: [
+      { name: 'Création de supports', why: "Plaquettes, catalogues, présentations : ce sont les vitrines de l'entreprise." },
+      { name: 'Organisation événementielle', why: "Salons et événements : la logistique fait la réussite (ou l'échec)." },
+      { name: 'Animation des canaux digitaux', why: "Newsletter, site, réseaux : garder la marque vivante et visible." },
+      { name: 'Veille concurrentielle', why: "Surveiller la concurrence nourrit les bonnes décisions marketing." },
+    ],
+    recruiterLooksFor: [
+      "Une orthographe irréprochable",
+      "De la polyvalence et de la débrouillardise",
+      "Un œil créatif (mise en page, visuels)",
+      "Le sens de l'organisation",
+    ],
+    pitfalls: [
+      "Publier un support avec des fautes",
+      "Sous-estimer la logistique d'un salon",
+      "Négliger la régularité sur les réseaux",
+    ],
+    situations: [
+      { situation: "Le catalogue produits doit être prêt pour le salon dans 3 jours.", skill: 'Création de supports' },
+      { situation: "Le stand du salon arrive mais le matériel n'est pas livré.", skill: 'Organisation événementielle' },
+      { situation: "La newsletter du mois n'est toujours pas partie.", skill: 'Animation des canaux digitaux' },
+    ],
+    hard: ['Pack Office / PowerPoint', 'PAO (Photoshop ou équivalent)', "Outils d'emailing", 'Réseaux sociaux', 'Mise à jour de site'],
+    soft: ['Polyvalence', 'Créativité', "Esprit d'équipe", 'Organisation'],
+  },
+
+  // ── Administratif — Assistant de gestion administrative ──────────────────────
+  'admin-assistant-gestion': {
+    label: 'Assistant de gestion administrative',
+    sector: 'Administratif',
+    emoji: '📇',
+    profile: 'Bac+2 — BTS GPME ou BTS SAM.',
+    pitch: "Tu es le pivot du bureau : accueil, courrier, agendas, documents, fournitures. Tu fais circuler l'information et tu fluidifies tout.",
+    keySkills: [
+      { name: 'Accueil & secrétariat', why: "Premier contact de l'entreprise : l'image passe par toi." },
+      { name: 'Gestion des agendas & déplacements', why: "Réunions, salles, billets : tu fais gagner du temps à toute l'équipe." },
+      { name: 'Traitement & archivage des documents', why: "Un document bien classé est un document retrouvé en 10 secondes." },
+      { name: 'Services généraux', why: "Sans fournitures ni suivi des commandes, le bureau s'arrête." },
+    ],
+    recruiterLooksFor: [
+      "Une excellente expression orale et écrite",
+      "Une présentation soignée",
+      "De la ponctualité et de la fiabilité",
+      "Le sens des priorités",
+    ],
+    pitfalls: [
+      "Oublier de transmettre un message ou un courrier important",
+      "Laisser l'archivage s'accumuler",
+      "Se laisser déborder sans hiérarchiser les urgences",
+    ],
+    situations: [
+      { situation: "Le téléphone sonne pendant que tu accueilles un client au comptoir.", skill: 'Accueil & secrétariat' },
+      { situation: "Deux réunions sont planifiées dans la même salle au même créneau.", skill: 'Gestion des agendas & déplacements' },
+      { situation: "Un collègue cherche un compte-rendu d'il y a 6 mois.", skill: 'Traitement & archivage des documents' },
+    ],
+    hard: ['Outlook', 'Word', 'Excel', 'Gestion du courrier', 'Suivi des fournisseurs'],
+    soft: ['Présentation soignée', 'Ponctualité', 'Organisation', 'Sens des priorités'],
+  },
+
+  // ── Finance & Gestion — Assistant comptable ─────────────────────────────────
+  'fin-assistant-comptable': {
+    label: 'Assistant comptable',
+    sector: 'Finance & Gestion',
+    emoji: '🧾',
+    profile: 'Bac+2 à Bac+3 — BTS CG, DCG ou BUT GEA option comptabilité.',
+    pitch: "Tu tiens les comptes au quotidien : factures fournisseurs et clients, banque, rapprochements. Rigueur et goût des chiffres sont indispensables.",
+    keySkills: [
+      { name: 'Comptabilité fournisseurs', why: "Enregistrer et vérifier les achats évite les erreurs de paiement." },
+      { name: 'Comptabilité clients & relances', why: "Facturer et relancer à temps, c'est la trésorerie de l'entreprise." },
+      { name: 'Trésorerie & rapprochements bancaires', why: "Coller les comptes à la banque garantit des chiffres justes." },
+      { name: 'Classement & justificatifs', why: "Une pièce manquante peut bloquer un contrôle ou une clôture." },
+    ],
+    recruiterLooksFor: [
+      "Une rigueur extrême et de la méthode",
+      "L'aisance avec les chiffres",
+      "La maîtrise (ou l'envie d'apprendre) un logiciel comptable",
+      "De la concentration sur la durée",
+    ],
+    pitfalls: [
+      "Saisir une facture sans vérifier le bon de commande",
+      "Oublier de relancer une facture impayée",
+      "Classer ses pièces « plus tard » et s'y perdre",
+    ],
+    situations: [
+      { situation: "Une facture fournisseur ne correspond pas au bon de commande.", skill: 'Comptabilité fournisseurs' },
+      { situation: "Plusieurs clients ont des factures en retard de paiement.", skill: 'Comptabilité clients & relances' },
+      { situation: "Le solde comptable ne colle pas avec le relevé bancaire.", skill: 'Trésorerie & rapprochements bancaires' },
+    ],
+    hard: ['Comptabilité générale (débit/crédit)', 'Logiciel comptable (Sage, EBP, Cegid)', 'Excel', 'Rapprochement bancaire'],
+    soft: ['Rigueur', 'Méthode', 'Esprit logique', 'Concentration'],
+  },
+
+  // ── Commerce / Vente — Assistant commercial / ADV ───────────────────────────
+  'com-assistant-adv': {
+    label: 'Assistant commercial / ADV',
+    sector: 'Commerce / Vente',
+    emoji: '📦',
+    profile: 'Bac+2 à Bac+3 — BTS NDRC, BTS MCO ou BUT TC.',
+    pitch: "Tu fais le lien entre les clients et les commerciaux : commandes, devis, suivi, facturation, livraison. Tu es la colonne vertébrale de la relation client.",
+    keySkills: [
+      { name: 'Gestion des commandes', why: "Une commande mal saisie, c'est un client mécontent et une livraison ratée." },
+      { name: 'Suivi de la relation client', why: "Informer sur les délais et la disponibilité rassure et fidélise le client." },
+      { name: 'Devis & dossiers commerciaux', why: "Des devis justes et rapides aident les commerciaux à conclure." },
+      { name: 'Facturation & logistique', why: "Factures et bons de livraison : le dernier maillon avant le paiement." },
+    ],
+    recruiterLooksFor: [
+      "De l'aisance au téléphone",
+      "Un vrai sens commercial et du service",
+      "De la réactivité face aux imprévus",
+      "De la rigueur dans le suivi (ERP, fichiers)",
+    ],
+    pitfalls: [
+      "Saisir une commande sans la vérifier",
+      "Laisser un client sans réponse sur son délai",
+      "Promettre un délai que la logistique ne peut pas tenir",
+    ],
+    situations: [
+      { situation: "Un client appelle, furieux : sa commande n'est pas arrivée.", skill: 'Suivi de la relation client' },
+      { situation: "Un commercial te demande un devis pour cet après-midi.", skill: 'Devis & dossiers commerciaux' },
+      { situation: "Une commande urgente vient d'arriver par email.", skill: 'Gestion des commandes' },
+    ],
+    hard: ['ERP / gestion commerciale', 'Excel', 'Facturation', 'Anglais commercial'],
+    soft: ['Sens commercial', 'Réactivité', 'Résistance au stress', 'Diplomatie'],
+  },
 };
 
 /** Profil métier complet (intel + données cvData fusionnées), ou null si non couvert. */

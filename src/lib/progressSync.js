@@ -19,14 +19,14 @@ import { getDiagnostic } from './employability';
 
 /** Clés localStorage qui constituent la progression (PAS les préférences). */
 export const PROGRESS_KEYS = [
-  'talia_player',            // xp, lastPlay, dayStreak, badges
-  'talia_interview_progress', // maîtrise par thème d'entretien
-  'talia_jobs_progress',      // métiers validés
-  'talia_codes_progress',     // { bestNote, plays }
-  'talia_recruit_progress',   // { bestNote, plays }
-  'talia_oral_progress',      // { bestNote, plays }
-  'talia_letters_count',      // compteur de lettres générées
-  'talia_energy',             // { day, spent } — énergie IA du jour
+  'altio_player',            // xp, lastPlay, dayStreak, badges
+  'altio_interview_progress', // maîtrise par thème d'entretien
+  'altio_jobs_progress',      // métiers validés
+  'altio_codes_progress',     // { bestNote, plays }
+  'altio_recruit_progress',   // { bestNote, plays }
+  'altio_oral_progress',      // { bestNote, plays }
+  'altio_letters_count',      // compteur de lettres générées
+  'altio_energy',             // { day, spent } — énergie IA du jour
 ];
 
 // ── Snapshot / hydratation du cache local ────────────────────────────────────
@@ -116,12 +116,12 @@ export function mergeEnergy(a = {}, b = {}) {
 }
 
 const KEY_MERGERS = {
-  talia_player: mergePlayer,
-  talia_codes_progress: mergeBestNote,
-  talia_recruit_progress: mergeBestNote,
-  talia_oral_progress: mergeBestNote,
-  talia_letters_count: (a = 0, b = 0) => Math.max(Number(a) || 0, Number(b) || 0),
-  talia_energy: mergeEnergy,
+  altio_player: mergePlayer,
+  altio_codes_progress: mergeBestNote,
+  altio_recruit_progress: mergeBestNote,
+  altio_oral_progress: mergeBestNote,
+  altio_letters_count: (a = 0, b = 0) => Math.max(Number(a) || 0, Number(b) || 0),
+  altio_energy: mergeEnergy,
 };
 
 /** Fusionne deux blobs de progression (local + distant), clé par clé. */
@@ -138,7 +138,7 @@ export function mergeProgress(local = {}, remote = {}) {
 
 /** XP / série extraites d'un blob (pour les colonnes indexées). */
 export function progressStats(blob = {}) {
-  const p = blob.talia_player || {};
+  const p = blob.altio_player || {};
   return { xp: Number(p.xp) || 0, day_streak: Number(p.dayStreak) || 0 };
 }
 

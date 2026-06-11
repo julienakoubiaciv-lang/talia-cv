@@ -1,3 +1,4 @@
+import './lib/migrateStorage.js'; // migration talia_* → altio_* (avant tout le reste)
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.jsx';

@@ -59,12 +59,12 @@ describe('getProfiles', () => {
 
   it('retourne les profils stockés', () => {
     const profiles = [{ id: 1, nom: 'Test' }];
-    localStorage.setItem('talia_cv_profiles', JSON.stringify(profiles));
+    localStorage.setItem('ALTIO_CV_profiles', JSON.stringify(profiles));
     expect(getProfiles()).toEqual(profiles);
   });
 
   it('retourne un tableau vide si JSON corrompu', () => {
-    localStorage.setItem('talia_cv_profiles', 'invalid-json{{{');
+    localStorage.setItem('ALTIO_CV_profiles', 'invalid-json{{{');
     expect(getProfiles()).toEqual([]);
   });
 });

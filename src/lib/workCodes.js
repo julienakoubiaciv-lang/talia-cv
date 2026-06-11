@@ -342,7 +342,7 @@ export function computeNote(scores) {
 }
 
 // ── Persistance de la maîtrise des codes (meilleure note /20) ─────────────────
-const LS_CODES = 'talia_codes_progress';
+const LS_CODES = 'altio_codes_progress';
 
 /** Enregistre le résultat d'une session « codes » (meilleure note conservée). */
 export function saveCodesResult(note) {

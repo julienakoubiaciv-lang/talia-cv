@@ -5,7 +5,7 @@
  * parties et le statut « validé » (note ≥ seuil). Persistance localStorage.
  * Alimente le Parcours gamifié unifié.
  */
-const LS_KEY = 'talia_jobs_progress';
+const LS_KEY = 'altio_jobs_progress';
 export const JOB_PASS_MARK = 12; // note /20 minimale pour valider un métier
 
 function read() {

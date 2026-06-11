@@ -224,7 +224,7 @@ export async function generateRecruitTest({
 }
 
 // ── Persistance de la meilleure note /20 ──────────────────────────────────────
-const LS_TEST = 'talia_recruit_progress';
+const LS_TEST = 'altio_recruit_progress';
 
 /** Enregistre le résultat d'un test (meilleure note conservée). */
 export function saveTestResult(note) {

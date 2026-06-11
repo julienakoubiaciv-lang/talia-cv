@@ -532,7 +532,7 @@ export function listJobsBySector() {
  */
 export function detectTargetJob() {
   try {
-    const hist = JSON.parse(localStorage.getItem('talia_cv_hist') || '[]');
+    const hist = JSON.parse(localStorage.getItem('ALTIO_CV_hist') || '[]');
     if (!Array.isArray(hist) || !hist.length) return null;
     // Plus récent d'abord (id = timestamp).
     const sorted = [...hist].sort((a, b) => Number(b.id) - Number(a.id));

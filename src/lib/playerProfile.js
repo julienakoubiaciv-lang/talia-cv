@@ -10,11 +10,11 @@
  * Avant, l'XP/série vivaient dans interviewProgress et les badges étaient
  * recalculés à la volée. Centralisé ici → base pour les ligues & badges.
  *
- * Persistance : localStorage 'talia_player'.
- * Migration auto depuis l'ancien 'talia_interview_meta' (aucune perte de données).
+ * Persistance : localStorage 'altio_player'.
+ * Migration auto depuis l'ancien 'altio_interview_meta' (aucune perte de données).
  */
-const LS_KEY = 'talia_player';
-const LEGACY_META = 'talia_interview_meta';
+const LS_KEY = 'altio_player';
+const LEGACY_META = 'altio_interview_meta';
 
 function normalize(o) {
   return {

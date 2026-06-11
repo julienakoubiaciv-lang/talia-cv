@@ -618,9 +618,9 @@ export default function Home() {
   // Persiste le profil actif dès qu'il change
   useEffect(() => {
     if (selectedProfileId) {
-      localStorage.setItem('talia_cv_active_profile', selectedProfileId);
+      localStorage.setItem('ALTIO_CV_active_profile', selectedProfileId);
     } else {
-      localStorage.removeItem('talia_cv_active_profile');
+      localStorage.removeItem('ALTIO_CV_active_profile');
     }
   }, [selectedProfileId]);
 

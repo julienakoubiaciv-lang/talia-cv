@@ -43,7 +43,7 @@ export const MESSAGE_TYPES = {
   },
 };
 
-const LS_COUNT = 'talia_letters_count';
+const LS_COUNT = 'altio_letters_count';
 
 /** Incrémente le compteur de lettres générées (alimente le parcours). */
 export function markLetterGenerated() {

@@ -68,9 +68,9 @@ describe('playerProfile — série quotidienne', () => {
   });
 });
 
-describe('playerProfile — migration depuis talia_interview_meta', () => {
+describe('playerProfile — migration depuis altio_interview_meta', () => {
   it('reprend xp/série de l\'ancien store si aucun profil', () => {
-    localStorage.setItem('talia_interview_meta', JSON.stringify({ xp: 320, lastPlay: '2026-01-01', dayStreak: 4 }));
+    localStorage.setItem('altio_interview_meta', JSON.stringify({ xp: 320, lastPlay: '2026-01-01', dayStreak: 4 }));
     const p = getProfile();
     expect(p.xp).toBe(320);
     expect(p.dayStreak).toBe(4);

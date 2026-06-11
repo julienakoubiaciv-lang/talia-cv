@@ -14,10 +14,10 @@
  * Ce qui coûte 1 ⚡ : une génération IA (lettre, test de recrutement, oral,
  * optimisation CV, session d'entretien IA…). 1 « module » = 1 ⚡.
  *
- * Persistance : localStorage 'talia_energy' = { day:'YYYY-MM-DD', spent:N }.
+ * Persistance : localStorage 'altio_energy' = { day:'YYYY-MM-DD', spent:N }.
  * Synchronisé multi-appareil via progressSync (fusion par jour → anti-contournement).
  */
-const LS_KEY = 'talia_energy';
+const LS_KEY = 'altio_energy';
 
 /** Coût en ⚡ par module IA (1 par défaut). */
 export const ENERGY_COST = 1;

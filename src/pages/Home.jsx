@@ -603,7 +603,7 @@ export default function Home() {
   const [demoOn, setDemoOn] = useState(() => isDemoMode());
   const [joinNotice, setJoinNotice] = useState(() => getJoinNotice());
   const [section, setSection] = useState('home'); // home | cv | prep | encadrement | account
-  const [showOnboard, setShowOnboard] = useState(() => { try { return !localStorage.getItem('talia_onboarded'); } catch { return false; } });
+  const [showOnboard, setShowOnboard] = useState(() => { try { return !localStorage.getItem('altio_onboarded'); } catch { return false; } });
   const { mode, toggle: toggleTheme } = useTheme();
   const isEncadrant = useEncadrant();
   useSeo({ title: 'Altio CV — Générateur de CV gratuit & préparation à l\'emploi', description: 'Crée ton CV gratuitement et entraîne-toi à décrocher ton poste : entretien, tests de recrutement, oral, lettre de motivation. Gagne en employabilité, étape par étape.' });
@@ -748,7 +748,7 @@ export default function Home() {
 
   return (
     <div style={{ minHeight: '100vh', background: C.bg, fontFamily: FONT }}>
-      {showOnboard && <GameOnboarding onDone={() => { try { localStorage.setItem('talia_onboarded', '1'); } catch { /* */ } setShowOnboard(false); }} />}
+      {showOnboard && <GameOnboarding onDone={() => { try { localStorage.setItem('altio_onboarded', '1'); } catch { /* */ } setShowOnboard(false); }} />}
 
       {/* ── Bandeau retour Stripe ── */}
       <CheckoutSuccessBanner

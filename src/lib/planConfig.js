@@ -3,7 +3,7 @@
  *
  * Hiérarchie : free < personal < business
  *
- * Stockage courant : localStorage talia_plan = { tier, activatedAt, source }
+ * Stockage courant : localStorage altio_plan = { tier, activatedAt, source }
  * Futur : synced depuis Supabase subscriptions (via Stripe webhook).
  *
  * Usage :
@@ -11,7 +11,7 @@
  *   if (!canDo('bulk')) → show upgrade gate
  */
 
-const LS_KEY = 'talia_plan';
+const LS_KEY = 'altio_plan';
 
 // ── Définitions des plans ──────────────────────────────────────────────────
 

@@ -8,9 +8,9 @@
  * Le roster est persistné en localStorage pour que la réattribution tienne
  * pendant la session. On peut changer de « persona » (qui regarde).
  */
-const LS_ROSTER  = 'talia_demo_roster';
-const LS_PERSONA = 'talia_demo_persona';
-const LS_ENCADRANT = 'talia_demo_encadrant'; // en démo : se voir comme encadrant
+const LS_ROSTER  = 'altio_demo_roster';
+const LS_PERSONA = 'altio_demo_persona';
+const LS_ENCADRANT = 'altio_demo_encadrant'; // en démo : se voir comme encadrant
 
 /** En démo, l'utilisateur a-t-il activé le « mode encadrant » ? (défaut : élève) */
 export function isDemoEncadrant() {

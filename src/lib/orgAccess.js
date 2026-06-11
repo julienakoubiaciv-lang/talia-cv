@@ -14,9 +14,9 @@ import { isAuthenticated } from './currentUser';
 import { isDemoMode } from './demoMode';
 import { redeemDemoInvite, demoOrgTier } from './demoOrg';
 
-const LS_PENDING = 'talia_pending_invite';
-const LS_ORG_NAME = 'talia_org_name';   // nom de l'école rattachée
-const LS_JOIN_NOTICE = 'talia_join_notice'; // notice de bienvenue (one-shot)
+const LS_PENDING = 'altio_pending_invite';
+const LS_ORG_NAME = 'altio_org_name';   // nom de l'école rattachée
+const LS_JOIN_NOTICE = 'altio_join_notice'; // notice de bienvenue (one-shot)
 
 /** Détecte ?org_invite=TOKEN dans l'URL, le mémorise et nettoie l'URL. */
 export function consumeOrgInviteFromURL() {

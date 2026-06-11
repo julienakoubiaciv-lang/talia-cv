@@ -2,12 +2,12 @@
  * interviewProgress — Suivi local du % de complétion du simulateur d'entretien.
  *
  * Stocke, par thème, le meilleur score (%) obtenu et le nombre de sessions jouées.
- * Persistance : localStorage 'talia_interview_progress'.
+ * Persistance : localStorage 'altio_interview_progress'.
  * Sert à afficher la progression sur l'écran d'accueil du jeu (façon code de la route).
  */
 import { CATEGORIES } from './interviewCategories.js';
 
-const LS_KEY = 'talia_interview_progress';
+const LS_KEY = 'altio_interview_progress';
 
 function read() {
   try {

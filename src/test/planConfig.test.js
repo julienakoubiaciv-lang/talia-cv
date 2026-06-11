@@ -96,12 +96,12 @@ describe('getCurrentTier', () => {
   });
 
   it('retourne "free" si le JSON est corrompu', () => {
-    localStorage.setItem('talia_plan', '{{invalid}}');
+    localStorage.setItem('altio_plan', '{{invalid}}');
     expect(getCurrentTier()).toBe('free');
   });
 
   it('retourne "free" si le tier stocké est inconnu', () => {
-    localStorage.setItem('talia_plan', JSON.stringify({ tier: 'ultra-premium' }));
+    localStorage.setItem('altio_plan', JSON.stringify({ tier: 'ultra-premium' }));
     expect(getCurrentTier()).toBe('free');
   });
 });
@@ -109,7 +109,7 @@ describe('getCurrentTier', () => {
 describe('setPlan', () => {
   it('stocke le tier et la source', () => {
     setPlan('business', 'stripe');
-    const stored = JSON.parse(localStorage.getItem('talia_plan') || '{}');
+    const stored = JSON.parse(localStorage.getItem('altio_plan') || '{}');
     expect(stored.tier).toBe('business');
     expect(stored.source).toBe('stripe');
     expect(stored.activatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);

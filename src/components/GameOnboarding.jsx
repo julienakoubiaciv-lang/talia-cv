@@ -1,7 +1,7 @@
 /**
  * GameOnboarding — Accueil premier lancement de l'app gamifiée.
  *
- * Modale multi-slides montrée UNE fois (localStorage 'talia_onboarded'),
+ * Modale multi-slides montrée UNE fois (localStorage 'altio_onboarded'),
  * pour poser la promesse : s'entraîner, gagner de l'XP, suivre son employabilité.
  */
 import React, { useState } from 'react';

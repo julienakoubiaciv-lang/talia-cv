@@ -42,7 +42,7 @@ describe('dayKey', () => {
 });
 
 describe('stockage énergie', () => {
-  beforeEach(() => { try { localStorage.removeItem('talia_energy'); } catch { /* */ } });
+  beforeEach(() => { try { localStorage.removeItem('altio_energy'); } catch { /* */ } });
 
   it('démarre à 0 dépensé', () => {
     expect(getSpent()).toBe(0);
@@ -55,7 +55,7 @@ describe('stockage énergie', () => {
   });
 
   it('réinitialise quand le jour change', () => {
-    localStorage.setItem('talia_energy', JSON.stringify({ day: '2000-01-01', spent: 4 }));
+    localStorage.setItem('altio_energy', JSON.stringify({ day: '2000-01-01', spent: 4 }));
     expect(readEnergy().spent).toBe(0); // jour périmé → reset
   });
 

@@ -180,7 +180,7 @@ export function computeOralNote(scores = []) {
 }
 
 // ── Persistance de la meilleure note /20 ─────────────────────────────────────
-const LS_ORAL = 'talia_oral_progress';
+const LS_ORAL = 'altio_oral_progress';
 
 /** Enregistre le résultat d'un oral (meilleure note conservée). */
 export function saveOralResult(note) {

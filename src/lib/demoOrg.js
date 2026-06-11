@@ -8,8 +8,8 @@
  * L'appartenance est stockée par navigateur (localStorage) → pour simuler
  * deux étudiants différents, on réinitialise l'état entre les deux.
  */
-const LS_MEMBER = 'talia_demo_membership';
-const LS_GEN = 'talia_demo_gen_invites';   // liens générés depuis le dashboard
+const LS_MEMBER = 'altio_demo_membership';
+const LS_GEN = 'altio_demo_gen_invites';   // liens générés depuis le dashboard
 
 /** Écoles de démo, indexées par token d'invitation. */
 export const DEMO_INVITES = {

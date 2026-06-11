@@ -10,7 +10,7 @@
  */
 import { supabaseReady } from '@/lib/supabase';
 
-const LS_KEY = 'talia_demo';
+const LS_KEY = 'altio_demo';
 
 /** Le mode démo est-il actif ? */
 export function isDemoMode() {

@@ -1,0 +1,18 @@
+{
+  "name": "Altio CV — Générateur de CV & préparation à l'emploi",
+  "short_name": "Altio CV",
+  "description": "Crée ton CV gratuitement et entraîne-toi à décrocher ton poste : entretien, tests de recrutement, oral, lettre de motivation.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F4F6FA",
+  "theme_color": "#1539B7",
+  "lang": "fr-FR",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='44' fill='%231539B7'/%3E%3Ctext x='96' y='134' font-family='Arial,sans-serif' font-size='120' font-weight='bold' fill='white' text-anchor='middle'%3EA%3C/text%3E%3C/svg%3E",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

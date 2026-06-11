@@ -23,6 +23,8 @@
  *   }
  */
 import { supabase, supabaseReady } from '@/lib/supabase';
+import { isDemoMode } from '@/lib/demoMode';
+import { mockClaudeResponse } from '@/lib/demoResponses';
 
 const FN_URL = supabaseReady
   ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/claude-proxy`
@@ -68,6 +70,11 @@ export async function callClaude({
   max_tokens = 4096,
   metadata,
 }) {
+  // Mode démo : réponses IA simulées en local (aucun backend requis).
+  if (isDemoMode()) {
+    return mockClaudeResponse({ action, messages, metadata });
+  }
+
   if (!FN_URL || !supabase) {
     throw new ClaudeProxyError('Supabase non configuré', 0);
   }

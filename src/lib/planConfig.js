@@ -1,9 +1,9 @@
 /**
- * planConfig.js — Définition des plans et feature flags TaliaCV
+ * planConfig.js — Définition des plans et feature flags Altio CV
  *
  * Hiérarchie : free < personal < business
  *
- * Stockage courant : localStorage talia_plan = { tier, activatedAt, source }
+ * Stockage courant : localStorage altio_plan = { tier, activatedAt, source }
  * Futur : synced depuis Supabase subscriptions (via Stripe webhook).
  *
  * Usage :
@@ -11,7 +11,7 @@
  *   if (!canDo('bulk')) → show upgrade gate
  */
 
-const LS_KEY = 'talia_plan';
+const LS_KEY = 'altio_plan';
 
 // ── Définitions des plans ──────────────────────────────────────────────────
 
@@ -40,6 +40,34 @@ export const PLANS = {
     crmSync:            false,
     templateIds:        ['classic', 'minimal', 'compact', 'impact'],
   },
+  // Cowork : petite équipe encadrée par un coach (3-5 personnes). Le coach paie
+  // pour son équipe ; chaque membre obtient un accès « pro ».
+  cowork: {
+    id:                 'cowork',
+    label:              'Cowork',
+    emoji:              '🤝',
+    maxCVs:             Infinity,
+    maxProfiles:        3,
+    maxBulkPerSession:  0,
+    bulkEnabled:        false,
+    cloudSync:          true,
+    crmSync:            false,
+    templateIds:        ['classic', 'minimal', 'compact', 'impact'],
+  },
+  // Forfait « parrainé » : accès offert à un élève via son école/entreprise.
+  // Pris en charge par l'organisation (sièges), pas de paiement individuel.
+  school: {
+    id:                 'school',
+    label:              'École',
+    emoji:              '🎓',
+    maxCVs:             Infinity,
+    maxProfiles:        3,
+    maxBulkPerSession:  0,
+    bulkEnabled:        false,
+    cloudSync:          true,
+    crmSync:            true,
+    templateIds:        ['classic', 'minimal', 'compact', 'impact'],
+  },
   business: {
     id:                 'business',
     label:              'Business',
@@ -53,6 +81,21 @@ export const PLANS = {
     templateIds:        ['classic', 'minimal', 'compact', 'impact'],
   },
 };
+
+/**
+ * Classement des tiers par niveau d'accès (pour résoudre l'entitlement effectif).
+ * Le tier effectif d'un utilisateur = le MEILLEUR de : abo perso, parrainage org.
+ */
+export const TIER_RANK = { free: 0, personal: 1, cowork: 2, school: 3, business: 4 };
+
+/** Renvoie le meilleur tier parmi ceux passés (ignore null/inconnus). */
+export function betterTier(...tiers) {
+  let best = 'free';
+  for (const t of tiers) {
+    if (t && TIER_RANK[t] != null && TIER_RANK[t] > TIER_RANK[best]) best = t;
+  }
+  return best;
+}
 
 // ── Getters / Setters ──────────────────────────────────────────────────────
 

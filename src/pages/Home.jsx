@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { saveEditorState, PALETTES, colorForFormation } from '@/lib/cvData';
 import { getHistorySync, deleteHistory } from '@/lib/historySync';
@@ -6,28 +6,40 @@ import { useCRMBridge } from '@/hooks/useCRMBridge.jsx';
 import { useAuth } from '@/hooks/useAuth.jsx';
 import { useIsMobile } from '@/hooks/useWindowWidth';
 import { useCRMToken } from '@/hooks/useCRMToken';
-import { usePlan } from '@/hooks/usePlan';
+import { useEntitlements } from '@/hooks/useEntitlements';
 import { PlanBanner } from '@/components/PlanGate';
 import { CheckoutSuccessBanner } from '@/components/CheckoutSuccessBanner.jsx';
 import { useCheckoutSuccess } from '@/hooks/useCheckoutSuccess';
 import { getOverallCompletion } from '@/lib/interviewProgress';
+import { getTotalXp, levelForXp, getDailyStreak } from '@/lib/playerProfile';
+import { getDiagnostic } from '@/lib/employability';
+import { useSeo } from '@/lib/seo';
+import { isDemoMode, setDemoMode } from '@/lib/demoMode';
+import { getJoinNotice, clearJoinNotice } from '@/lib/orgAccess';
+import { useEncadrant } from '@/hooks/useEncadrant';
+import { isDemoEncadrant, setDemoEncadrant } from '@/lib/demoCohort';
+import GameOnboarding from '@/components/GameOnboarding';
+import { alpha } from '@/lib/gameTheme';
+import { useTheme } from '@/hooks/useTheme.jsx';
+import EnergyBar from '@/components/EnergyBar';
 
 /* ─── Design tokens ─────────────────────────────────────────────────────── */
 const C = {
-  bluePrimary: '#1539B7',
-  blueHover:   '#1F4FE0',
-  blueSoft:    '#EEF2FF',
-  navy:        '#0B1638',
-  navyDeep:    '#0F1A40',
-  ink:         '#0B1020',
-  ink2:        '#3A4156',
-  mute:        '#9AA0AE',
-  rule:        '#ECEDF1',
-  bg:          '#FFFFFF',
-  surface:     '#F7F8FA',
-  ok:          '#1F8A5B',
-  okBg:        'rgba(31,138,91,0.10)',
-  star:        '#F5B400',
+  bluePrimary: 'var(--altio-blue)',
+  blueHover:   'var(--altio-blue-hover)',
+  blueSoft:    'var(--altio-blue-soft)',
+  navy:        'var(--altio-ink)',
+  navyDeep:    'var(--altio-ink)',
+  ink:         'var(--altio-ink)',
+  ink2:        'var(--altio-ink2)',
+  mute:        'var(--altio-mute)',
+  rule:        'var(--altio-line)',
+  bg:          'var(--altio-bg)',
+  surface:     'var(--altio-card2)',
+  card:        'var(--altio-card)',
+  ok:          'var(--altio-green)',
+  okBg:        'var(--altio-green-soft)',
+  star:        'var(--altio-star)',
 };
 
 const FONT = "'Manrope', system-ui, sans-serif";
@@ -141,7 +153,7 @@ function Stars({ value = 5, size = 22 }) {
 function ConfirmModal({ name, onConfirm, onCancel }) {
   return (
     <div onClick={onCancel} style={{ position: 'fixed', inset: 0, background: 'rgba(11,16,32,0.45)', backdropFilter: 'blur(3px)', zIndex: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 20, padding: '32px', maxWidth: 400, width: '90%', boxShadow: '0 40px 100px rgba(11,16,32,.28), 0 0 0 1px rgba(0,0,0,.04)', fontFamily: FONT }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: C.card, borderRadius: 20, padding: '32px', maxWidth: 400, width: '90%', boxShadow: '0 40px 100px rgba(11,16,32,.28), 0 0 0 1px rgba(0,0,0,.04)', fontFamily: FONT }}>
         <div style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(239,68,68,.10)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ef4444', marginBottom: 20 }}>
           <IconTrash s={20} />
         </div>
@@ -150,7 +162,7 @@ function ConfirmModal({ name, onConfirm, onCancel }) {
           <strong style={{ color: C.ink }}>{name}</strong> sera définitivement supprimé.
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
-          <button onClick={onCancel} style={{ flex: 1, padding: '11px', border: `1px solid ${C.rule}`, borderRadius: 10, background: '#fff', fontSize: 13.5, fontWeight: 600, color: C.ink2, cursor: 'pointer' }}>Annuler</button>
+          <button onClick={onCancel} style={{ flex: 1, padding: '11px', border: `1px solid ${C.rule}`, borderRadius: 10, background: C.card, fontSize: 13.5, fontWeight: 600, color: C.ink2, cursor: 'pointer' }}>Annuler</button>
           <button onClick={onConfirm} style={{ flex: 1, padding: '11px', border: 'none', borderRadius: 10, background: '#ef4444', fontSize: 13.5, fontWeight: 700, color: '#fff', cursor: 'pointer' }}>Supprimer</button>
         </div>
       </div>
@@ -171,7 +183,7 @@ function PreviewModal({ item, onModify, onDownload, downloading, onClose }) {
       <div onClick={e => e.stopPropagation()} style={{
         width: '100%', maxWidth: isMobile ? '100%' : 1040,
         height: isMobile ? 'min(88vh, 640px)' : 'min(740px, 90vh)',
-        background: '#fff', borderRadius: isMobile ? 16 : 20, overflow: 'hidden',
+        background: C.card, borderRadius: isMobile ? 16 : 20, overflow: 'hidden',
         boxShadow: '0 40px 100px rgba(11,16,32,.28), 0 0 0 1px rgba(0,0,0,.04)',
         display: 'flex', flexDirection: 'column', fontFamily: FONT,
       }}>
@@ -195,7 +207,7 @@ function PreviewModal({ item, onModify, onDownload, downloading, onClose }) {
                 disabled={downloading}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 7, padding: '9px 18px',
-                  border: `1px solid ${C.rule}`, borderRadius: 10, background: '#fff',
+                  border: `1px solid ${C.rule}`, borderRadius: 10, background: C.card,
                   fontSize: 13, fontWeight: 600, color: C.ink,
                   cursor: downloading ? 'wait' : 'pointer',
                   opacity: downloading ? 0.7 : 1,
@@ -209,7 +221,7 @@ function PreviewModal({ item, onModify, onDownload, downloading, onClose }) {
             <button onClick={() => { onModify(item); onClose(); }} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: isMobile ? '8px 14px' : '9px 18px', border: 'none', borderRadius: 10, background: C.bluePrimary, fontSize: 13, fontWeight: 600, color: '#fff', cursor: 'pointer' }}>
               <IconEdit s={13} /> Modifier
             </button>
-            <button onClick={onClose} style={{ width: 34, height: 34, border: `1px solid ${C.rule}`, borderRadius: 10, background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.mute, flexShrink: 0 }}>
+            <button onClick={onClose} style={{ width: 34, height: 34, border: `1px solid ${C.rule}`, borderRadius: 10, background: C.card, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.mute, flexShrink: 0 }}>
               <IconX s={15} />
             </button>
           </div>
@@ -348,7 +360,7 @@ function CVCard({ item, onModify, onView, onDelete, onCreateLead, animDelay }) {
 /* ─── Stat Card ──────────────────────────────────────────────────────────── */
 function StatCard({ icon, value, label, sub, badge }) {
   return (
-    <div style={{ background: '#fff', borderRadius: 16, padding: '22px 24px', border: `1px solid ${C.rule}`, boxShadow: '0 1px 2px rgba(15,20,40,.02)', display: 'flex', alignItems: 'center', gap: 16, flex: '1 1 180px' }}>
+    <div style={{ background: C.card, borderRadius: 16, padding: '22px 24px', border: `1px solid ${C.rule}`, boxShadow: '0 1px 2px rgba(15,20,40,.02)', display: 'flex', alignItems: 'center', gap: 16, flex: '1 1 180px' }}>
       <div style={{ width: 46, height: 46, borderRadius: 12, background: C.blueSoft, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.bluePrimary, flexShrink: 0 }}>
         {icon}
       </div>
@@ -420,7 +432,7 @@ function OnboardingTour({ onClose, onAction }) {
       animation:'fadeIn .25s ease', fontFamily:FONT,
     }}>
       <div style={{
-        width:'min(540px, 96vw)', background:'#fff', borderRadius:24,
+        width:'min(540px, 96vw)', background: C.card, borderRadius:24,
         overflow:'hidden', boxShadow:'0 40px 100px rgba(11,16,32,.4)',
         animation:'fadeInUp .35s cubic-bezier(.16,.84,.24,1)',
       }}>
@@ -472,7 +484,7 @@ function OnboardingTour({ onClose, onAction }) {
             {step > 0 && (
               <button onClick={() => setStep(step-1)} style={{
                 padding:'11px 18px', border:`1px solid ${C.rule}`, borderRadius:10,
-                background:'#fff', fontSize:13, fontWeight:600, color:C.ink2,
+                background: C.card, fontSize:13, fontWeight:600, color:C.ink2,
                 cursor:'pointer', fontFamily:FONT, display:'flex', alignItems:'center', gap:5,
               }}>
                 ← Précédent
@@ -508,6 +520,62 @@ function OnboardingTour({ onClose, onAction }) {
 }
 
 /* ─── Main ───────────────────────────────────────────────────────────────── */
+const HOME_MODULES = [
+  { route: '/parcours',         emoji: '🧗', accent: '#1539B7', title: "Ton chemin vers l'emploi",  desc: "Suis ta progression : CV, métier, entretien. Gagne de l'XP et des badges.", cta: 'Mon parcours' },
+  { route: '/entretien',        emoji: '🎤', accent: '#0CA678', title: "Simulateur d'entretien",     desc: "Mises en situation réelles, feedback immédiat. Entraîne-toi avant le jour J.", cta: "S'entraîner" },
+  { route: '/metiers',          emoji: '🧭', accent: '#1098AD', title: 'Décrypte les métiers',       desc: 'Les compétences clés attendues pour chaque poste, en mode jeu.', cta: 'Explorer' },
+  { route: '/diagnostic',       emoji: '🧪', accent: '#7048E8', title: "Mon bilan d'employabilité",  desc: "Ton score global, tes forces et ce qu'il reste à travailler.", cta: 'Mon bilan' },
+  { route: '/analyse',          emoji: '🔍', accent: '#1F4FE0', title: 'Analyse CV ↔ offre',         desc: 'Score de correspondance, mots-clés manquants et compatibilité ATS.', cta: 'Analyser' },
+  { route: '/codes',            emoji: '🏢', accent: '#E8590C', title: "Les codes de l'entreprise",  desc: 'Savoir-être en poste : la meilleure réaction face à des situations réelles.', cta: "S'entraîner" },
+  { route: '/lettre',           emoji: '✉️', accent: '#C2255C', title: 'Kit de candidature IA',      desc: 'Lettre de motivation, mail de relance ou de remerciement, depuis ton CV.', cta: 'Rédiger' },
+  { route: '/entretien-oral',   emoji: '🗣️', accent: '#0CA678', title: "Entretien à l'oral IA",      desc: 'Réponds à voix haute : le coach évalue le fond, la structure et la clarté.', cta: "S'entraîner" },
+  { route: '/test-recrutement', emoji: '🧩', accent: '#7048E8', title: 'Test de recrutement IA',     desc: "Aptitudes, métier et mises en situation, adaptés à ton CV et à l'annonce.", cta: 'Passer le test' },
+];
+
+const NAV_ITEMS = [
+  { id: 'home',        icon: '🏠', label: 'Accueil' },
+  { id: 'cv',          icon: '📄', label: 'Mes CV' },
+  { id: 'prep',        icon: '🎯', label: 'Préparation' },
+  { id: 'encadrement', icon: '👩‍🏫', label: 'Encadrement', optional: true },
+  { id: 'account',     icon: '⚙️', label: 'Compte' },
+];
+
+function Sidebar({ section, setSection, isMobile, showEncadrement }) {
+  const items = NAV_ITEMS.filter((n) => !n.optional || showEncadrement);
+  if (isMobile) {
+    return (
+      <nav style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 40, display: 'flex',
+        background: C.bg, borderTop: `1px solid ${C.rule}`, padding: '6px 2px', boxShadow: '0 -4px 18px rgba(11,22,56,.06)' }}>
+        {items.map((n) => (
+          <button key={n.id} onClick={() => setSection(n.id)}
+            style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, background: 'none', border: 'none', cursor: 'pointer', padding: '6px 2px', fontFamily: 'Manrope,sans-serif', color: section === n.id ? C.bluePrimary : C.mute }}>
+            <span style={{ fontSize: 18 }}>{n.icon}</span>
+            <span style={{ fontSize: 9.5, fontWeight: 700 }}>{n.label}</span>
+          </button>
+        ))}
+      </nav>
+    );
+  }
+  return (
+    <aside style={{ width: 208, flexShrink: 0, position: 'sticky', top: 24, alignSelf: 'flex-start' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        {items.map((n) => {
+          const on = section === n.id;
+          return (
+            <button key={n.id} onClick={() => setSection(n.id)}
+              style={{ display: 'flex', alignItems: 'center', gap: 11, width: '100%', textAlign: 'left',
+                background: on ? C.blueSoft : 'transparent', color: on ? C.bluePrimary : C.ink2,
+                border: 'none', borderRadius: 12, padding: '11px 14px', fontSize: 14.5, fontWeight: on ? 800 : 600,
+                cursor: 'pointer', fontFamily: 'Manrope,sans-serif', transition: 'background .15s' }}>
+              <span style={{ fontSize: 18 }}>{n.icon}</span>{n.label}
+            </button>
+          );
+        })}
+      </div>
+    </aside>
+  );
+}
+
 export default function Home() {
   const navigate = useNavigate();
   const { embedded, notifyCreateLead } = useCRMBridge();
@@ -515,7 +583,7 @@ export default function Home() {
   const isMobile = useIsMobile();
   const { crmLink, isLinked: isCRMLinked, linkFromURL, link: linkCRM, unlink: unlinkCRM } = useCRMToken();
   const [crmKeyInput, setCrmKeyInput] = useState('');
-  const { isFree, plan, canCV, remainingCVs, canBulk, nextPlan, upgrade } = usePlan();
+  const { isFree, plan, canCV, remainingCVs, canBulk, nextPlan, upgrade, isSchool, orgName } = useEntitlements();
 
   // Taux de complétion global du simulateur d'entretien (localStorage)
   const interviewPct = getOverallCompletion();
@@ -532,24 +600,28 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedForms, setSelectedForms] = useState([]); // formations sélectionnées
   const [groupByBulk, setGroupByBulk] = useState(false);
-  const [tourOpen, setTourOpen] = useState(false);
+  const [demoOn, setDemoOn] = useState(() => isDemoMode());
+  const [joinNotice, setJoinNotice] = useState(() => getJoinNotice());
+  const [section, setSection] = useState('home'); // home | cv | prep | encadrement | account
+  const [showOnboard, setShowOnboard] = useState(() => { try { return !localStorage.getItem('altio_onboarded'); } catch { return false; } });
+  const { mode, toggle: toggleTheme } = useTheme();
+  const isEncadrant = useEncadrant();
+  useSeo({ title: 'Altio CV — Générateur de CV gratuit & préparation à l\'emploi', description: 'Crée ton CV gratuitement et entraîne-toi à décrocher ton poste : entretien, tests de recrutement, oral, lettre de motivation. Gagne en employabilité, étape par étape.' });
+
+  // Rafraîchit la notice de bienvenue une fois le rattachement école résolu.
+  useEffect(() => { const n = getJoinNotice(); if (n) setJoinNotice(n); }, [orgName, isSchool]);
+
+  // Tableau de bord : niveau/XP, série, snapshot employabilité.
+  const dashXp = useMemo(() => getTotalXp(), []);
+  const dashLvl = useMemo(() => levelForXp(dashXp), [dashXp]);
+  const dashStreak = useMemo(() => getDailyStreak(), []);
+  const dashDiag = useMemo(() => { try { return getDiagnostic(); } catch { return null; } }, []);
   const [leadSentIds, setLeadSentIds] = useState(new Set()); // IDs déjà envoyés au CRM
 
   useEffect(() => { setCvList(getHistorySync()); }, []);
 
   // Détection du token CRM dans l'URL (?crm_token=…)
   useEffect(() => { linkFromURL(); }, [linkFromURL]);
-
-  // Première visite → ouvre le tour
-  useEffect(() => {
-    if (!localStorage.getItem('altio_onboarding_done')) {
-      setTimeout(() => setTourOpen(true), 600);
-    }
-  }, []);
-  const closeTour = () => {
-    setTourOpen(false);
-    localStorage.setItem('altio_onboarding_done', '1');
-  };
 
   // ── Liste unique des formations présentes ──
   const formations = React.useMemo(() => {
@@ -676,6 +748,8 @@ export default function Home() {
 
   return (
     <div style={{ minHeight: '100vh', background: C.bg, fontFamily: FONT }}>
+      {showOnboard && <GameOnboarding onDone={() => { try { localStorage.setItem('altio_onboarded', '1'); } catch { /* */ } setShowOnboard(false); }} />}
+
       {/* ── Bandeau retour Stripe ── */}
       <CheckoutSuccessBanner
         checkoutState={checkoutState}
@@ -713,150 +787,211 @@ export default function Home() {
           )}
         </div>
 
-        {/* Centre — masqué sur mobile */}
-        {!isMobile && (
-          <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 18px', background: C.surface, border: `1px solid ${C.rule}`, borderRadius: 99, fontSize: 13.5, fontWeight: 600, color: C.ink }}>
-              <IconGrid s={14} />
-              Tableau de bord
-            </div>
-          </div>
+        <div style={{ flex: 1 }} />
+
+        {/* Parrainage école (accès offert) */}
+        {isSchool && (
+          <span title={orgName ? `Accès offert par ${orgName}` : 'Accès offert par ton école'}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 800,
+              color: C.ok, background: alpha(C.ok, 12), padding: '5px 11px', borderRadius: 99, whiteSpace: 'nowrap', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            🎓 {orgName || 'École'}
+          </span>
         )}
 
-        <div style={{ flex: isMobile ? 1 : 'none' }} />
-
-        {/* Nouveau CV — bloqué si limite plan atteinte */}
-        <button
-          onClick={() => canCV(cvList.length) ? navigate('/generate') : navigate('/generate')}
-          title={!canCV(cvList.length) ? `Limite ${cvList.length} CV atteinte (plan Gratuit)` : ''}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: isMobile ? '9px 14px' : '10px 22px', background: !canCV(cvList.length) ? C.mute : C.ink, color: '#fff', border: 'none', borderRadius: 99, fontSize: isMobile ? 13 : 13.5, fontWeight: 700, cursor: 'pointer', transition: 'opacity .15s', letterSpacing: '-0.1px', whiteSpace: 'nowrap' }}
-          onMouseEnter={e => e.currentTarget.style.opacity = '.85'}
-          onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
-          <IconPlus s={12} /> {isMobile ? 'Nouveau' : 'Nouveau CV'}
-          {isFree && cvList.length > 0 && remainingCVs(cvList.length) !== Infinity && (
-            <span style={{ fontSize: 10, background: 'rgba(255,255,255,0.25)', padding: '1px 5px', borderRadius: 99 }}>
-              {remainingCVs(cvList.length)}/{plan.maxCVs}
-            </span>
-          )}
-        </button>
-
-        {/* En masse — masqué sur mobile */}
-        {!isMobile && (
-          <button
-            onClick={() => canBulk ? navigate('/bulk') : null}
-            title={!canBulk ? 'Disponible à partir du plan Personnel' : ''}
-            style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '10px 18px', background: C.bg, color: canBulk ? C.ink : C.mute, border: `1.5px solid ${canBulk ? C.rule : C.rule}`, borderRadius: 99, fontSize: 13.5, fontWeight: 700, cursor: canBulk ? 'pointer' : 'not-allowed', transition: 'border-color .15s', letterSpacing: '-0.1px', opacity: canBulk ? 1 : 0.6 }}
-            onMouseEnter={e => { if (canBulk) e.currentTarget.style.borderColor = C.ink; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = C.rule; }}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-            En masse
-            {!canBulk && <span style={{ fontSize: 10 }}>🔒</span>}
-          </button>
-        )}
-
-        {/* Badge CRM lié — masqué sur mobile si pas de place */}
-        {isCRMLinked && !embedded && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 10px', background: '#F0FDF4', border: '1px solid #86EFAC', borderRadius: 99, flexShrink: 0 }}>
-            <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#16A34A', flexShrink: 0 }} />
-            {!isMobile && (
-              <span style={{ fontSize: 11.5, fontWeight: 600, color: '#15803D', whiteSpace: 'nowrap' }}>
-                CRM Altio
-              </span>
-            )}
-            <button onClick={unlinkCRM} title="Délier le CRM"
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#16A34A', padding: '0 2px', display: 'flex', alignItems: 'center', lineHeight: 1 }}
-              onMouseEnter={e => e.currentTarget.style.opacity = '.6'}
-              onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
-              <IconX s={10} />
-            </button>
-          </div>
-        )}
-
-        {/* Auth — email masqué sur mobile */}
-        {user ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            {!isMobile && (
-              <div style={{ fontSize: 12, color: C.mute, maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={user.email}>
-                {user.email}
-              </div>
-            )}
-            <button onClick={signOut}
-              style={{ padding: isMobile ? '7px 10px' : '7px 14px', borderRadius: 99, fontSize: 12, fontWeight: 600, background: C.surface, color: C.ink2, border: `1px solid ${C.rule}`, cursor: 'pointer', fontFamily: 'Manrope,sans-serif', whiteSpace: 'nowrap' }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = C.ink}
-              onMouseLeave={e => e.currentTarget.style.borderColor = C.rule}>
-              {isMobile ? '↩' : 'Déconnexion'}
-            </button>
-          </div>
-        ) : (
-          <button onClick={() => navigate('/auth')}
-            style={{ padding: isMobile ? '7px 10px' : '7px 16px', borderRadius: 99, fontSize: 12, fontWeight: 700, background: C.blueSoft, color: C.bluePrimary, border: `1.5px solid ${C.bluePrimary}33`, cursor: 'pointer', fontFamily: 'Manrope,sans-serif', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 5 }}>
-            {isMobile ? '☁' : '☁ Connexion'}
-          </button>
-        )}
-
-        {/* Aide */}
-        {!isMobile && (
-          <button onClick={() => setTourOpen(true)} title="Visite guidée"
-            style={{ flexShrink: 0, width: 34, height: 34, background: C.surface, color: C.ink2, border: `1px solid ${C.rule}`, borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .15s' }}
-            onMouseEnter={e => { e.currentTarget.style.background=C.blueSoft; e.currentTarget.style.color=C.bluePrimary; e.currentTarget.style.borderColor=`${C.bluePrimary}55`; }}
-            onMouseLeave={e => { e.currentTarget.style.background=C.surface; e.currentTarget.style.color=C.ink2; e.currentTarget.style.borderColor=C.rule; }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-            </svg>
-          </button>
-        )}
+        {/* Énergie IA du jour */}
+        <EnergyBar variant="pill" />
       </header>
 
-      {/* ── Main content ─────────────────────────────────────────────────── */}
-      <main style={{ maxWidth: 1180, margin: '0 auto', padding: isMobile ? '24px 16px 60px' : '56px 64px 80px' }}>
+      {/* ── Layout : sidebar gauche + contenu ────────────────────────────── */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: isMobile ? 0 : 28, maxWidth: 1300, margin: '0 auto', padding: isMobile ? '16px 0 88px' : '28px 28px 80px' }}>
+        <Sidebar section={section} setSection={setSection} isMobile={isMobile} showEncadrement={isEncadrant} />
+        <main style={{ flex: 1, minWidth: 0, maxWidth: 1180, padding: isMobile ? '0 16px' : 0 }}>
 
-        {/* Hero */}
-        <div style={{ marginBottom: isMobile ? 28 : 48, animation: 'fadeIn 0.8s ease both' }}>
+        {section === 'home' && (
+        <>
+        {/* Tableau de bord */}
+        <div style={{ marginBottom: isMobile ? 16 : 22 }}>
+          <h1 style={{ fontSize: isMobile ? 28 : 42, fontWeight: 800, color: C.ink, letterSpacing: '-1px', lineHeight: 1.05, margin: 0 }}>
+            {user ? 'Bonjour 👋' : 'Bienvenue sur Altio CV'}
+          </h1>
+          <p style={{ fontSize: isMobile ? 13.5 : 15.5, color: C.ink2, marginTop: 8, lineHeight: 1.5, maxWidth: 520 }}>
+            Prépare-toi à décrocher ton poste : CV, entraînements et suivi, au même endroit.
+          </p>
+        </div>
+
+        {/* Tableau de bord : niveau/XP + énergie */}
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.5fr 1fr', gap: 12, marginBottom: 12 }}>
+          <div style={{ background: C.card, border: `1px solid ${C.rule}`, borderRadius: 16, padding: '16px 18px', boxShadow: '0 4px 18px rgba(11,22,56,.05)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 11, marginBottom: 11 }}>
+              <span style={{ fontSize: 26 }}>{dashLvl.emoji}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 15.5, fontWeight: 800, color: C.ink }}>Niveau {dashLvl.index + 1} · {dashLvl.label}</div>
+                <div style={{ fontSize: 12.5, color: C.mute }}>⚡ {dashXp} XP{dashLvl.next ? ` · encore ${dashLvl.toNext} pour ${dashLvl.next.label}` : ' · niveau max 👑'}</div>
+              </div>
+              {dashStreak > 0 && <span style={{ flexShrink: 0, fontSize: 13, fontWeight: 800, color: C.star, background: alpha(C.star, 16), padding: '5px 10px', borderRadius: 99 }}>🔥 {dashStreak} j</span>}
+            </div>
+            <div style={{ height: 8, background: C.surface, borderRadius: 99, overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${dashLvl.progress}%`, background: C.bluePrimary, borderRadius: 99, transition: 'width .5s ease' }} />
+            </div>
+          </div>
+          <EnergyBar variant="card" />
+        </div>
+
+        {/* Snapshot employabilité */}
+        {dashDiag && (
+          <div onClick={() => navigate('/diagnostic')}
+            style={{ display: 'flex', alignItems: 'center', gap: 14, background: C.card, border: `1px solid ${C.rule}`, borderRadius: 16, padding: '14px 18px', marginBottom: isMobile ? 16 : 22, cursor: 'pointer', boxShadow: '0 4px 18px rgba(11,22,56,.05)' }}>
+            <div style={{ width: 54, height: 54, borderRadius: '50%', flexShrink: 0, background: `conic-gradient(${dashDiag.tier.color} ${dashDiag.global * 3.6}deg, ${C.rule} 0deg)`, display: 'grid', placeItems: 'center' }}>
+              <div style={{ width: 40, height: 40, borderRadius: '50%', background: C.card, display: 'grid', placeItems: 'center', fontSize: 14, fontWeight: 800, color: dashDiag.tier.color }}>{dashDiag.global}</div>
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 15.5, fontWeight: 800, color: C.ink }}>{dashDiag.tier.emoji} {dashDiag.tier.label}</div>
+              <div style={{ fontSize: 12.5, color: C.mute }}>Score d'employabilité · {dashDiag.global}%</div>
+            </div>
+            <span style={{ flexShrink: 0, fontSize: 12.5, fontWeight: 800, color: C.bluePrimary }}>Voir le bilan →</span>
+          </div>
+        )}
+
+        {/* Bienvenue après rattachement à une école (one-shot) */}
+        {joinNotice && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 12,
+            padding: isMobile ? '13px 15px' : '15px 20px',
+            background: alpha(C.ok, 12), border: `1px solid ${alpha(C.ok, 34)}`,
+            borderRadius: 14, marginBottom: isMobile ? 18 : 24,
+          }}>
+            <span style={{ fontSize: isMobile ? 22 : 26 }}>🎓</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: isMobile ? 14 : 15.5, fontWeight: 800, color: C.ink }}>
+                Bienvenue ! Tu as rejoint {joinNotice} 🎉
+              </div>
+              <div style={{ fontSize: isMobile ? 12 : 13, color: C.ink2, lineHeight: 1.45 }}>
+                Ton accès aux fonctionnalités est offert par ton école — pas d'abonnement à payer.
+              </div>
+            </div>
+            <button onClick={() => { clearJoinNotice(); setJoinNotice(null); }}
+              style={{ flexShrink: 0, background: 'transparent', border: 'none', color: C.mute, fontSize: 20, cursor: 'pointer', lineHeight: 1 }}>×</button>
+          </div>
+        )}
+
+        {/* Bandeau Mode démo — IA simulée en local (en attendant le backend) */}
+        {demoOn && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: isMobile ? 10 : 14,
+            padding: isMobile ? '12px 14px' : '14px 20px',
+            background: 'linear-gradient(90deg,#FFF8E6,#FEF1F6)',
+            border: '1px solid #F0D8A8', borderRadius: 14,
+            marginBottom: isMobile ? 18 : 24,
+          }}>
+            <span style={{ fontSize: isMobile ? 22 : 26 }}>🧪</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: isMobile ? 13.5 : 15, fontWeight: 800, color: C.ink }}>Mode démo actif</div>
+              <div style={{ fontSize: isMobile ? 11.5 : 13, color: C.ink2, lineHeight: 1.45 }}>
+                Les fonctionnalités IA (lettre, test, oral, optimisation…) sont simulées en local, sans backend.
+              </div>
+            </div>
+            <button
+              onClick={() => { setDemoMode(false); setDemoOn(false); }}
+              style={{
+                flexShrink: 0, background: C.card, color: C.ink2, border: '1px solid #E7C98F',
+                borderRadius: 99, padding: isMobile ? '7px 12px' : '8px 14px',
+                fontSize: isMobile ? 11.5 : 12.5, fontWeight: 700, cursor: 'pointer',
+              }}>
+              Désactiver
+            </button>
+          </div>
+        )}
+
+        {/* Accès espace encadrant — réservé aux conseillers / direction */}
+        {isEncadrant && (
+          <div onClick={() => navigate('/encadrement')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: isMobile ? 12 : 16,
+              padding: isMobile ? '13px 15px' : '15px 20px',
+              background: C.card, border: `1px solid ${C.rule}`, borderRadius: 14,
+              marginBottom: isMobile ? 18 : 24, cursor: 'pointer',
+              boxShadow: '0 4px 18px rgba(11,22,56,.05)',
+            }}>
+            <span style={{ fontSize: isMobile ? 24 : 28 }}>👩‍🏫</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: isMobile ? 14 : 15.5, fontWeight: 800, color: C.ink }}>Espace encadrant</div>
+              <div style={{ fontSize: isMobile ? 12 : 13, color: C.mute, lineHeight: 1.45 }}>
+                Vue conseiller & direction : la progression de la cohorte (démo).
+              </div>
+            </div>
+            <span style={{ flexShrink: 0, fontSize: 12.5, fontWeight: 800, color: C.bluePrimary }}>Ouvrir →</span>
+          </div>
+        )}
+
+        {/* Raccourcis */}
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr 1fr' : 'repeat(3, 1fr)', gap: 12 }}>
+          {[
+            { ic: '🎯', lb: "S'entraîner", on: () => setSection('prep') },
+            { ic: '📄', lb: 'Nouveau CV', on: () => navigate('/generate') },
+            { ic: '🧪', lb: 'Mon bilan', on: () => navigate('/diagnostic') },
+          ].map((q) => (
+            <button key={q.lb} onClick={q.on}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, background: C.card, border: `1px solid ${C.rule}`, borderRadius: 14, padding: isMobile ? '14px 8px' : '18px 12px', cursor: 'pointer', fontFamily: 'Manrope,sans-serif', boxShadow: '0 4px 18px rgba(11,22,56,.05)' }}>
+              <span style={{ fontSize: isMobile ? 22 : 26 }}>{q.ic}</span>
+              <span style={{ fontSize: isMobile ? 12 : 13.5, fontWeight: 800, color: C.ink }}>{q.lb}</span>
+            </button>
+          ))}
+        </div>
+        </>
+        )}
+
+        {section === 'prep' && (
+        <>
+        <h1 style={{ fontSize: isMobile ? 28 : 42, fontWeight: 800, color: C.ink, letterSpacing: '-1px', lineHeight: 1.05, margin: '0 0 6px' }}>Préparation</h1>
+        <p style={{ fontSize: isMobile ? 13.5 : 15.5, color: C.ink2, margin: '0 0 20px', lineHeight: 1.5, maxWidth: 520 }}>Tes modules d'entraînement vers l'emploi.</p>
+
+        {/* Modules — grille 5 par ligne */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
+          gap: isMobile ? 10 : 14,
+          marginBottom: isMobile ? 24 : 36,
+        }}>
+          {HOME_MODULES.map((m, i) => (
+            <div key={m.route} onClick={() => navigate(m.route)}
+              style={{
+                display: 'flex', flexDirection: 'column', gap: 7,
+                background: C.card, border: `1px solid ${C.rule}`,
+                borderRadius: 16, padding: isMobile ? '13px 13px' : '16px 16px 14px',
+                cursor: 'pointer', boxShadow: '0 4px 18px rgba(11,22,56,.05)',
+                transition: 'transform .15s, box-shadow .15s',
+                animation: 'fadeIn .6s ease both', animationDelay: `${i * 0.04}s`,
+              }}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 10px 26px rgba(11,22,56,.10)'; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 18px rgba(11,22,56,.05)'; }}>
+              <div style={{ width: 42, height: 42, borderRadius: 12, display: 'grid', placeItems: 'center', fontSize: 22, background: alpha(m.accent, 14), color: m.accent }}>{m.emoji}</div>
+              <div style={{ fontSize: 14, fontWeight: 800, letterSpacing: '-0.3px', color: C.ink, lineHeight: 1.25 }}>{m.title}</div>
+              <div style={{ fontSize: 11.5, color: C.mute, lineHeight: 1.4, flex: 1, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{m.desc}</div>
+              {m.route === '/entretien' && interviewPct > 0 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <div style={{ flex: 1, height: 5, background: C.track, borderRadius: 99, overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${interviewPct}%`, background: m.accent, borderRadius: 99 }} />
+                  </div>
+                  <span style={{ fontSize: 10.5, fontWeight: 700, color: C.mute }}>{interviewPct}%</span>
+                </div>
+              )}
+              <div style={{ fontSize: 12.5, fontWeight: 800, color: m.accent, marginTop: 2 }}>{m.cta} →</div>
+            </div>
+          ))}
+        </div>
+        </>
+        )}
+
+        {section === 'cv' && (
+        <>
+        {/* Hero — titre de la liste des CV (placé sous les modules) */}
+        <div style={{ margin: isMobile ? '8px 0 28px' : '16px 0 48px', animation: 'fadeIn 0.8s ease both' }}>
           <h1 style={{ fontSize: isMobile ? 36 : 64, fontWeight: 700, color: C.ink, letterSpacing: isMobile ? '-0.8px' : '-2px', lineHeight: 1.05, marginBottom: 8 }}>Mes CV</h1>
           {!isMobile && (
             <p style={{ fontSize: 16.5, color: C.ink2, fontWeight: 400, lineHeight: 1.55 }}>
               Créez et gérez vos CV professionnels avec un design premium.
             </p>
           )}
-        </div>
-
-        {/* Bannière Simulateur d'entretien — accroche vers le jeu */}
-        <div
-          onClick={() => navigate('/entretien')}
-          style={{
-            display: 'flex', alignItems: 'center', gap: isMobile ? 12 : 18,
-            padding: isMobile ? '14px 16px' : '18px 24px',
-            background: 'linear-gradient(100deg, #0B1638 0%, #1C2D6B 100%)',
-            borderRadius: 16, marginBottom: isMobile ? 20 : 28, cursor: 'pointer',
-            color: '#fff', boxShadow: '0 10px 30px rgba(11,22,56,.18)',
-            transition: 'transform .15s', animation: 'fadeIn .6s ease both',
-          }}
-          onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
-          onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}>
-          <div style={{ fontSize: isMobile ? 30 : 38, flexShrink: 0 }}>🎤</div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: isMobile ? 15 : 17, fontWeight: 800, letterSpacing: '-0.3px', marginBottom: 2 }}>
-              Simulateur d'entretien
-            </div>
-            <div style={{ fontSize: isMobile ? 12 : 13.5, color: '#B9C2DA', lineHeight: 1.45 }}>
-              Des mises en situation réelles, feedback immédiat. Entraîne-toi avant le jour J.
-            </div>
-            {interviewPct > 0 && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
-                <div style={{ flex: 1, maxWidth: 180, height: 6, background: 'rgba(255,255,255,0.18)', borderRadius: 99, overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: `${interviewPct}%`, background: '#6E8BFF', borderRadius: 99 }} />
-                </div>
-                <span style={{ fontSize: 11.5, fontWeight: 700, color: '#fff' }}>{interviewPct}% maîtrisé</span>
-              </div>
-            )}
-          </div>
-          <div style={{
-            flexShrink: 0, padding: isMobile ? '8px 14px' : '10px 18px',
-            background: '#fff', color: C.ink, borderRadius: 99,
-            fontSize: isMobile ? 12.5 : 13.5, fontWeight: 700, whiteSpace: 'nowrap',
-          }}>
-            {isMobile ? '▶ Jouer' : '▶ S\'entraîner'}
-          </div>
         </div>
 
         {/* Stats */}
@@ -968,7 +1103,7 @@ export default function Home() {
                 </div>
 
                 {/* Sort dropdown */}
-                <div style={{ position:'relative', display:'flex', alignItems:'center', gap:6, padding:'8px 12px', background:'#fff', border:`1px solid ${C.rule}`, borderRadius:99, fontSize:12.5, fontWeight:600, color:C.ink }}>
+                <div style={{ position:'relative', display:'flex', alignItems:'center', gap:6, padding:'8px 12px', background: C.card, border:`1px solid ${C.rule}`, borderRadius:99, fontSize:12.5, fontWeight:600, color:C.ink }}>
                   <IconSort s={13} />
                   <select value={sortBy} onChange={e => setSortBy(e.target.value)}
                     style={{ border:'none', background:'transparent', fontSize:12.5, fontWeight:600, color:C.ink, fontFamily:FONT, cursor:'pointer', outline:'none', paddingRight:18, appearance:'none', backgroundImage:'url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'10\' height=\'10\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%239AA0AE\' stroke-width=\'2.5\'><polyline points=\'6 9 12 15 18 9\'/></svg>")', backgroundRepeat:'no-repeat', backgroundPosition:'right 0 center' }}>
@@ -1128,7 +1263,7 @@ export default function Home() {
             </div>
             <div style={{ fontSize:16, fontWeight:700, color:C.ink, marginBottom:6 }}>Aucun CV ne correspond</div>
             <div style={{ fontSize:13, color:C.mute, marginBottom:18 }}>Essaie une autre recherche ou retire des filtres.</div>
-            <button onClick={clearFilters} style={{ padding:'9px 20px', border:`1px solid ${C.rule}`, background:'#fff', borderRadius:99, fontSize:13, fontWeight:600, color:C.ink, cursor:'pointer', fontFamily:FONT }}>
+            <button onClick={clearFilters} style={{ padding:'9px 20px', border:`1px solid ${C.rule}`, background: C.card, borderRadius:99, fontSize:13, fontWeight:600, color:C.ink, cursor:'pointer', fontFamily:FONT }}>
               Réinitialiser les filtres
             </button>
           </div>
@@ -1154,7 +1289,56 @@ export default function Home() {
             </div>
           );
         })}
-      </main>
+        </>
+        )}
+
+        {section === 'encadrement' && (
+          <>
+            <h1 style={{ fontSize: isMobile ? 28 : 42, fontWeight: 800, color: C.ink, letterSpacing: '-1px', lineHeight: 1.05, margin: '0 0 6px' }}>Encadrement</h1>
+            <p style={{ fontSize: isMobile ? 13.5 : 15.5, color: C.ink2, margin: '0 0 20px', lineHeight: 1.5, maxWidth: 520 }}>
+              Suis la progression de tes élèves (conseiller) ou de toute la cohorte (direction).
+            </p>
+            <div onClick={() => navigate('/encadrement')}
+              style={{ display: 'flex', alignItems: 'center', gap: 14, background: C.card, border: `1px solid ${C.rule}`, borderRadius: 16, padding: '18px 20px', cursor: 'pointer', boxShadow: '0 4px 18px rgba(11,22,56,.05)' }}>
+              <span style={{ fontSize: 30 }}>👩‍🏫</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 16, fontWeight: 800, color: C.ink }}>Ouvrir l'espace encadrant</div>
+                <div style={{ fontSize: 13, color: C.mute }}>Liste des élèves, relances, fiches, réattribution.</div>
+              </div>
+              <span style={{ flexShrink: 0, fontSize: 13, fontWeight: 800, color: C.bluePrimary }}>Ouvrir →</span>
+            </div>
+          </>
+        )}
+
+        {section === 'account' && (
+          <>
+            <h1 style={{ fontSize: isMobile ? 28 : 42, fontWeight: 800, color: C.ink, letterSpacing: '-1px', lineHeight: 1.05, margin: '0 0 18px' }}>Compte</h1>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, background: C.card, border: `1px solid ${C.rule}`, borderRadius: 14, padding: '16px 18px', marginBottom: 10 }}>
+              <div>
+                <div style={{ fontSize: 15.5, fontWeight: 800, color: C.ink }}>{plan?.emoji} Forfait {plan?.label}</div>
+                {isSchool && orgName && <div style={{ fontSize: 12.5, color: C.ok, fontWeight: 700, marginTop: 2 }}>🎓 Accès offert par {orgName}</div>}
+              </div>
+              {!isSchool && nextPlan && (
+                <button onClick={() => navigate('/pricing')} style={{ background: C.bluePrimary, color: '#fff', border: 'none', borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'Manrope,sans-serif', whiteSpace: 'nowrap' }}>Passer à {nextPlan}</button>
+              )}
+            </div>
+            {[
+              { lb: '🌙 Thème', btn: mode === 'dark' ? '☀️ Clair' : '🌙 Sombre', on: toggleTheme },
+              { lb: '🧪 Mode démo', btn: demoOn ? 'Désactiver' : 'Activer', on: () => { setDemoMode(!demoOn); setDemoOn(!demoOn); } },
+              { lb: '🎨 Charte graphique', btn: 'Voir', on: () => navigate('/charte') },
+              { lb: '🧭 Visite guidée', btn: 'Lancer', on: () => setShowOnboard(true) },
+              ...(demoOn ? [{ lb: '👩‍🏫 Mode encadrant (démo)', btn: isDemoEncadrant() ? 'Désactiver' : 'Activer', on: () => { setDemoEncadrant(!isDemoEncadrant()); location.reload(); } }] : []),
+              { lb: user ? `👤 ${user.email}` : '👤 Non connecté', btn: user ? 'Déconnexion' : 'Connexion', on: user ? signOut : () => navigate('/auth') },
+            ].map((r) => (
+              <div key={r.lb} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, background: C.card, border: `1px solid ${C.rule}`, borderRadius: 12, padding: '13px 16px', marginTop: 10 }}>
+                <span style={{ fontSize: 14, fontWeight: 600, color: C.ink2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.lb}</span>
+                <button onClick={r.on} style={{ flexShrink: 0, background: C.surface, color: C.ink2, border: `1px solid ${C.rule}`, borderRadius: 99, padding: '8px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'Manrope,sans-serif' }}>{r.btn}</button>
+              </div>
+            ))}
+          </>
+        )}
+        </main>
+      </div>
 
       <PreviewModal
         item={viewCV}
@@ -1164,7 +1348,6 @@ export default function Home() {
         onClose={() => setViewCV(null)}
       />
       {deleteTarget && <ConfirmModal name={deleteTarget.name} onConfirm={handleDeleteConfirm} onCancel={() => setDeleteTarget(null)} />}
-      {tourOpen && <OnboardingTour onClose={closeTour} onAction={(a) => { if (a==='done') navigate('/generate'); }} />}
     </div>
   );
 }

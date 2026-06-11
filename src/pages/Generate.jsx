@@ -618,9 +618,9 @@ export default function Home() {
   // Persiste le profil actif dès qu'il change
   useEffect(() => {
     if (selectedProfileId) {
-      localStorage.setItem('talia_cv_active_profile', selectedProfileId);
+      localStorage.setItem('ALTIO_CV_active_profile', selectedProfileId);
     } else {
-      localStorage.removeItem('talia_cv_active_profile');
+      localStorage.removeItem('ALTIO_CV_active_profile');
     }
   }, [selectedProfileId]);
 
@@ -1156,6 +1156,14 @@ RÈGLES :
             onCreateNew={() => navigate('/profils/nouveau')}
           />
 
+          {/* ── PICKER SECTEUR (placé sous le profil IA) ────────────────── */}
+          <div style={{
+            background: '#fff', borderRadius: 16, padding: 22,
+            border: '1.5px solid ' + C.rule, marginBottom: 16,
+          }}>
+            <SectorPicker value={sectorId} onChange={setSectorId} />
+          </div>
+
           {/* Stepper */}
           <Stepper
             steps={[
@@ -1389,14 +1397,6 @@ RÈGLES :
             keywords={annonceKeywords}
             onChange={handleAnnonceInput}
           />
-
-          {/* ── PICKER SECTEUR : réorganise les sections + active des sections spécialisées ── */}
-          <div style={{
-            background: '#fff', borderRadius: 16, padding: 22,
-            border: '1.5px solid ' + C.rule, marginBottom: 16,
-          }}>
-            <SectorPicker value={sectorId} onChange={setSectorId} />
-          </div>
 
           {/* ── BOUTON GÉNÉRER ────────────────────────────────────────── */}
           <div ref={card3Ref} style={{ marginBottom: 16 }}>

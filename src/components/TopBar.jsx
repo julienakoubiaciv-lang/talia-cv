@@ -15,7 +15,7 @@ export default function TopBar() {
           className="flex items-center gap-2.5 hover:opacity-80 transition-opacity"
         >
           <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary">
-            <span className="text-white font-display font-bold text-sm tracking-wider">T</span>
+            <span className="text-white font-display font-bold text-sm tracking-wider">A</span>
           </div>
           <div className="flex flex-col leading-none">
             <span className="font-display font-bold text-primary text-base tracking-wide">ALTIO</span>

@@ -6,6 +6,7 @@ import { AuthProvider, useAuth } from './hooks/useAuth.jsx';
 import { UpgradeModalProvider } from './components/UpgradeModal.jsx';
 import ThemeToggle from './components/ThemeToggle.jsx';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
+import ProgressSync from './components/ProgressSync.jsx';
 
 // SettingsPanel chargé en lazy : il n'est jamais visible au premier rendu
 // (s'ouvre uniquement sur clic icône ⚙) → hors du bundle initial
@@ -26,6 +27,16 @@ const Auth          = lazy(() => import('./pages/Auth.jsx'));
 const Pricing       = lazy(() => import('./pages/Pricing.jsx'));
 const Admin         = lazy(() => import('./pages/Admin.jsx'));
 const Interview     = lazy(() => import('./pages/Interview.jsx'));
+const Jobs          = lazy(() => import('./pages/Jobs.jsx'));
+const Journey       = lazy(() => import('./pages/Journey.jsx'));
+const LetterWriter  = lazy(() => import('./pages/LetterWriter.jsx'));
+const WorkCodes     = lazy(() => import('./pages/WorkCodes.jsx'));
+const AnalyzeOffer  = lazy(() => import('./pages/AnalyzeOffer.jsx'));
+const Diagnostic    = lazy(() => import('./pages/Diagnostic.jsx'));
+const RecruitTest   = lazy(() => import('./pages/RecruitTest.jsx'));
+const Charte        = lazy(() => import('./pages/Charte.jsx'));
+const CohortDashboard = lazy(() => import('./pages/CohortDashboard.jsx'));
+const OralInterview = lazy(() => import('./pages/OralInterview.jsx'));
 const PhoneVerify   = lazy(() => import('./pages/PhoneVerify.jsx'));
 const Confidentialite = lazy(() => import('./pages/Legal.jsx').then(m => ({ default: m.Confidentialite })));
 const MentionsLegales = lazy(() => import('./pages/Legal.jsx').then(m => ({ default: m.MentionsLegales })));
@@ -83,6 +94,16 @@ function GatedRoutes() {
         <Route path="/pricing"            element={<Pricing />} />
         <Route path="/admin"              element={<Admin />} />
         <Route path="/entretien"          element={<Interview />} />
+        <Route path="/metiers"            element={<Jobs />} />
+        <Route path="/parcours"           element={<Journey />} />
+        <Route path="/lettre"             element={<LetterWriter />} />
+        <Route path="/codes"              element={<WorkCodes />} />
+        <Route path="/analyse"            element={<AnalyzeOffer />} />
+        <Route path="/diagnostic"         element={<Diagnostic />} />
+        <Route path="/test-recrutement"   element={<RecruitTest />} />
+        <Route path="/charte"             element={<Charte />} />
+        <Route path="/encadrement"        element={<CohortDashboard />} />
+        <Route path="/entretien-oral"     element={<OralInterview />} />
         <Route path="/confidentialite"    element={<Confidentialite />} />
         <Route path="/mentions-legales"   element={<MentionsLegales />} />
         <Route path="/cgu"                element={<CGU />} />
@@ -97,6 +118,7 @@ export default function App() {
       <SettingsProvider>
         <BrowserRouter>
           <AuthProvider>
+            <ProgressSync />
             <UpgradeModalProvider>
               <ErrorBoundary>
                 <GatedRoutes />

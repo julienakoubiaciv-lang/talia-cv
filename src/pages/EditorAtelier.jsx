@@ -28,6 +28,7 @@ import {
   saveHistory, updateHistory, getHistorySync,
 } from '@/lib/historySync';
 import { uploadMedia } from '@/lib/mediaUpload';
+import { loadScript, loadCSS } from '@/lib/editorHelpers.js';
 import { useAuth } from '@/hooks/useAuth.jsx';
 import { useRole } from '@/hooks/useRole';
 import { usePlan } from '@/hooks/usePlan';
@@ -41,6 +42,9 @@ const TOK = {
   ink:        '#0B1B33',
   inkSoft:    '#4A5B78',
   mute:       '#8390A6',
+  blue:       '#1539B7',
+  blueSoft:   '#EEF2FF',
+  blueRing:   'rgba(21,57,183,.14)',
   line:       '#E6EAF1',
   line2:      '#EFF2F7',
   paper:      '#FFFFFF',
@@ -115,6 +119,41 @@ function computeScore(cvData) {
   if ((cvData.competences?.comportementales || []).length >= 3) score++;
   if ((cvData.langues || []).length >= 2) score++;
   return Math.round((score / max) * 100);
+}
+
+// ─── Complétude d'une étape : TOUTES les cases doivent être remplies ───────────
+const filled = (v) => !!(v && String(v).trim());
+
+function isStepComplete(stepId, d) {
+  if (!d) return false;
+  switch (stepId) {
+    case 'identite':
+      // tous les champs du formulaire identité
+      return [d.prenom, d.nom, d.dateNaissance, d.adresse, d.email, d.telephone, d.linkedin, d.poste, d.accroche].every(filled);
+    case 'experiences': {
+      const exps = d.experiences || [];
+      return exps.length > 0 && exps.every((e) =>
+        e && filled(e.poste) && filled(e.entreprise) && filled(e.lieu) && filled(e.periode)
+        && (e.missions || []).some(filled));
+    }
+    case 'formations': {
+      const fs = d.formations || [];
+      return fs.length > 0 && fs.every((f) => f && (f.isTalia || (filled(f.titre) && filled(f.etablissement) && filled(f.periode))));
+    }
+    case 'competences': {
+      const c = d.competences || {};
+      // les 3 catégories doivent contenir au moins une entrée
+      return ['techniques', 'comportementales', 'outils'].every((cat) => (c[cat] || []).filter(filled).length > 0);
+    }
+    case 'langues': {
+      const ls = d.langues || [];
+      return ls.length > 0 && ls.every((l) => (typeof l === 'string' ? filled(l) : filled(l?.langue) && filled(l?.niveau)));
+    }
+    case 'interets':
+      return (d.centresInteret || []).filter(filled).length > 0;
+    default:
+      return false;
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -333,18 +372,58 @@ export default function EditorAtelier() {
     }
   }, [generatedHTML, candidateName, tier, isStaff, showToast]);
 
-  // ── Upload photo ──────────────────────────────────────────────────────────
+  // ── Upload photo + recadrage (CropperJS) ───────────────────────────────────
   const photoInputRef = useRef(null);
+  const logoInputRef = useRef(null);
+  const cropperRef = useRef(null);
+  const cropImgRef = useRef(null);
+  const [photoMode, setPhotoMode] = useState(false);
+  const [photoDraft, setPhotoDraft] = useState('');
+
   const handlePhotoChange = useCallback((e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (ev) => {
-      setCroppedPhoto(ev.target.result);
-      setIsDirty(true);
-    };
+    reader.onload = (ev) => { setPhotoDraft(ev.target.result); setPhotoMode(true); };
     reader.readAsDataURL(file);
+    e.target.value = '';
   }, []);
+
+  // Initialise Cropper quand le mode recadrage s'ouvre
+  useEffect(() => {
+    if (!photoMode || !photoDraft || !cropImgRef.current) return;
+    loadCSS('https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css');
+    loadScript('https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js').then(() => {
+      if (cropperRef.current) { cropperRef.current.destroy(); cropperRef.current = null; }
+      if (!window.Cropper || !cropImgRef.current) return;
+      cropImgRef.current.src = photoDraft;
+      cropperRef.current = new window.Cropper(cropImgRef.current, {
+        aspectRatio: 1, viewMode: 1, autoCropArea: 0.9, guides: true, movable: true, zoomable: true,
+      });
+    });
+    return () => { if (cropperRef.current) { cropperRef.current.destroy(); cropperRef.current = null; } };
+  }, [photoMode, photoDraft]);
+
+  const confirmCrop = useCallback(() => {
+    if (!cropperRef.current) return;
+    const canvas = cropperRef.current.getCroppedCanvas({ width: 600, height: 600 });
+    setCroppedPhoto(canvas.toDataURL('image/jpeg', 0.98));
+    setIsDirty(true);
+    setPhotoMode(false); setPhotoDraft('');
+    showToast('Photo mise à jour ✓', 'success');
+  }, [showToast]);
+
+  const cancelCrop = useCallback(() => { setPhotoMode(false); setPhotoDraft(''); }, []);
+
+  // ── Upload logo ─────────────────────────────────────────────────────────────
+  const handleLogoChange = useCallback((e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => { setLogoDataURL(ev.target.result); setIsDirty(true); showToast('Logo mis à jour ✓', 'success'); };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  }, [showToast]);
 
   // ── Empty state ───────────────────────────────────────────────────────────
   if (noCVState) {
@@ -377,13 +456,12 @@ export default function EditorAtelier() {
     <div style={{
       width: '100%', minHeight: '100vh', background: TOK.shellBg,
       fontFamily: FONT, color: TOK.ink,
-      display: 'grid', gridTemplateRows: '48px 1fr',
+      display: 'grid', gridTemplateRows: '48px auto 1fr',
     }}>
+      <style>{`@keyframes stepIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}`}</style>
       {/* ──────────────────────── TOPBAR ──────────────────────── */}
       <Topbar
         candidateName={candidateName}
-        currentStep={currentStep}
-        onStepChange={setCurrentStep}
         isDirty={isDirty}
         lastSavedAt={lastSavedAt}
         onSave={handleSave}
@@ -393,6 +471,9 @@ export default function EditorAtelier() {
         onHome={() => navigate('/')}
         onHistory={() => navigate('/history')}
       />
+
+      {/* ──────────────── FIL DES ÉTAPES (sous la topbar) ──────────────── */}
+      <StepsBar currentStep={currentStep} onStepChange={setCurrentStep} fields={edFields} />
 
       {/* ──────────────────────── BODY (3 colonnes) ──────────────────────── */}
       <div style={{
@@ -406,6 +487,9 @@ export default function EditorAtelier() {
           fields={edFields}
           onUpdate={updateField}
           onCropPhoto={() => photoInputRef.current?.click()}
+          onPickLogo={() => logoInputRef.current?.click()}
+          photo={croppedPhoto}
+          logo={logoDataURL}
           onNextStep={() => {
             const idx = STEPS.findIndex(s => s.id === currentStep);
             if (idx < STEPS.length - 1) setCurrentStep(STEPS[idx + 1].id);
@@ -440,12 +524,36 @@ export default function EditorAtelier() {
         />
       </div>
 
-      {/* Input fichier caché pour photo */}
+      {/* Inputs fichiers cachés (photo + logo) */}
       <input
         ref={photoInputRef} type="file" accept="image/*"
         style={{ display: 'none' }}
         onChange={handlePhotoChange}
       />
+      <input
+        ref={logoInputRef} type="file" accept="image/*"
+        style={{ display: 'none' }}
+        onChange={handleLogoChange}
+      />
+
+      {/* Modale de recadrage de la photo */}
+      {photoMode && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(11,16,32,0.45)', backdropFilter: 'blur(3px)', zIndex: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: '#fff', borderRadius: 16, padding: 24, width: 480, maxWidth: '94vw', boxShadow: '0 40px 100px rgba(11,16,32,.28)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <span style={{ fontWeight: 700, fontSize: 16, color: TOK.ink }}>Recadrer la photo</span>
+              <button onClick={cancelCrop} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: TOK.mute }}>×</button>
+            </div>
+            <div style={{ maxHeight: 380, overflow: 'hidden', borderRadius: 10, background: TOK.wash }}>
+              <img ref={cropImgRef} style={{ display: 'block', maxWidth: '100%' }} alt="recadrage" />
+            </div>
+            <div style={{ display: 'flex', gap: 10, marginTop: 16, justifyContent: 'flex-end' }}>
+              <button onClick={cancelCrop} style={{ ...btnGhost }}>Annuler</button>
+              <button onClick={confirmCrop} style={{ ...btnPrimary }}>Valider</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Toast */}
       {toastMsg && (
@@ -469,8 +577,60 @@ export default function EditorAtelier() {
 // ═══════════════════════════════════════════════════════════════════════════
 //                               TOPBAR
 // ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════
+//                       FIL DES ÉTAPES (sous la topbar)
+// ═══════════════════════════════════════════════════════════════════════════
+function StepsBar({ currentStep, onStepChange, fields }) {
+  // « Validé » = toutes les cases essentielles de l'étape sont remplies (pas la simple navigation)
+  const completeById = Object.fromEntries(STEPS.map(s => [s.id, isStepComplete(s.id, fields)]));
+  return (
+    <div style={{
+      display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2,
+      background: '#fff', borderBottom: `1px solid ${TOK.line}`,
+      padding: '9px 14px', overflowX: 'auto',
+    }}>
+      {STEPS.map((s, i) => {
+        const active = currentStep === s.id;
+        const done = completeById[s.id];
+        const prevDone = i > 0 && completeById[STEPS[i - 1].id];
+        // badge : vert ✓ si rempli ; sinon bleu si actif ; sinon neutre
+        const badgeBg = done ? TOK.green : active ? TOK.blue : 'transparent';
+        const badgeColor = (done || active) ? '#fff' : TOK.mute;
+        return (
+          <React.Fragment key={s.id}>
+            {i > 0 && <span style={{ width: 14, height: 2, borderRadius: 2, background: prevDone ? TOK.green : TOK.line, flexShrink: 0 }} />}
+            <button
+              onClick={() => onStepChange(s.id)}
+              title={done ? 'Étape complète' : 'À compléter'}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 7,
+                padding: '6px 13px', borderRadius: 99,
+                background: active ? TOK.blueSoft : 'transparent',
+                border: active ? `1px solid ${TOK.blue}33` : '1px solid transparent',
+                cursor: 'pointer', fontFamily: 'inherit',
+                fontSize: 12.5, color: active ? TOK.blue : done ? TOK.ink : TOK.inkSoft,
+                fontWeight: (active || done) ? 700 : 500,
+                whiteSpace: 'nowrap', transition: 'all .15s',
+              }}
+            >
+              <span style={{
+                width: 18, height: 18, borderRadius: 99,
+                display: 'grid', placeItems: 'center',
+                background: badgeBg, color: badgeColor,
+                border: (done || active) ? 'none' : `1px solid ${TOK.line}`,
+                fontSize: 10, fontWeight: 700,
+              }}>{done ? '✓' : i + 1}</span>
+              {s.label}
+            </button>
+          </React.Fragment>
+        );
+      })}
+    </div>
+  );
+}
+
 function Topbar({
-  candidateName, currentStep, onStepChange,
+  candidateName,
   isDirty, lastSavedAt,
   onSave, onDownload, dlLoading,
   onSwitchClassic, onHome, onHistory,
@@ -478,7 +638,7 @@ function Topbar({
   return (
     <div style={{
       display: 'grid',
-      gridTemplateColumns: '260px 1fr auto',
+      gridTemplateColumns: '1fr auto',
       alignItems: 'center',
       background: '#fff',
       borderBottom: `1px solid ${TOK.line}`,
@@ -490,12 +650,12 @@ function Topbar({
         <button onClick={onHome} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
           <div style={{
             width: 24, height: 24, borderRadius: 6,
-            background: TOK.ink, color: '#fff',
+            background: TOK.blue, color: '#fff',
             display: 'grid', placeItems: 'center',
             fontWeight: 700, fontSize: 12, letterSpacing: -0.2,
-          }}>T</div>
-          <div style={{ fontWeight: 600, fontSize: 13.5, letterSpacing: -0.2, color: TOK.ink }}>
-            Talia<span style={{ color: TOK.mute, fontWeight: 500 }}>CV</span>
+          }}>A</div>
+          <div style={{ fontWeight: 700, fontSize: 13.5, letterSpacing: -0.2, color: TOK.ink }}>
+            Altio <span style={{ color: TOK.blue, fontWeight: 700 }}>CV</span>
           </div>
         </button>
         {candidateName && (
@@ -506,38 +666,6 @@ function Topbar({
             </div>
           </>
         )}
-      </div>
-
-      {/* Breadcrumb étapes */}
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 4, overflow: 'auto' }}>
-        {STEPS.map((s, i) => {
-          const active = currentStep === s.id;
-          return (
-            <button
-              key={s.id}
-              onClick={() => onStepChange(s.id)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 6,
-                padding: '5px 10px', borderRadius: 99,
-                background: active ? TOK.wash2 : 'transparent',
-                border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-                fontSize: 12, color: active ? TOK.ink : TOK.inkSoft,
-                fontWeight: active ? 600 : 500,
-                whiteSpace: 'nowrap',
-              }}
-            >
-              <span style={{
-                width: 16, height: 16, borderRadius: 99,
-                display: 'grid', placeItems: 'center',
-                background: active ? TOK.ink : 'transparent',
-                color: active ? '#fff' : TOK.mute,
-                border: active ? 'none' : `1px solid ${TOK.line}`,
-                fontSize: 10, fontWeight: 600,
-              }}>{i + 1}</span>
-              {s.label}
-            </button>
-          );
-        })}
       </div>
 
       {/* Actions */}
@@ -579,7 +707,7 @@ function Topbar({
 // ═══════════════════════════════════════════════════════════════════════════
 //                            COLONNE ÉDITION
 // ═══════════════════════════════════════════════════════════════════════════
-function EditPanel({ step, fields, onUpdate, onCropPhoto, onNextStep, onPrevStep }) {
+function EditPanel({ step, fields, onUpdate, onCropPhoto, onPickLogo, photo, logo, onNextStep, onPrevStep }) {
   if (!fields) {
     return (
       <div style={{ borderRight: `1px solid ${TOK.line}`, background: '#fff', padding: 20 }}>
@@ -601,20 +729,25 @@ function EditPanel({ step, fields, onUpdate, onCropPhoto, onNextStep, onPrevStep
       overflow: 'hidden',
     }}>
       {/* En-tête */}
-      <div style={{ padding: '18px 22px 14px', borderBottom: `1px solid ${TOK.line2}` }}>
+      <div style={{ padding: '18px 22px 14px', borderBottom: `1px solid ${TOK.line2}`, position: 'relative' }}>
+        <div style={{ position: 'absolute', left: 0, top: 18, bottom: 14, width: 3, borderRadius: 99, background: TOK.blue }} />
         <div style={{
-          fontSize: 10.5, letterSpacing: 0.8, color: TOK.mute,
-          textTransform: 'uppercase', fontWeight: 600,
+          fontSize: 10.5, letterSpacing: 0.8, color: TOK.blue,
+          textTransform: 'uppercase', fontWeight: 700,
         }}>Étape {stepIdx + 1} / {STEPS.length}</div>
         <h2 style={{ margin: '4px 0 0', fontSize: 22, letterSpacing: -0.4, fontWeight: 700, color: TOK.ink }}>
           {stepCfg.label}
         </h2>
+        {/* mini barre de progression des étapes */}
+        <div style={{ marginTop: 12, height: 4, borderRadius: 99, background: TOK.line2, overflow: 'hidden' }}>
+          <div style={{ height: '100%', width: `${((stepIdx + 1) / STEPS.length) * 100}%`, background: TOK.blue, borderRadius: 99, transition: 'width .3s ease' }} />
+        </div>
       </div>
 
-      {/* Contenu scrollable */}
-      <div style={{ padding: '16px 22px 18px', overflowY: 'auto' }}>
+      {/* Contenu scrollable (réanimé à chaque étape) */}
+      <div key={step} style={{ padding: '16px 22px 18px', overflowY: 'auto', animation: 'stepIn .28s ease both' }}>
         {step === 'identite' && (
-          <IdentiteStep fields={fields} onUpdate={onUpdate} onCropPhoto={onCropPhoto} />
+          <IdentiteStep fields={fields} onUpdate={onUpdate} onCropPhoto={onCropPhoto} onPickLogo={onPickLogo} photo={photo} logo={logo} />
         )}
         {step === 'experiences' && (
           <ExperiencesStep fields={fields} onUpdate={onUpdate} />
@@ -659,9 +792,23 @@ function EditPanel({ step, fields, onUpdate, onCropPhoto, onNextStep, onPrevStep
 }
 
 // ─── Étape Identité ────────────────────────────────────────────────────────
-function IdentiteStep({ fields, onUpdate, onCropPhoto }) {
+function IdentiteStep({ fields, onUpdate, onCropPhoto, onPickLogo, photo, logo }) {
   return (
     <>
+      {/* Médias : photo (avec recadrage) + logo — placés en premier */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 18 }}>
+        <MediaUploader
+          label="Photo de profil" preview={photo} round
+          onClick={onCropPhoto}
+          cta={photo ? 'Changer / recadrer' : '📷 Ajouter une photo'}
+        />
+        <MediaUploader
+          label="Logo établissement" preview={logo}
+          onClick={onPickLogo}
+          cta={logo ? 'Changer le logo' : '🏢 Ajouter un logo'}
+        />
+      </div>
+
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 10px' }}>
         <Field label="Prénom" value={fields.prenom} onChange={v => onUpdate('prenom', v)} />
         <Field label="Nom" value={fields.nom} onChange={v => onUpdate('nom', v)} />
@@ -701,8 +848,8 @@ function IdentiteStep({ fields, onUpdate, onCropPhoto }) {
             transition: 'border-color .15s, box-shadow .15s',
           }}
           onFocus={e => {
-            e.target.style.borderColor = TOK.ink;
-            e.target.style.boxShadow = '0 0 0 3px rgba(11,27,51,.06)';
+            e.target.style.borderColor = TOK.blue;
+            e.target.style.boxShadow = `0 0 0 3px ${TOK.blueRing}`;
           }}
           onBlur={e => {
             e.target.style.borderColor = TOK.line;
@@ -710,23 +857,38 @@ function IdentiteStep({ fields, onUpdate, onCropPhoto }) {
           }}
         />
       </div>
-
-      {/* Photo */}
-      <div style={{ marginTop: 18 }}>
-        <div style={{ fontSize: 11.5, fontWeight: 600, color: TOK.ink, marginBottom: 6 }}>Photo de profil</div>
-        <button
-          onClick={onCropPhoto}
-          style={{
-            width: '100%', padding: '12px 14px',
-            border: `1px dashed ${TOK.line}`, borderRadius: 10,
-            background: TOK.wash, color: TOK.inkSoft, fontSize: 12.5,
-            cursor: 'pointer', fontFamily: 'inherit', fontWeight: 500,
-          }}
-        >
-          📷 Changer la photo
-        </button>
-      </div>
     </>
+  );
+}
+
+// ─── Bloc d'upload média (photo / logo) avec aperçu ────────────────────────
+function MediaUploader({ label, preview, onClick, cta, round }) {
+  return (
+    <div>
+      <div style={{ fontSize: 11.5, fontWeight: 600, color: TOK.ink, marginBottom: 6 }}>{label}</div>
+      <button
+        onClick={onClick}
+        style={{
+          width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+          padding: '10px 12px', border: `1px dashed ${TOK.line}`, borderRadius: 10,
+          background: TOK.wash, color: TOK.inkSoft, fontSize: 12.5,
+          cursor: 'pointer', fontFamily: 'inherit', fontWeight: 500, textAlign: 'left',
+        }}
+      >
+        <span style={{
+          width: 38, height: 38, flexShrink: 0,
+          borderRadius: round ? '50%' : 8,
+          border: `1px solid ${TOK.line}`, background: '#fff',
+          display: 'grid', placeItems: 'center', overflow: 'hidden',
+          fontSize: 16,
+        }}>
+          {preview
+            ? <img src={preview} alt="" style={{ width: '100%', height: '100%', objectFit: round ? 'cover' : 'contain' }} />
+            : (round ? '📷' : '🏢')}
+        </span>
+        <span style={{ flex: 1, minWidth: 0 }}>{cta}</span>
+      </button>
+    </div>
   );
 }
 
@@ -1260,6 +1422,8 @@ function Field({ label, value, onChange, placeholder, type = 'text', fullWidth }
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
         style={inputStyle}
+        onFocus={e => { e.target.style.borderColor = TOK.blue; e.target.style.boxShadow = `0 0 0 3px ${TOK.blueRing}`; }}
+        onBlur={e => { e.target.style.borderColor = TOK.line; e.target.style.boxShadow = 'none'; }}
       />
     </div>
   );
@@ -1271,7 +1435,7 @@ const inputStyle = {
   padding: '9px 11px', fontSize: 13,
   color: TOK.ink, background: '#fff',
   fontFamily: 'inherit', outline: 'none',
-  transition: 'border-color .15s',
+  transition: 'border-color .15s, box-shadow .15s',
 };
 
 const btnGhost = {
@@ -1280,10 +1444,10 @@ const btnGhost = {
   cursor: 'pointer', fontFamily: 'inherit',
 };
 const btnPrimary = {
-  border: 'none', background: TOK.ink, color: '#fff',
-  padding: '7px 14px', borderRadius: 8, fontSize: 12.5, fontWeight: 600,
+  border: 'none', background: TOK.blue, color: '#fff',
+  padding: '7px 14px', borderRadius: 8, fontSize: 12.5, fontWeight: 700,
   cursor: 'pointer', fontFamily: 'inherit',
-  boxShadow: '0 1px 0 rgba(0,0,0,.04)',
+  boxShadow: '0 6px 16px -6px rgba(21,57,183,.5)',
 };
 const zoomBtn = {
   border: 'none', background: 'transparent', color: TOK.ink,

@@ -42,6 +42,7 @@ export function PlanGate({
   next         = 'Personnel',
   description  = null,
   onUpgrade    = null,
+  onBack       = null,
   children,
 }) {
   if (!locked) return children;
@@ -95,6 +96,21 @@ export function PlanGate({
           ) : (
             <div style={{ fontSize: 12, color: C.mute }}>
               Contactez votre administrateur pour activer ce plan.
+            </div>
+          )}
+
+          {onBack && (
+            <div style={{ marginTop: 14 }}>
+              <button onClick={onBack}
+                style={{
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  color: C.ink2, fontSize: 13, fontWeight: 600, fontFamily: FONT,
+                  padding: '4px 8px',
+                }}
+                onMouseEnter={e => e.currentTarget.style.color = C.ink}
+                onMouseLeave={e => e.currentTarget.style.color = C.ink2}>
+                ← Retour
+              </button>
             </div>
           )}
         </div>

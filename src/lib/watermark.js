@@ -17,7 +17,7 @@
 const WATERMARK_HTML = `
 <div class="talia-watermark-bottom" aria-hidden="true">
   Généré gratuitement avec
-  <a href="https://taliacv.app" target="_blank" rel="noopener" style="color:#1539B7;text-decoration:none;font-weight:700;">TaliaCV</a>
+  <a href="https://taliacv.app" target="_blank" rel="noopener" style="color:#1539B7;text-decoration:none;font-weight:700;">Altio CV</a>
   · Passe Personnel pour le retirer
 </div>
 `;

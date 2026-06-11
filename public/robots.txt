@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+
+# Pages outils / privées : inutiles à indexer
+Disallow: /editor
+Disallow: /editor/
+Disallow: /admin
+Disallow: /auth
+Disallow: /profils
+Disallow: /history
+Disallow: /bulk
+
+Sitemap: https://www.cv.altio-wave.com/sitemap.xml

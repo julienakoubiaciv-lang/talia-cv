@@ -1,351 +1,266 @@
 /**
- * Pricing — Page de tarifs TaliaCV
+ * Pricing — Tarifs Altio CV.
  *
- * Affiche les 3 plans : Gratuit / Personnel / Business
- * Déclenche Stripe Checkout via la Edge Function create-checkout.
- * Redirige vers / après paiement réussi (?checkout=success).
+ * Quatre offres : Gratuit · Personnel (jeunes/B2C) · Cowork (coach + petite
+ * équipe) · École (sur devis, parrainage des élèves). Tarifs pensés abordables
+ * pour les jeunes — l'essentiel gratuit pour toujours.
+ *
+ * Le paiement Stripe sera branché plus tard ; les CTA payants redirigent vers
+ * la connexion / le contact en attendant (dégradé propre si non configuré).
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { C, FONT } from '@/lib/gameTheme';
 import { useAuth } from '@/hooks/useAuth';
-import { usePlan } from '@/hooks/usePlan';
+import { useEntitlements } from '@/hooks/useEntitlements';
 import { supabase, supabaseReady } from '@/lib/supabase';
+import { useSeo } from '@/lib/seo';
 import { track, captureError } from '@/lib/monitoring';
 
-/* ─── Config Stripe (prix IDs à remplir dans .env.local) ───────────────── */
 const PRICE_IDS = {
   personal: import.meta.env.VITE_STRIPE_PRICE_PERSONAL || '',
-  business: import.meta.env.VITE_STRIPE_PRICE_BUSINESS || '',
+  cowork:   import.meta.env.VITE_STRIPE_PRICE_COWORK || '',
 };
 
-/* ─── Design tokens ─────────────────────────────────────────────────────── */
-const C = {
-  ink:     '#0B1020', ink2: '#3A4156', mute: '#9AA0AE',
-  rule:    '#ECEDF1', bg: '#FFFFFF', surface: '#F7F8FA',
-  blue:    '#1539B7', blueSoft: '#EEF2FF',
-  ok:      '#16A34A', okSoft: '#F0FDF4',
-  star:    '#F5B400',
-};
-const FONT = "'Manrope', system-ui, sans-serif";
+const eur = (n) => n.toFixed(2).replace('.', ',').replace(',00', '') + ' €';
 
-/* ─── Plans à afficher ────────────────────────────────────────────────────  */
-const PLANS_UI = [
+/** Offres. priceM = prix mensuel (€) ; annuel = 10× (2 mois offerts). */
+const PLANS = [
   {
-    id: 'free',
-    label: 'Gratuit',
-    emoji: '🌱',
-    price: '0€',
-    period: null,
-    desc: 'Pour découvrir et tester.',
-    color: C.mute,
-    bg: C.surface,
+    id: 'free', label: 'Gratuit', emoji: '🌱', priceM: 0, accent: C.mute,
+    desc: 'Pour se lancer — l\'essentiel, gratuit pour toujours.',
     features: [
-      '5 CV au total',
-      '1 profil personnalité',
-      '2 templates (Classic, Minimal)',
-      'Sauvegarde locale',
-      'Génération IA incluse',
+      '2 CV',
+      '5 générations IA par jour ⚡',
+      'Tous les entraînements en illimité (entretien, métiers, codes…)',
+      'Bilan d\'employabilité',
     ],
-    missing: [
-      'Génération en masse',
-      'Synchronisation cloud',
-      'Tous les templates',
-    ],
-    cta: 'Plan actuel',
-    ctaDisabled: true,
+    missing: ['CV illimités', 'Multi-appareils'],
+    cta: 'Commencer gratuitement',
   },
   {
-    id: 'personal',
-    label: 'Personnel',
-    emoji: '⚡',
-    price: '9€',
-    period: '/ mois',
-    desc: 'Pour les professionnels qui créent souvent.',
-    color: C.blue,
-    bg: C.blueSoft,
-    highlight: true,
-    badge: 'Populaire',
+    id: 'personal', label: 'Personnel', emoji: '⚡', priceM: 4.99, accent: C.blue,
+    highlight: true, badge: 'Tarif jeune',
+    desc: 'Pour aller au bout de ta recherche, sans te ruiner.',
     features: [
       'CV illimités',
-      '3 profils personnalité',
-      '4 templates (dont Impact)',
-      'Sauvegarde cloud (multi-appareils)',
-      'Génération en masse (10/session)',
-      'Génération IA illimitée',
+      '40 générations IA par jour ⚡',
+      'Tous les modules IA : lettre, test de recrutement, oral, optimisation CV',
+      'Sauvegarde multi-appareils',
+      'Sans engagement, annulable en 1 clic',
     ],
-    missing: [
-      'Synchronisation CRM',
-    ],
-    cta: 'Commencer',
+    missing: [],
+    cta: 'Choisir Personnel',
     priceId: PRICE_IDS.personal,
   },
   {
-    id: 'business',
-    label: 'Business',
-    emoji: '🏆',
-    price: '29€',
-    period: '/ mois',
-    desc: 'Pour les équipes et les écoles.',
-    color: '#7C3AED',
-    bg: '#F5F3FF',
+    id: 'cowork', label: 'Cowork', emoji: '🤝', priceM: 19, accent: C.boss,
+    desc: 'Pour un coach et sa petite équipe (jusqu\'à 5).',
+    sub: '≈ 3,80 € / personne',
     features: [
-      'CV illimités',
-      'Profils illimités',
-      '4 templates',
-      'Sauvegarde cloud',
-      'Génération en masse illimitée',
-      'Synchronisation CRM Talia',
-      'Support prioritaire',
+      'Jusqu\'à 5 personnes',
+      'Tout le plan Personnel pour chacun',
+      'Espace coach : suivi de l\'équipe',
+      'Relance des décrocheurs',
     ],
     missing: [],
-    cta: 'Contacter l\'équipe',
-    priceId: PRICE_IDS.business,
+    cta: 'Choisir Cowork',
+    priceId: PRICE_IDS.cowork,
+  },
+  {
+    id: 'school', label: 'École', emoji: '🎓', priceM: null, accent: C.green,
+    desc: 'Pour les écoles & CFA. Sur devis, par sièges.',
+    features: [
+      'Élèves illimités (par sièges)',
+      'Espace conseillers & direction',
+      'Suivi de progression des cohortes',
+      'Accès offert à tes élèves (lien d\'invitation)',
+    ],
+    missing: [],
+    cta: 'Nous contacter',
     contactSales: true,
   },
 ];
 
-/* ─── Icône check / cross ─────────────────────────────────────────────────── */
-function IconCheck() {
-  return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>;
-}
-function IconX() {
-  return <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>;
-}
+function Check() { return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round"><polyline points="20 6 9 17 4 12" /></svg>; }
+function Cross() { return <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>; }
 
-/* ─── Composant PlanCard ─────────────────────────────────────────────────── */
-function PlanCard({ plan, currentTier, onSubscribe, loading }) {
-  const isCurrent = plan.id === currentTier;
-  return (
-    <div style={{
-      background: plan.highlight ? C.blue : '#fff',
-      border: `2px solid ${plan.highlight ? C.blue : C.rule}`,
-      borderRadius: 20, padding: '32px 28px', flex: '1 1 280px',
-      display: 'flex', flexDirection: 'column', gap: 0,
-      boxShadow: plan.highlight ? '0 20px 60px rgba(21,57,183,.25)' : '0 2px 8px rgba(0,0,0,.04)',
-      position: 'relative', transition: 'transform .2s',
-    }}
-    onMouseEnter={e => { if (!plan.highlight) e.currentTarget.style.transform = 'translateY(-2px)'; }}
-    onMouseLeave={e => { e.currentTarget.style.transform = 'none'; }}>
-
-      {/* Badge Populaire */}
-      {plan.badge && (
-        <div style={{
-          position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)',
-          background: C.star, color: C.ink, padding: '3px 14px',
-          borderRadius: 99, fontSize: 11, fontWeight: 800, whiteSpace: 'nowrap',
-          boxShadow: '0 2px 8px rgba(245,180,0,.35)',
-        }}>
-          ✦ {plan.badge}
-        </div>
-      )}
-
-      {/* En-tête */}
-      <div style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 28, marginBottom: 8 }}>{plan.emoji}</div>
-        <div style={{ fontSize: 18, fontWeight: 800, color: plan.highlight ? '#fff' : C.ink, marginBottom: 4 }}>
-          {plan.label}
-        </div>
-        <div style={{ fontSize: 12.5, color: plan.highlight ? 'rgba(255,255,255,.7)' : C.mute, lineHeight: 1.5 }}>
-          {plan.desc}
-        </div>
-      </div>
-
-      {/* Prix */}
-      <div style={{ marginBottom: 24 }}>
-        <span style={{ fontSize: 40, fontWeight: 800, color: plan.highlight ? '#fff' : C.ink, letterSpacing: '-1.5px' }}>
-          {plan.price}
-        </span>
-        {plan.period && (
-          <span style={{ fontSize: 14, color: plan.highlight ? 'rgba(255,255,255,.65)' : C.mute, marginLeft: 4 }}>
-            {plan.period}
-          </span>
-        )}
-      </div>
-
-      {/* Features */}
-      <div style={{ flex: 1, marginBottom: 24 }}>
-        {plan.features.map((f, i) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 10 }}>
-            <span style={{ color: plan.highlight ? '#4ADE80' : C.ok, flexShrink: 0 }}><IconCheck /></span>
-            <span style={{ fontSize: 13, color: plan.highlight ? 'rgba(255,255,255,.9)' : C.ink2 }}>{f}</span>
-          </div>
-        ))}
-        {plan.missing.map((f, i) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 10, opacity: 0.5 }}>
-            <span style={{ color: plan.highlight ? 'rgba(255,255,255,.5)' : C.mute, flexShrink: 0 }}><IconX /></span>
-            <span style={{ fontSize: 13, color: plan.highlight ? 'rgba(255,255,255,.6)' : C.mute, textDecoration: 'line-through' }}>{f}</span>
-          </div>
-        ))}
-      </div>
-
-      {/* CTA */}
-      <button
-        disabled={plan.ctaDisabled || isCurrent || loading === plan.id}
-        onClick={() => onSubscribe(plan)}
-        style={{
-          width: '100%', padding: '12px 0', borderRadius: 12, fontSize: 14,
-          fontWeight: 700, fontFamily: FONT, cursor: (plan.ctaDisabled || isCurrent) ? 'default' : 'pointer',
-          border: plan.highlight ? '2px solid rgba(255,255,255,.25)' : `2px solid ${plan.id === 'free' ? C.rule : plan.color}`,
-          background: plan.highlight ? 'rgba(255,255,255,.15)' : (plan.ctaDisabled || isCurrent ? C.surface : plan.color),
-          color: plan.highlight ? '#fff' : (plan.ctaDisabled || isCurrent ? C.mute : '#fff'),
-          transition: 'opacity .15s',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-        }}
-        onMouseEnter={e => { if (!plan.ctaDisabled && !isCurrent) e.currentTarget.style.opacity = '.85'; }}
-        onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}>
-        {loading === plan.id ? (
-          <>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
-              style={{ animation: 'spin .7s linear infinite' }}>
-              <path d="M21 12A9 9 0 1112 3" strokeLinecap="round"/>
-            </svg>
-            Redirection…
-          </>
-        ) : isCurrent ? (
-          '✓ Plan actuel'
-        ) : plan.cta}
-      </button>
-    </div>
-  );
-}
-
-/* ─── Page principale ────────────────────────────────────────────────────── */
 export default function Pricing() {
-  const navigate        = useNavigate();
-  const [params]        = useSearchParams();
-  const { user }        = useAuth();
-  const { tier }        = usePlan();
+  const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const { user } = useAuth();
+  const { tier, isSchool, orgName } = useEntitlements();
+  const [annual, setAnnual] = useState(true);
+  useSeo({ title: 'Tarifs : gratuit, Personnel, Cowork, École', description: 'Des tarifs pensés pour les jeunes : l\'essentiel gratuit pour toujours, Personnel à 4,99 €/mois. Offres Cowork (coach) et École (parrainage des élèves).' });
   const [loading, setLoading] = useState(null);
-  const [error,   setError]   = useState('');
-  const checkoutStatus  = params.get('checkout');
+  const [error, setError] = useState('');
+  const checkout = params.get('checkout');
 
-  const handleSubscribe = async (plan) => {
-    if (plan.ctaDisabled || plan.id === 'free') return;
-
-    track('upgrade_clicked', {
-      targetTier: plan.id,
-      contactSales: !!plan.contactSales,
-    });
-
-    if (plan.contactSales) {
-      // Business → email commercial
-      window.location.href = 'mailto:hello@altio-wave.app?subject=Plan Business Altio CV';
-      return;
-    }
-
-    if (!user) {
-      // Doit être connecté pour s'abonner
-      navigate('/auth?tab=inscription&redirect=/pricing');
-      return;
-    }
-
-    if (!supabaseReady || !supabase) {
-      setError('Supabase non configuré — impossible de lancer le paiement.');
-      return;
-    }
-
-    if (!plan.priceId) {
-      setError('Price ID Stripe non configuré (VITE_STRIPE_PRICE_*).');
-      return;
-    }
-
-    setLoading(plan.id);
-    setError('');
-
-    try {
-      const { data, error: fnErr } = await supabase.functions.invoke('create-checkout', {
-        body: {
-          priceId:    plan.priceId,
-          successUrl: `${window.location.origin}/?checkout=success`,
-          cancelUrl:  `${window.location.origin}/pricing?checkout=cancelled`,
-        },
-      });
-
-      if (fnErr || !data?.url) {
-        throw new Error(fnErr?.message || 'Impossible de créer la session de paiement.');
-      }
-
-      window.location.href = data.url;
-    } catch (err) {
-      captureError(err, { context: 'stripe_checkout', tier: plan.id });
-      setError(err.message);
-    } finally {
-      setLoading(null);
-    }
+  const priceLabel = (p) => {
+    if (p.priceM === null) return { big: 'Sur devis', small: '' };
+    if (p.priceM === 0) return { big: '0 €', small: '' };
+    if (annual) return { big: eur(p.priceM * 10), small: `/ an · ≈ ${eur(p.priceM * 10 / 12)}/mois` };
+    return { big: eur(p.priceM), small: '/ mois' };
   };
 
+  async function subscribe(p) {
+    if (p.id === 'free') { navigate(user ? '/' : '/auth'); return; }
+    track('upgrade_clicked', { targetTier: p.id, annual, contactSales: !!p.contactSales });
+    if (p.contactSales) { window.location.href = 'mailto:hello@altio-wave.com?subject=Altio CV — Offre École'; return; }
+    if (!user) { navigate('/auth?tab=inscription&redirect=/pricing'); return; }
+    if (!supabaseReady || !supabase || !p.priceId) {
+      setError('Le paiement en ligne arrive bientôt. Laisse-nous ton email à hello@altio-wave.com pour être prévenu.');
+      return;
+    }
+    setLoading(p.id); setError('');
+    try {
+      const { data, error: fnErr } = await supabase.functions.invoke('create-checkout', {
+        body: { priceId: p.priceId, interval: annual ? 'year' : 'month', successUrl: `${window.location.origin}/?checkout=success`, cancelUrl: `${window.location.origin}/pricing?checkout=cancelled` },
+      });
+      if (fnErr || !data?.url) throw new Error(fnErr?.message || 'Impossible de créer la session de paiement.');
+      window.location.href = data.url;
+    } catch (err) { captureError(err, { context: 'stripe_checkout', tier: p.id }); setError(err.message); }
+    finally { setLoading(null); }
+  }
+
   return (
-    <div style={{ minHeight: '100vh', background: C.surface, fontFamily: FONT }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes fadeInUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
-      `}</style>
-
-      {/* Header */}
-      <header style={{ background: C.bg, borderBottom: `1px solid ${C.rule}`, height: 60, display: 'flex', alignItems: 'center', padding: '0 24px', gap: 12 }}>
-        <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: C.ink2, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 5 }}>
-          ← Retour
-        </button>
-        <div style={{ flex: 1 }} />
-        <div style={{ fontSize: 15, fontWeight: 700, color: C.ink }}>
-          Altio <span style={{ color: C.blue }}>CV</span> — Tarifs
+    <div style={S.shell}>
+      <div style={S.wrap}>
+        <div style={S.top}>
+          <button style={S.backBtn} onClick={() => navigate(-1)}>← Retour</button>
+          <span style={S.brandTag}>ALTIO · Tarifs</span>
         </div>
-      </header>
 
-      <main style={{ maxWidth: 1060, margin: '0 auto', padding: '56px 24px 80px', animation: 'fadeInUp .4s ease both' }}>
+        {checkout === 'success' && <div style={{ ...S.banner, background: C.greenSoft, color: C.green }}>🎉 Abonnement activé — bienvenue dans ton nouveau plan !</div>}
+        {checkout === 'cancelled' && <div style={{ ...S.banner, background: C.amberSoft, color: C.amber }}>Paiement annulé — tu n'as pas été débité.</div>}
+        {error && <div style={{ ...S.banner, background: C.redSoft, color: C.red }}>{error}</div>}
 
-        {/* Bannière checkout résultat */}
-        {checkoutStatus === 'success' && (
-          <div style={{ background: C.okSoft, border: `1px solid #86EFAC`, borderRadius: 12, padding: '14px 20px', marginBottom: 32, display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ fontSize: 22 }}>🎉</span>
-            <div>
-              <div style={{ fontWeight: 700, color: C.ok }}>Abonnement activé !</div>
-              <div style={{ fontSize: 13, color: '#15803D', marginTop: 2 }}>Bienvenue dans votre nouveau plan. Vos fonctionnalités sont déjà disponibles.</div>
-            </div>
-          </div>
-        )}
-        {checkoutStatus === 'cancelled' && (
-          <div style={{ background: '#FEF2F2', border: '1px solid #FCA5A5', borderRadius: 12, padding: '14px 20px', marginBottom: 32, fontSize: 13, color: '#991B1B' }}>
-            ℹ️ Paiement annulé — vous n'avez pas été débité.
-          </div>
-        )}
-        {error && (
-          <div style={{ background: '#FEF2F2', border: '1px solid #FCA5A5', borderRadius: 12, padding: '14px 20px', marginBottom: 32, fontSize: 13, color: '#991B1B' }}>
-            ❌ {error}
-          </div>
-        )}
-
-        {/* Hero */}
-        <div style={{ textAlign: 'center', marginBottom: 48 }}>
-          <h1 style={{ fontSize: 44, fontWeight: 800, color: C.ink, letterSpacing: '-1.5px', marginBottom: 12, lineHeight: 1.1 }}>
-            Le plan qui vous correspond
-          </h1>
-          <p style={{ fontSize: 16, color: C.ink2, maxWidth: 520, margin: '0 auto', lineHeight: 1.6 }}>
-            Commencez gratuitement. Passez à un plan payant quand vous êtes prêt — sans engagement, annulation en un clic.
+        <div style={S.header}>
+          <h1 style={S.h1}>Des tarifs pensés pour les jeunes</h1>
+          <p style={S.lead}>
+            L'essentiel est <b>gratuit, pour toujours</b>. Et si tu veux tout débloquer,
+            ça reste le prix d'un café par mois.
           </p>
         </div>
 
-        {/* Cards */}
-        <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', justifyContent: 'center', alignItems: 'stretch' }}>
-          {PLANS_UI.map(plan => (
-            <PlanCard
-              key={plan.id}
-              plan={plan}
-              currentTier={tier}
-              onSubscribe={handleSubscribe}
-              loading={loading}
-            />
-          ))}
+        {/* Parrainage école */}
+        <div style={S.sponsor}>
+          <span style={{ fontSize: 22 }}>🎓</span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            {isSchool ? (
+              <><b>Ton accès est offert par {orgName || 'ton école'} 🎉</b> — tu profites déjà de toutes les fonctionnalités.</>
+            ) : (
+              <><b>Tu es dans une école partenaire ?</b> Ton accès peut être <b>offert</b> : demande ton lien d'invitation à ton conseiller.</>
+            )}
+          </div>
         </div>
 
-        {/* Note bas de page */}
-        <p style={{ textAlign: 'center', fontSize: 12, color: C.mute, marginTop: 40, lineHeight: 1.7 }}>
-          Paiement sécurisé via Stripe · TVA incluse · Annulation à tout moment depuis votre espace client<br />
-          Des questions ? <a href="mailto:hello@altio-wave.app" style={{ color: C.blue, textDecoration: 'none', fontWeight: 600 }}>hello@altio-wave.app</a>
+        {/* Toggle mensuel / annuel */}
+        <div style={S.toggleRow}>
+          <div style={S.toggle}>
+            <button style={{ ...S.toggleBtn, ...(!annual ? S.toggleOn : {}) }} onClick={() => setAnnual(false)}>Mensuel</button>
+            <button style={{ ...S.toggleBtn, ...(annual ? S.toggleOn : {}) }} onClick={() => setAnnual(true)}>
+              Annuel <span style={S.save}>2 mois offerts</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Cartes */}
+        <div style={S.grid}>
+          {PLANS.map((p) => {
+            const pl = priceLabel(p);
+            const isCurrent = p.id === tier;
+            const hl = p.highlight;
+            return (
+              <div key={p.id} style={{ ...S.card, ...(hl ? S.cardHL : {}) }}>
+                {p.badge && <div style={S.badge}>✦ {p.badge}</div>}
+                <div style={{ fontSize: 24 }}>{p.emoji}</div>
+                <div style={{ ...S.planName, color: hl ? '#fff' : C.ink }}>{p.label}</div>
+                <div style={{ ...S.planDesc, color: hl ? 'rgba(255,255,255,.8)' : C.mute }}>{p.desc}</div>
+
+                <div style={S.priceRow}>
+                  <span style={{ ...S.price, color: hl ? '#fff' : C.ink }}>{pl.big}</span>
+                  {pl.small && <span style={{ ...S.pricePer, color: hl ? 'rgba(255,255,255,.7)' : C.mute }}>{pl.small}</span>}
+                </div>
+                {p.sub && <div style={{ ...S.priceSub, color: hl ? 'rgba(255,255,255,.7)' : C.mute }}>{p.sub}</div>}
+
+                <div style={S.features}>
+                  {p.features.map((f, i) => (
+                    <div key={i} style={S.featRow}>
+                      <span style={{ color: hl ? '#7CF2C0' : C.green, flexShrink: 0, marginTop: 2 }}><Check /></span>
+                      <span style={{ fontSize: 12.5, color: hl ? 'rgba(255,255,255,.92)' : C.ink2, lineHeight: 1.4 }}>{f}</span>
+                    </div>
+                  ))}
+                  {p.missing.map((f, i) => (
+                    <div key={i} style={{ ...S.featRow, opacity: 0.55 }}>
+                      <span style={{ color: hl ? 'rgba(255,255,255,.5)' : C.mute, flexShrink: 0, marginTop: 2 }}><Cross /></span>
+                      <span style={{ fontSize: 12.5, color: hl ? 'rgba(255,255,255,.6)' : C.mute, textDecoration: 'line-through', lineHeight: 1.4 }}>{f}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <button
+                  disabled={isCurrent || loading === p.id}
+                  onClick={() => subscribe(p)}
+                  style={{
+                    ...S.cta,
+                    background: isCurrent ? C.line : hl ? '#fff' : p.accent,
+                    color: isCurrent ? C.mute : hl ? C.blue : '#fff',
+                    cursor: isCurrent ? 'default' : 'pointer',
+                  }}>
+                  {loading === p.id ? 'Redirection…' : isCurrent ? '✓ Plan actuel' : p.cta}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+
+        <p style={S.foot}>
+          Paiement sécurisé · sans engagement · annulation à tout moment.
+          Une question ? <a href="mailto:hello@altio-wave.com" style={{ color: C.blue, fontWeight: 700, textDecoration: 'none' }}>hello@altio-wave.com</a>
         </p>
-      </main>
+      </div>
     </div>
   );
 }
+
+const S = {
+  shell: { minHeight: '100vh', background: C.bg, fontFamily: FONT, color: C.ink, padding: '24px 16px 60px' },
+  wrap: { maxWidth: 1100, margin: '0 auto' },
+  top: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 },
+  backBtn: { background: 'none', border: 'none', color: C.ink2, fontSize: 13.5, fontWeight: 600, cursor: 'pointer', fontFamily: FONT, padding: 0 },
+  brandTag: { fontSize: 10.5, fontWeight: 800, letterSpacing: 1.2, color: C.mute },
+
+  banner: { borderRadius: 12, padding: '12px 16px', fontSize: 13.5, fontWeight: 700, marginBottom: 16, lineHeight: 1.5 },
+
+  header: { textAlign: 'center', marginBottom: 18, maxWidth: 560, marginLeft: 'auto', marginRight: 'auto' },
+  h1: { fontSize: 34, fontWeight: 800, letterSpacing: -1.2, lineHeight: 1.1, margin: '6px 0 12px' },
+  lead: { fontSize: 15.5, color: C.ink2, lineHeight: 1.6, margin: 0 },
+
+  sponsor: { display: 'flex', alignItems: 'center', gap: 12, background: C.card, border: `1px solid ${C.line}`, borderRadius: 14, padding: '13px 18px', maxWidth: 720, margin: '0 auto 20px', fontSize: 13.5, color: C.ink2, lineHeight: 1.45 },
+
+  toggleRow: { display: 'flex', justifyContent: 'center', marginBottom: 22 },
+  toggle: { display: 'inline-flex', background: C.card, border: `1px solid ${C.line}`, borderRadius: 99, padding: 4 },
+  toggleBtn: { display: 'inline-flex', alignItems: 'center', gap: 7, border: 'none', background: 'transparent', color: C.ink2, fontFamily: FONT, fontSize: 13.5, fontWeight: 700, padding: '8px 16px', borderRadius: 99, cursor: 'pointer' },
+  toggleOn: { background: C.blue, color: '#fff' },
+  save: { fontSize: 10.5, fontWeight: 800, background: C.greenSoft, color: C.green, padding: '2px 7px', borderRadius: 99 },
+
+  grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 16, alignItems: 'stretch' },
+  card: { position: 'relative', display: 'flex', flexDirection: 'column', background: C.card, border: `1px solid ${C.line}`, borderRadius: 18, padding: '22px 20px', boxShadow: '0 4px 20px rgba(11,22,56,.05)' },
+  cardHL: { background: C.blue, border: `1px solid ${C.blue}`, boxShadow: '0 18px 50px -16px rgba(21,57,183,.45)', transform: 'translateY(-4px)' },
+  badge: { position: 'absolute', top: -11, left: '50%', transform: 'translateX(-50%)', background: C.star, color: '#3A2D00', fontSize: 11, fontWeight: 800, padding: '3px 12px', borderRadius: 99, whiteSpace: 'nowrap' },
+  planName: { fontSize: 18, fontWeight: 800, marginTop: 8 },
+  planDesc: { fontSize: 12.5, lineHeight: 1.45, marginTop: 4, minHeight: 36 },
+
+  priceRow: { display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 14, flexWrap: 'wrap' },
+  price: { fontSize: 32, fontWeight: 800, letterSpacing: -1 },
+  pricePer: { fontSize: 12.5, fontWeight: 600 },
+  priceSub: { fontSize: 11.5, marginTop: 2 },
+
+  features: { flex: 1, display: 'grid', gap: 9, margin: '18px 0' },
+  featRow: { display: 'flex', alignItems: 'flex-start', gap: 9 },
+
+  cta: { width: '100%', border: 'none', borderRadius: 12, padding: '12px', fontSize: 13.5, fontWeight: 800, fontFamily: FONT },
+
+  foot: { textAlign: 'center', fontSize: 12.5, color: C.mute, marginTop: 30, lineHeight: 1.7 },
+};

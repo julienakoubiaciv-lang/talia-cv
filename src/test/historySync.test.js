@@ -36,7 +36,7 @@ import {
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function snapshotLS() {
-  return JSON.parse(localStorage.getItem('talia_cv_hist') || '[]');
+  return JSON.parse(localStorage.getItem('ALTIO_CV_hist') || '[]');
 }
 
 // ── Mode A : sans Supabase ────────────────────────────────────────────────────
@@ -47,7 +47,7 @@ describe('[localStorage only] getHistorySync', () => {
   });
 
   it('retourne les données préexistantes', () => {
-    localStorage.setItem('talia_cv_hist', JSON.stringify([{ id: '1', name: 'CV Test' }]));
+    localStorage.setItem('ALTIO_CV_hist', JSON.stringify([{ id: '1', name: 'CV Test' }]));
     expect(getHistorySync()).toHaveLength(1);
   });
 });

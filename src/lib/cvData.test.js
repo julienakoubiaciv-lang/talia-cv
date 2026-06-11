@@ -1,9 +1,9 @@
 ﻿import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   getHist, setHist, saveToHist, updateHist,
-  PALETTES, TEMPLATES,
-  renderCVFromData,
+  PALETTES,
 } from './cvData.js';
+import { TEMPLATES, renderCVFromData } from './cvTemplates.js';
 
 // ─── Données de test minimales ────────────────────────────────────────────────
 const MINIMAL_CV = {

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
-  QUESTIONS, listCategories, listSectors, listGroups, buildSession,
-  groupOf, CATEGORIES, SECTORS, TYPES,
+  QUESTIONS, listCategories, listSectors, listGroups, buildSession, buildDemoSession,
+  groupOf, xpFor, XP_BY_KIND, CATEGORIES, SECTORS, TYPES,
 } from './interviewBank.js';
 
 describe('interviewBank — intégrité de la banque', () => {
@@ -40,6 +40,15 @@ describe('cible 30 questions / thème (tronc commun, étoffé par lots)', () => 
   }
 });
 
+describe('tronc commun — minimum 20 questions par thème', () => {
+  for (const cat of Object.keys(CATEGORIES)) {
+    it(`le thème "${cat}" a au moins 20 questions`, () => {
+      const n = QUESTIONS.filter((q) => q.sector === 'general' && q.category === cat).length;
+      expect(n).toBeGreaterThanOrEqual(20);
+    });
+  }
+});
+
 describe('secteurs métier — 4 couches complètes', () => {
   const metiers = listSectors().filter((s) => s.id !== 'general').map((s) => s.id);
 
@@ -52,6 +61,16 @@ describe('secteurs métier — 4 couches complètes', () => {
       const groups = listGroups(sec);
       expect(groups.map((g) => g.id).sort()).toEqual(['actu', 'comportemental', 'situation', 'technique']);
       for (const g of groups) expect(g.count).toBeGreaterThan(0);
+    });
+  }
+
+  // Secteurs dont les 4 couches sont étoffées à 20 (complétés par lots).
+  const SECTORS_DONE = ['commerce', 'admin', 'rh', 'marketing', 'finance'];
+  for (const sec of SECTORS_DONE) {
+    it(`le secteur "${sec}" a 20+ questions par couche`, () => {
+      for (const g of listGroups(sec)) {
+        expect(g.count, `${sec}/${g.id}`).toBeGreaterThanOrEqual(20);
+      }
     });
   }
 });
@@ -95,5 +114,48 @@ describe('buildSession', () => {
     const total = QUESTIONS.filter((q) => q.sector === 'commerce').length;
     const s = buildSession({ sector: 'commerce', group: 'all', size: 999 });
     expect(s.length).toBe(total);
+  });
+});
+
+describe('xpFor / barème XP', () => {
+  it('barème par typologie', () => {
+    expect(xpFor({ kind: 'mcq' })).toBe(XP_BY_KIND.mcq);
+    expect(xpFor({ kind: 'translator' })).toBe(XP_BY_KIND.translator);
+    expect(xpFor({ kind: 'boss' })).toBe(XP_BY_KIND.boss);
+  });
+
+  it('le boss rapporte plus que le QCM', () => {
+    expect(XP_BY_KIND.boss).toBeGreaterThan(XP_BY_KIND.mcq);
+  });
+
+  it('défaut = barème mcq quand kind absent', () => {
+    expect(xpFor({})).toBe(XP_BY_KIND.mcq);
+    expect(xpFor(undefined)).toBe(XP_BY_KIND.mcq);
+  });
+});
+
+describe('buildDemoSession — parcours guidé', () => {
+  it('renvoie les 3 étapes, dans l\'ordre, une de chaque typologie', () => {
+    const s = buildDemoSession();
+    expect(s.length).toBe(3);
+    expect(s.map((q) => q.kind)).toEqual(['mcq', 'translator', 'boss']);
+  });
+
+  it('la démo n\'est PAS dans la banque principale (banque intacte pour les tests d\'intégrité)', () => {
+    const demoIds = buildDemoSession().map((q) => q.id);
+    expect(QUESTIONS.some((q) => demoIds.includes(q.id))).toBe(false);
+  });
+
+  it('le Traducteur Pro expose des blocs et une cible cohérente', () => {
+    const t = buildDemoSession().find((q) => q.kind === 'translator');
+    expect(Array.isArray(t.blocks)).toBe(true);
+    expect(t.blocks.length).toBeGreaterThanOrEqual(3);
+    expect(t.blocks.join(' ')).toBe(t.target);
+  });
+
+  it('les QCM/Boss de la démo gardent exactement une bonne réponse', () => {
+    for (const q of buildDemoSession().filter((q) => q.options)) {
+      expect(q.options.filter((o) => o.correct).length, q.id).toBe(1);
+    }
   });
 });

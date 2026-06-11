@@ -3,7 +3,7 @@
  *
  * Priorité :
  *   1. Supabase subscriptions (si connecté + Supabase configuré)
- *   2. localStorage talia_plan (override manuel, pour tests)
+ *   2. localStorage altio_plan (override manuel, pour tests)
  *   3. Défaut : free
  *
  * Réagit aux changements de plan (storage events cross-onglet).
@@ -53,7 +53,7 @@ export function usePlan() {
   // ── Sync si le plan change dans un autre onglet (localStorage) ──────────
   useEffect(() => {
     const handler = (e) => {
-      if (e.key === 'talia_plan') setTier(getCurrentTier());
+      if (e.key === 'altio_plan') setTier(getCurrentTier());
     };
     window.addEventListener('storage', handler);
     return () => window.removeEventListener('storage', handler);

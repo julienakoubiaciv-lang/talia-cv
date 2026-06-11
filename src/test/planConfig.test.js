@@ -19,19 +19,39 @@ import {
   canUseTemplate,
   remainingCVs,
   nextPlanLabel,
+  TIER_RANK,
+  betterTier,
 } from '@/lib/planConfig';
+
+describe('betterTier (max perso / parrainage org)', () => {
+  it('classe free < personal < school < business', () => {
+    expect(TIER_RANK.free).toBeLessThan(TIER_RANK.personal);
+    expect(TIER_RANK.personal).toBeLessThan(TIER_RANK.school);
+    expect(TIER_RANK.school).toBeLessThan(TIER_RANK.business);
+  });
+  it('renvoie le meilleur tier', () => {
+    expect(betterTier('free', 'school')).toBe('school');
+    expect(betterTier('personal', 'school')).toBe('school');
+    expect(betterTier('business', 'school')).toBe('business');
+  });
+  it('ignore null / undefined / inconnu', () => {
+    expect(betterTier('personal', null)).toBe('personal');
+    expect(betterTier(null, undefined)).toBe('free');
+    expect(betterTier('free', 'inconnu')).toBe('free');
+  });
+});
 
 // localStorage est vidé avant chaque test (cf. setup.js)
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 
 describe('PLANS', () => {
-  it('contient les 3 tiers', () => {
-    expect(Object.keys(PLANS)).toEqual(['free', 'personal', 'business']);
+  it('contient les tiers attendus (perso, cowork, école, business)', () => {
+    expect(Object.keys(PLANS).sort()).toEqual(['business', 'cowork', 'free', 'personal', 'school']);
   });
 
-  it('free a maxCVs = 5', () => {
-    expect(PLANS.free.maxCVs).toBe(5);
+  it('free a maxCVs = 2', () => {
+    expect(PLANS.free.maxCVs).toBe(2);
   });
 
   it('personal a maxCVs = Infinity', () => {
@@ -76,12 +96,12 @@ describe('getCurrentTier', () => {
   });
 
   it('retourne "free" si le JSON est corrompu', () => {
-    localStorage.setItem('talia_plan', '{{invalid}}');
+    localStorage.setItem('altio_plan', '{{invalid}}');
     expect(getCurrentTier()).toBe('free');
   });
 
   it('retourne "free" si le tier stocké est inconnu', () => {
-    localStorage.setItem('talia_plan', JSON.stringify({ tier: 'ultra-premium' }));
+    localStorage.setItem('altio_plan', JSON.stringify({ tier: 'ultra-premium' }));
     expect(getCurrentTier()).toBe('free');
   });
 });
@@ -89,7 +109,7 @@ describe('getCurrentTier', () => {
 describe('setPlan', () => {
   it('stocke le tier et la source', () => {
     setPlan('business', 'stripe');
-    const stored = JSON.parse(localStorage.getItem('talia_plan') || '{}');
+    const stored = JSON.parse(localStorage.getItem('altio_plan') || '{}');
     expect(stored.tier).toBe('business');
     expect(stored.source).toBe('stripe');
     expect(stored.activatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
@@ -148,13 +168,13 @@ describe('canDo', () => {
 // ── canCreateCV ───────────────────────────────────────────────────────────────
 
 describe('canCreateCV', () => {
-  it('free: autorisé si count < 5', () => {
+  it('free: autorisé si count < 2', () => {
     expect(canCreateCV(0)).toBe(true);
-    expect(canCreateCV(4)).toBe(true);
+    expect(canCreateCV(1)).toBe(true);
   });
 
-  it('free: bloqué si count >= 5', () => {
-    expect(canCreateCV(5)).toBe(false);
+  it('free: bloqué si count >= 2', () => {
+    expect(canCreateCV(2)).toBe(false);
     expect(canCreateCV(10)).toBe(false);
   });
 
@@ -219,10 +239,10 @@ describe('canUseTemplate', () => {
 // ── remainingCVs ──────────────────────────────────────────────────────────────
 
 describe('remainingCVs', () => {
-  it('free: 5 - count', () => {
-    expect(remainingCVs(0)).toBe(5);
-    expect(remainingCVs(3)).toBe(2);
-    expect(remainingCVs(5)).toBe(0);
+  it('free: 2 - count', () => {
+    expect(remainingCVs(0)).toBe(2);
+    expect(remainingCVs(1)).toBe(1);
+    expect(remainingCVs(2)).toBe(0);
     expect(remainingCVs(7)).toBe(0); // pas de négatif
   });
 

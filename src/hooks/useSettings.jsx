@@ -2,8 +2,8 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 
 /**
  * Gestion centralisée et sécurisée de la clé API + code PIN.
- * - La clé API est stockée dans localStorage (talia_api_key).
- * - Le PIN n'est jamais stocké en clair : seul son hash SHA-256 est conservé (talia_pin_hash).
+ * - La clé API est stockée dans localStorage (altio_api_key).
+ * - Le PIN n'est jamais stocké en clair : seul son hash SHA-256 est conservé (altio_pin_hash).
  * - Toute modification de la clé exige la vérification du PIN (voir SettingsPanel).
  *
  * NB sécurité : avec des appels API directs depuis le navigateur, la clé reste
@@ -14,8 +14,8 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 
 const SettingsContext = createContext(null);
 
-const API_KEY_LS = 'talia_api_key';
-const PIN_HASH_LS = 'talia_pin_hash';
+const API_KEY_LS = 'altio_api_key';
+const PIN_HASH_LS = 'altio_pin_hash';
 
 async function sha256(str) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));

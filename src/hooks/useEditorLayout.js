@@ -5,7 +5,7 @@
  *   - 'atelier' (défaut, nouveau)   : 3 colonnes (édition / aperçu / design)
  *   - 'classique'                    : Layout historique (1 panneau gauche + iframe)
  *
- * Persistance : localStorage clé 'talia_editor_layout'
+ * Persistance : localStorage clé 'altio_editor_layout'
  * Sync cross-tab : storage event
  *
  * Usage :
@@ -14,7 +14,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { track } from '@/lib/monitoring';
 
-const LS_KEY = 'talia_editor_layout';
+const LS_KEY = 'altio_editor_layout';
 export const DEFAULT_LAYOUT = 'atelier';
 export const LAYOUTS = ['atelier', 'classique'];
 

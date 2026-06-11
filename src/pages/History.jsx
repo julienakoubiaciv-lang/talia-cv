@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Page Historique — liste tous les CV générés.
  * Lecture depuis Supabase (avec fallback localStorage).
  * Écriture via historySync.js (write-through cache).
@@ -134,7 +134,7 @@ export default function History() {
           <div style={{ width: 30, height: 30, borderRadius: 8, background: C.ink, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
           </div>
-          <span style={{ fontSize: 15, fontWeight: 700, color: C.ink }}>ALTIO<span style={{ color: C.bluePrimary }}>CV</span></span>
+          <span style={{ fontSize: 15, fontWeight: 700, color: C.ink }}>Altio <span style={{ color: C.bluePrimary }}>CV</span></span>
         </button>
 
         <button

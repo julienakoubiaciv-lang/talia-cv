@@ -16,10 +16,12 @@ import { getDiagnostic } from '@/lib/employability';
 import { useSeo } from '@/lib/seo';
 import { isDemoMode, setDemoMode } from '@/lib/demoMode';
 import { getJoinNotice, clearJoinNotice } from '@/lib/orgAccess';
+import { useEncadrant } from '@/hooks/useEncadrant';
+import { isDemoEncadrant, setDemoEncadrant } from '@/lib/demoCohort';
+import GameOnboarding from '@/components/GameOnboarding';
 import { alpha } from '@/lib/gameTheme';
 import { useTheme } from '@/hooks/useTheme.jsx';
 import EnergyBar from '@/components/EnergyBar';
-import GameOnboarding from '@/components/GameOnboarding';
 
 /* ─── Design tokens ─────────────────────────────────────────────────────── */
 const C = {
@@ -597,12 +599,12 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedForms, setSelectedForms] = useState([]); // formations sélectionnées
   const [groupByBulk, setGroupByBulk] = useState(false);
-  const [tourOpen, setTourOpen] = useState(false);
   const [demoOn, setDemoOn] = useState(() => isDemoMode());
   const [joinNotice, setJoinNotice] = useState(() => getJoinNotice());
   const [section, setSection] = useState('home'); // home | cv | prep | encadrement | account
   const [showOnboard, setShowOnboard] = useState(() => { try { return !localStorage.getItem('talia_onboarded'); } catch { return false; } });
   const { mode, toggle: toggleTheme } = useTheme();
+  const isEncadrant = useEncadrant();
   useSeo({ title: 'Altio CV — Générateur de CV gratuit & préparation à l\'emploi', description: 'Crée ton CV gratuitement et entraîne-toi à décrocher ton poste : entretien, tests de recrutement, oral, lettre de motivation. Gagne en employabilité, étape par étape.' });
 
   // Rafraîchit la notice de bienvenue une fois le rattachement école résolu.
@@ -620,16 +622,6 @@ export default function Home() {
   // Détection du token CRM dans l'URL (?crm_token=…)
   useEffect(() => { linkFromURL(); }, [linkFromURL]);
 
-  // Première visite → ouvre le tour
-  useEffect(() => {
-    if (!localStorage.getItem('talia_onboarding_done')) {
-      setTimeout(() => setTourOpen(true), 600);
-    }
-  }, []);
-  const closeTour = () => {
-    setTourOpen(false);
-    localStorage.setItem('talia_onboarding_done', '1');
-  };
 
   // ── Liste unique des formations présentes ──
   const formations = React.useMemo(() => {
@@ -812,7 +804,7 @@ export default function Home() {
 
       {/* ── Layout : sidebar gauche + contenu ────────────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: isMobile ? 0 : 28, maxWidth: 1300, margin: '0 auto', padding: isMobile ? '16px 0 88px' : '28px 28px 80px' }}>
-        <Sidebar section={section} setSection={setSection} isMobile={isMobile} showEncadrement={demoOn} />
+        <Sidebar section={section} setSection={setSection} isMobile={isMobile} showEncadrement={isEncadrant} />
         <main style={{ flex: 1, minWidth: 0, maxWidth: 1180, padding: isMobile ? '0 16px' : 0 }}>
 
         {section === 'home' && (
@@ -910,8 +902,8 @@ export default function Home() {
           </div>
         )}
 
-        {/* Accès espace encadrant (démo) */}
-        {demoOn && (
+        {/* Accès espace encadrant — réservé aux conseillers / direction */}
+        {isEncadrant && (
           <div onClick={() => navigate('/encadrement')}
             style={{
               display: 'flex', alignItems: 'center', gap: isMobile ? 12 : 16,
@@ -1317,7 +1309,8 @@ export default function Home() {
               { lb: '🌙 Thème', btn: mode === 'dark' ? '☀️ Clair' : '🌙 Sombre', on: toggleTheme },
               { lb: '🧪 Mode démo', btn: demoOn ? 'Désactiver' : 'Activer', on: () => { setDemoMode(!demoOn); setDemoOn(!demoOn); } },
               { lb: '🎨 Charte graphique', btn: 'Voir', on: () => navigate('/charte') },
-              { lb: '🧭 Visite guidée', btn: 'Lancer', on: () => setTourOpen(true) },
+              { lb: '🧭 Visite guidée', btn: 'Lancer', on: () => setShowOnboard(true) },
+              ...(demoOn ? [{ lb: '👩‍🏫 Mode encadrant (démo)', btn: isDemoEncadrant() ? 'Désactiver' : 'Activer', on: () => { setDemoEncadrant(!isDemoEncadrant()); location.reload(); } }] : []),
               { lb: user ? `👤 ${user.email}` : '👤 Non connecté', btn: user ? 'Déconnexion' : 'Connexion', on: user ? signOut : () => navigate('/auth') },
             ].map((r) => (
               <div key={r.lb} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, background: C.card, border: `1px solid ${C.rule}`, borderRadius: 12, padding: '13px 16px', marginTop: 10 }}>
@@ -1338,7 +1331,6 @@ export default function Home() {
         onClose={() => setViewCV(null)}
       />
       {deleteTarget && <ConfirmModal name={deleteTarget.name} onConfirm={handleDeleteConfirm} onCancel={() => setDeleteTarget(null)} />}
-      {tourOpen && <OnboardingTour onClose={closeTour} onAction={(a) => { if (a==='done') navigate('/generate'); }} />}
     </div>
   );
 }

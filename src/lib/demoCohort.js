@@ -10,6 +10,16 @@
  */
 const LS_ROSTER  = 'talia_demo_roster';
 const LS_PERSONA = 'talia_demo_persona';
+const LS_ENCADRANT = 'talia_demo_encadrant'; // en démo : se voir comme encadrant
+
+/** En démo, l'utilisateur a-t-il activé le « mode encadrant » ? (défaut : élève) */
+export function isDemoEncadrant() {
+  try { return localStorage.getItem(LS_ENCADRANT) === '1'; } catch { return false; }
+}
+/** Active/désactive le mode encadrant de démo. */
+export function setDemoEncadrant(on) {
+  try { localStorage.setItem(LS_ENCADRANT, on ? '1' : '0'); } catch { /* ignore */ }
+}
 
 /** Conseillers de l'école de démo. */
 export const DEMO_CONSEILLERS = [

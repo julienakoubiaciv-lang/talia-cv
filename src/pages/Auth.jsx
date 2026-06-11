@@ -87,6 +87,7 @@ export default function Auth() {
   const [loading,  setLoading]  = useState(false);
   const [error,    setError]    = useState('');
   const [success,  setSuccess]  = useState('');
+  const [consent,  setConsent]  = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -97,6 +98,10 @@ export default function Auth() {
     }
     if (password.length < 6) {
       setError('Le mot de passe doit faire au moins 6 caractères.');
+      return;
+    }
+    if (tab === 'inscription' && !consent) {
+      setError('Merci d’accepter la politique de confidentialité et les CGU pour créer un compte.');
       return;
     }
 
@@ -210,6 +215,23 @@ export default function Auth() {
               placeholder={tab === 'inscription' ? 'Min. 6 caractères' : '••••••••'}
               autoComplete={tab === 'connexion' ? 'current-password' : 'new-password'}
             />
+            {tab === 'inscription' && (
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: 9, cursor: 'pointer', fontSize: 12, color: C.ink2, lineHeight: 1.5 }}>
+                <input
+                  type="checkbox"
+                  checked={consent}
+                  onChange={e => setConsent(e.target.checked)}
+                  style={{ width: 16, height: 16, marginTop: 1, accentColor: C.blue, cursor: 'pointer', flexShrink: 0 }}
+                />
+                <span>
+                  J’accepte la{' '}
+                  <a href="/confidentialite" target="_blank" rel="noreferrer" style={{ color: C.blue, fontWeight: 600 }}>politique de confidentialité</a>
+                  {' '}et les{' '}
+                  <a href="/cgu" target="_blank" rel="noreferrer" style={{ color: C.blue, fontWeight: 600 }}>conditions d’utilisation</a>.
+                </span>
+              </label>
+            )}
+
             <div style={{ marginTop: 4 }}>
               <SubmitBtn loading={loading}>
                 {tab === 'connexion' ? 'Se connecter' : 'Créer mon compte'}

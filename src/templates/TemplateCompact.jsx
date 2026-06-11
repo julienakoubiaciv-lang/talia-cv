@@ -1,4 +1,4 @@
-/**
+﻿/**
  * TemplateCompact — Template CV "colonne unique" (photo + header, barre contacts, corps)
  *
  * CSS exporté séparément (getCompactCSS) → injecté dans <head> par cvData.js.
@@ -73,9 +73,9 @@ body{font-family:'Manrope',sans-serif;background:#fff;color:#1a1a1a;}
 .form-block{margin-bottom:7px;}
 .form-titre{font-size:11px;font-weight:600;color:#1a1a1a;}
 .form-meta{font-size:10px;color:#6b7280;font-style:italic;}
-.form-talia{margin-bottom:7px;display:block;}
-.form-talia .form-titre{color:#1a1a1a;font-weight:700;}
-.form-talia .form-meta{color:#6b7280;}
+.form-altio{margin-bottom:7px;display:block;}
+.form-altio .form-titre{color:#1a1a1a;font-weight:700;}
+.form-altio .form-meta{color:#6b7280;}
 .ldm-text{font-size:10.5px;line-height:1.7;color:#333;white-space:pre-line;}
 `;
 }
@@ -178,8 +178,8 @@ function FormationsSection({ data }) {
     <>
       <div className="section-title">FORMATIONS</div>
       {data.formations.map((f, fi) =>
-        f.isTalia ? (
-          <div key={fi} className="form-talia">
+        f.isAltio ? (
+          <div key={fi} className="form-altio">
             <div className="form-titre" data-field={`formations.${fi}.titre`}>{f.titre}</div>
             <div className="form-meta">
               {f.etablissement || ''}{f.periode ? ` · ${f.periode}` : ''}{' · 1j cours 4j entreprise'}

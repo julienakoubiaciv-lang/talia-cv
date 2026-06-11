@@ -9,7 +9,7 @@
  *
  * Variables d'environnement (Edge Function Secrets) :
  *   STRIPE_SECRET_KEY  — clé secrète Stripe (sk_live_... ou sk_test_...)
- *   SITE_URL           — URL de base de l'app (ex: https://cv.talia.fr)
+ *   SITE_URL           — URL de base de l'app (ex: https://cv.altio-wave.app)
  */
 import Stripe from 'https://esm.sh/stripe@14?target=deno';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
     const { priceId, successUrl, cancelUrl } = await req.json();
     if (!priceId) throw new Error('priceId requis');
 
-    const siteUrl = Deno.env.get('SITE_URL') ?? 'https://cv.talia.fr';
+    const siteUrl = Deno.env.get('SITE_URL') ?? 'https://cv.altio-wave.app';
 
     // Chercher ou créer le customer Stripe lié à cet utilisateur
     const { data: sub } = await supabase

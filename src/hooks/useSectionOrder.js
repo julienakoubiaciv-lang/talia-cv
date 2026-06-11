@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+﻿import { useState, useCallback } from 'react';
 import { arrayMove } from '@dnd-kit/sortable';
 
 export const DEFAULT_SECTION_ORDER  = ['experiences', 'formations'];
@@ -15,14 +15,14 @@ function readLS(key, fallback) {
 
 export function useSectionOrder() {
   // ── Ordre des sections PRINCIPALES (côté contenu) ────────────────────────
-  const [order, setOrder] = useState(() => readLS('talia_section_order', DEFAULT_SECTION_ORDER));
+  const [order, setOrder] = useState(() => readLS('altio_section_order', DEFAULT_SECTION_ORDER));
 
   const onDragEnd = useCallback((event) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
     setOrder(prev => {
       const next = arrayMove(prev, prev.indexOf(active.id), prev.indexOf(over.id));
-      localStorage.setItem('talia_section_order', JSON.stringify(next));
+      localStorage.setItem('altio_section_order', JSON.stringify(next));
       return next;
     });
   }, []);
@@ -32,7 +32,7 @@ export function useSectionOrder() {
     setOrder(prev => {
       if (prev.includes(id)) return prev;
       const next = [...prev, id];
-      localStorage.setItem('talia_section_order', JSON.stringify(next));
+      localStorage.setItem('altio_section_order', JSON.stringify(next));
       return next;
     });
   }, []);
@@ -41,19 +41,19 @@ export function useSectionOrder() {
   const removeSection = useCallback((id) => {
     setOrder(prev => {
       const next = prev.filter(s => s !== id);
-      localStorage.setItem('talia_section_order', JSON.stringify(next));
+      localStorage.setItem('altio_section_order', JSON.stringify(next));
       return next;
     });
   }, []);
 
   const resetOrder = useCallback(() => {
     setOrder(DEFAULT_SECTION_ORDER);
-    localStorage.removeItem('talia_section_order');
+    localStorage.removeItem('altio_section_order');
   }, []);
 
   // ── Ordre des sections de BARRE LATÉRALE ────────────────────────────────
   const [sidebarOrder, setSidebarOrder] = useState(() =>
-    readLS('talia_sidebar_order', DEFAULT_SIDEBAR_ORDER)
+    readLS('altio_sidebar_order', DEFAULT_SIDEBAR_ORDER)
   );
 
   const onSidebarDragEnd = useCallback((event) => {
@@ -61,14 +61,14 @@ export function useSectionOrder() {
     if (!over || active.id === over.id) return;
     setSidebarOrder(prev => {
       const next = arrayMove(prev, prev.indexOf(active.id), prev.indexOf(over.id));
-      localStorage.setItem('talia_sidebar_order', JSON.stringify(next));
+      localStorage.setItem('altio_sidebar_order', JSON.stringify(next));
       return next;
     });
   }, []);
 
   const resetSidebarOrder = useCallback(() => {
     setSidebarOrder(DEFAULT_SIDEBAR_ORDER);
-    localStorage.removeItem('talia_sidebar_order');
+    localStorage.removeItem('altio_sidebar_order');
   }, []);
 
   return {

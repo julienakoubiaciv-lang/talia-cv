@@ -1,5 +1,7 @@
 // ─── SMART MATCHER — Analyse de correspondance offre/CV ──────────────────────
 
+import { callClaude } from '@/lib/claudeClient';
+
 const STOP_WORDS = new Set([
   'le','la','les','un','une','des','de','du','en','et','ou','à','au','aux',
   'par','pour','dans','sur','avec','son','sa','ses','ce','cette','ces','qui',
@@ -172,8 +174,6 @@ export function atsCheck(cvData = {}) {
 //
 // Migration V0 : plus aucun fetch direct à /api/anthropic.
 // Tout passe par callClaude() avec auth JWT + quota serveur + prompt caching.
-
-import { callClaude } from '@/lib/claudeClient';
 
 /**
  * Prompt système (cacheable — invariant entre appels). Les instructions

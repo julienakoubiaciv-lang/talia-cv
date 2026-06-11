@@ -383,7 +383,7 @@ function OnboardingTour({ onClose, onAction }) {
     {
       emoji: '👋',
       title: 'Bienvenue sur Altio CV',
-      subtitle: 'Le générateur de CV intelligent pour Talia',
+      subtitle: 'Le générateur de CV intelligent pour Altio',
       text: "Génère des CV professionnels en quelques clics — l'IA reformule, met en page et optimise pour l'alternance.",
       cta: 'Commencer la visite →',
       bg: 'linear-gradient(135deg, #1539B7, #1F4FE0)',
@@ -392,7 +392,7 @@ function OnboardingTour({ onClose, onAction }) {
       emoji: '✨',
       title: 'Créer un CV en 3 étapes',
       subtitle: 'Formation → Contenu → Génération',
-      text: "Choisis la formation Talia, dépose le CV du candidat (PDF/image) ou colle son texte, et laisse l'IA faire le reste. Un stepper visuel te guide à chaque étape.",
+      text: "Choisis la Formation Altio, dépose le CV du candidat (PDF/image) ou colle son texte, et laisse l'IA faire le reste. Un stepper visuel te guide à chaque étape.",
       cta: 'Étape suivante →',
       bg: 'linear-gradient(135deg, #1539B7, #7c3aed)',
     },
@@ -581,7 +581,8 @@ export default function Home() {
   const { embedded, notifyCreateLead } = useCRMBridge();
   const { user, signOut } = useAuth();
   const isMobile = useIsMobile();
-  const { crmLink, isLinked: isCRMLinked, linkFromURL, unlink: unlinkCRM } = useCRMToken();
+  const { crmLink, isLinked: isCRMLinked, linkFromURL, link: linkCRM, unlink: unlinkCRM } = useCRMToken();
+  const [crmKeyInput, setCrmKeyInput] = useState('');
   const { isFree, plan, canCV, remainingCVs, canBulk, nextPlan, upgrade, isSchool, orgName } = useEntitlements();
 
   // Taux de complétion global du simulateur d'entretien (localStorage)
@@ -621,7 +622,6 @@ export default function Home() {
 
   // Détection du token CRM dans l'URL (?crm_token=…)
   useEffect(() => { linkFromURL(); }, [linkFromURL]);
-
 
   // ── Liste unique des formations présentes ──
   const formations = React.useMemo(() => {
@@ -1009,7 +1009,7 @@ export default function Home() {
             <span style={{ fontSize: 20 }}>🔗</span>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: '#15803D' }}>
-                Connecté à {crmLink.orgName}
+                Connecté au CRM Altio
               </div>
               <div style={{ fontSize: 11.5, color: '#16A34A', marginTop: 1 }}>
                 Les CV générés sont automatiquement envoyés vers votre espace CRM.
@@ -1024,13 +1024,30 @@ export default function Home() {
           </div>
         )}
 
-        {/* Invite lien CRM — si pas lié, pas embedded, et page non vide */}
-        {!embedded && !isCRMLinked && cvList.length > 0 && !isMobile && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px', background: C.surface, border: `1px solid ${C.rule}`, borderRadius: 10, marginBottom: 24, animation: 'fadeIn .4s ease' }}>
+        {/* Lier le CRM — saisie de la clé de connexion (si pas lié, pas embedded) */}
+        {!embedded && !isCRMLinked && !isMobile && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', background: C.surface, border: `1px solid ${C.rule}`, borderRadius: 10, marginBottom: 24, animation: 'fadeIn .4s ease', flexWrap: 'wrap' }}>
             <span style={{ fontSize: 16 }}>🔗</span>
-            <div style={{ flex: 1, fontSize: 12.5, color: C.ink2 }}>
-              <strong style={{ color: C.ink }}>Lier votre CRM Talia</strong> — demandez un lien de connexion à votre administrateur pour synchroniser les CV automatiquement.
+            <div style={{ flex: 1, minWidth: 200, fontSize: 12.5, color: C.ink2 }}>
+              <strong style={{ color: C.ink }}>Lier votre CRM Altio</strong> — collez votre clé de connexion (CRM → Paramètres → Connecteur CV) pour envoyer vos CV automatiquement.
             </div>
+            <input
+              type="text"
+              value={crmKeyInput}
+              onChange={e => setCrmKeyInput(e.target.value)}
+              placeholder="altio_xxxxxxxx"
+              style={{ flex: 1, minWidth: 200, padding: '8px 12px', borderRadius: 8, border: `1px solid ${C.rule}`, fontSize: 13, fontFamily: 'monospace' }}
+            />
+            <button
+              onClick={() => {
+                const k = crmKeyInput.trim();
+                if (!/^altio_[a-f0-9]{8,}$/i.test(k)) { alert('Clé invalide. Elle commence par « altio_ ».'); return; }
+                linkCRM(k);
+                setCrmKeyInput('');
+              }}
+              style={{ padding: '8px 16px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, background: C.bluePrimary, color: '#fff', border: 'none', cursor: 'pointer', fontFamily: FONT, whiteSpace: 'nowrap' }}>
+              Lier le CRM
+            </button>
           </div>
         )}
 

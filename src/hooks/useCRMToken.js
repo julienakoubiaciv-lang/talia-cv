@@ -11,20 +11,27 @@
 import { useState, useCallback } from 'react';
 import {
   getCRMLink,
+  setCRMLink,
   removeCRMLink,
   consumeCRMTokenFromURL,
   pushCVtoCRM,
-  isCRMLinked,
 } from '@/lib/crmToken';
 
 export function useCRMToken() {
   const [crmLink, setCrmLink] = useState(() => getCRMLink());
 
-  /** Détecte ?crm_token= dans l'URL, stocke et nettoie. */
+  /** Détecte ?altio_key= dans l'URL, stocke et nettoie. */
   const linkFromURL = useCallback(() => {
     const link = consumeCRMTokenFromURL();
     if (link) setCrmLink(link);
     return link;
+  }, []);
+
+  /** Lie manuellement via une clé de connexion collée par l'utilisateur. */
+  const link = useCallback((key) => {
+    const l = setCRMLink(key);
+    setCrmLink(l);
+    return l;
   }, []);
 
   /** Supprime le lien. */
@@ -33,15 +40,16 @@ export function useCRMToken() {
     setCrmLink(null);
   }, []);
 
-  /** Pousse un CV vers le CRM si un token est disponible. */
+  /** Pousse un CV vers le CRM si une clé est disponible. */
   const push = useCallback(async (payload) => {
     return pushCVtoCRM(payload);
   }, []);
 
   return {
     crmLink,
-    isLinked: Boolean(crmLink?.token),
+    isLinked: Boolean(crmLink?.key),
     linkFromURL,
+    link,
     unlink,
     push,
   };

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * historySync.js — Couche de synchronisation CV History
  *
  * Stratégie "write-through cache" :
@@ -14,7 +14,7 @@ import { getCurrentUserId, isAuthenticated } from './currentUser';
 
 // ── helpers locaux ──────────────────────────────────────────────────────────
 
-const LS_KEY = 'talia_cv_hist';
+const LS_KEY = 'ALTIO_CV_hist';
 
 function lsGet() {
   try { return JSON.parse(localStorage.getItem(LS_KEY) || '[]'); }

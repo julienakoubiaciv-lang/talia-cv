@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
+﻿import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   PALETTES,
@@ -71,13 +71,13 @@ export default function Editor() {
 
   /* profil personnalité actif */
   const [profiles, setProfiles]               = useState(() => getProfiles());
-  const [activeProfileId, setActiveProfileId] = useState(() => localStorage.getItem('talia_cv_active_profile') || '');
+  const [activeProfileId, setActiveProfileId] = useState(() => localStorage.getItem('ALTIO_CV_active_profile') || '');
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const activeProfile = profiles.find(p => String(p.id) === String(activeProfileId)) || null;
   // Persist la sélection de profil
   useEffect(() => {
-    if (activeProfileId) localStorage.setItem('talia_cv_active_profile', activeProfileId);
-    else localStorage.removeItem('talia_cv_active_profile');
+    if (activeProfileId) localStorage.setItem('ALTIO_CV_active_profile', activeProfileId);
+    else localStorage.removeItem('ALTIO_CV_active_profile');
   }, [activeProfileId]);
   // Rafraîchit la liste si on revient sur la page après ajout de profil
   useEffect(() => { setProfiles(getProfiles()); }, []);
@@ -164,7 +164,7 @@ export default function Editor() {
 
   /* retour au lot bulk */
   const [hasBulkSession, setHasBulkSession] = useState(() => {
-    return sessionStorage.getItem('talia_bulk_returning') === '1' || loadBulkSession() !== null;
+    return sessionStorage.getItem('altio_bulk_returning') === '1' || loadBulkSession() !== null;
   });
 
   /* text colour for floating toolbar */
@@ -199,9 +199,9 @@ export default function Editor() {
 
   /* sidebar texture */
   const [sidebarTextureId, setSidebarTextureId] = useState(
-    () => localStorage.getItem('talia_sidebar_texture_id') || 'none'
+    () => localStorage.getItem('altio_sidebar_texture_id') || 'none'
   );
-  const sidebarTextureRef = useRef(SIDEBAR_TEXTURES.find(t => t.id === (localStorage.getItem('talia_sidebar_texture_id') || 'none')) || SIDEBAR_TEXTURES[0]);
+  const sidebarTextureRef = useRef(SIDEBAR_TEXTURES.find(t => t.id === (localStorage.getItem('altio_sidebar_texture_id') || 'none')) || SIDEBAR_TEXTURES[0]);
 
   // Sync texture object ref when id changes
   useEffect(() => {
@@ -296,18 +296,18 @@ export default function Editor() {
     setCroppedPhoto(photo); // met aussi croppedPhotoRef à jour (useStateRef)
     setLogoDataURL(logo);   // idem logoDataURLRef
     setCandidateName(s.name || (cData ? (cData.prenom||'') + ' ' + (cData.nom||'') : ''));
-    const savedTemplateId = s.templateId || localStorage.getItem('talia_template_id') || 'classic';
+    const savedTemplateId = s.templateId || localStorage.getItem('altio_template_id') || 'classic';
     setTemplateId(savedTemplateId); // met aussi templateIdRef à jour
     if (cData) setEdFields(JSON.parse(JSON.stringify(cData)));
 
     // Toujours régénérer le HTML depuis le template le plus récent
     const savedOrder = (() => {
-      try { return JSON.parse(localStorage.getItem('talia_section_order')) || undefined; } catch { return undefined; }
+      try { return JSON.parse(localStorage.getItem('altio_section_order')) || undefined; } catch { return undefined; }
     })();
     const savedSidebarOrder = (() => {
-      try { return JSON.parse(localStorage.getItem('talia_sidebar_order')) || undefined; } catch { return undefined; }
+      try { return JSON.parse(localStorage.getItem('altio_sidebar_order')) || undefined; } catch { return undefined; }
     })();
-    const savedTextureId = localStorage.getItem('talia_sidebar_texture_id') || 'none';
+    const savedTextureId = localStorage.getItem('altio_sidebar_texture_id') || 'none';
     const savedTexture   = SIDEBAR_TEXTURES.find(t => t.id === savedTextureId) || SIDEBAR_TEXTURES[0];
     const freshHtml = cData
       ? injectMedia(renderCVFromData(cData, savedPal, savedOrder, savedTemplateId, savedSidebarOrder, savedTexture), photo, logo)
@@ -603,8 +603,8 @@ export default function Editor() {
       .exp-missions li::before{color:${c} !important}
       .sidebar-title{color:${accent} !important}
       .comp-list li::before{color:${accent} !important}
-      .form-talia .form-titre{color:#1a1a1a !important}
-      .form-talia .form-meta{color:#6b7280 !important}
+      .form-altio .form-titre{color:#1a1a1a !important}
+      .form-altio .form-meta{color:#6b7280 !important}
       .sl-title{color:${c} !important;border-bottom-color:${c} !important}
       .sl-list li::before{color:${c} !important}
       .sl-gauge-fill{background:${c} !important}
@@ -909,7 +909,7 @@ export default function Editor() {
 
     // 3. Redirection contextuelle (mode standalone)
     if (hasBulkSession) {
-      sessionStorage.setItem('talia_bulk_returning', '1');
+      sessionStorage.setItem('altio_bulk_returning', '1');
       showToast('CV validé ✓ — retour à la session', 'success', 1800);
       setTimeout(() => navigate('/bulk'), 250);
     } else {
@@ -1118,8 +1118,8 @@ Retourne UNIQUEMENT : {"competences": {"techniques": [], "comportementales": [],
       const prompt = prompts[section] ||
         `Tu es expert RH. Améliore la section "${section}" du CV. Retourne UNIQUEMENT un JSON {"${section}": ...valeur mise à jour...}.\nCV:\n${JSON.stringify(cvData, null, 2)}`;
 
-      const text = await callAnthropicAPI({
-        model:      'claude-sonnet-4-5', // sonnet : meilleur ratio qualité/vitesse pour la regen
+      const text = await callCoach({
+        model:      'claude-sonnet-4-6', // sonnet : meilleur ratio qualité/vitesse pour la regen
         max_tokens: section === 'experiences' ? 2000 : 800,
         messages:   [{ role: 'user', content: prompt }],
         metadata:   { section, regenType: 'single' },
@@ -1186,8 +1186,8 @@ Formations : ${cvData.formations?.map(f => f.titre).join(', ') || '—'}
 Retourne UNIQUEMENT : {"competences": {"techniques": [], "comportementales": [], "outils": []}}`,
         };
 
-        const text = await callAnthropicAPI({
-          model: 'claude-sonnet-4-5',
+        const text = await callCoach({
+          model: 'claude-sonnet-4-6',
           max_tokens: section === 'experiences' ? 2000 : 800,
           messages: [{ role: 'user', content: prompts[section] }],
           metadata: { section, regenType: 'all' },
@@ -1220,7 +1220,8 @@ Retourne UNIQUEMENT : {"competences": {"techniques": [], "comportementales": [],
     const mission = exp?.missions?.[missionIdx] || '';
     if (!mission.trim()) { showToast('Mission vide', 'info'); return; }
 
-    setReformOpen({ expIdx, missionIdx, variants: [], loading: true });
+    // IA bloquée sans compte
+    if (!user) { showToast('Connecte-toi pour reformuler avec l’IA', 'error'); return; }
 
     // Mode démo si non connecté : variantes pré-construites localement
     if (!user) {
@@ -1405,7 +1406,7 @@ Retourne UNIQUEMENT un tableau JSON de 3 strings : ["variante 1", "variante 2", 
       printStyle2.textContent = `
         .section-title { margin-top: 20px !important; padding-top: 5px !important; }
         .section-title:first-child { margin-top: 0 !important; }
-        .exp-block, .form-block, .form-talia { margin-bottom: 9px !important; }
+        .exp-block, .form-block, .form-altio { margin-bottom: 9px !important; }
       `;
       doc.head.appendChild(printStyle2);
       await new Promise(r => setTimeout(r, 80));
@@ -1414,7 +1415,7 @@ Retourne UNIQUEMENT un tableau JSON de 3 strings : ["variante 1", "variante 2", 
       doc.designMode = 'on';
       const a = document.createElement('a');
       a.href = canvas.toDataURL('image/png');
-      a.download = `CV_${candidateName || 'Talia'}.png`;
+      a.download = `CV_${candidateName || 'Altio'}.png`;
       a.click();
       showToast('PNG téléchargé ✓', 'success');
     } catch (err) { console.error(err); showToast('Erreur export PNG', 'error'); }
@@ -1706,7 +1707,7 @@ Retourne UNIQUEMENT un tableau JSON de 3 strings : ["variante 1", "variante 2", 
           <div style={{ width:30, height:30, borderRadius:8, background:C.ink, display:'flex', alignItems:'center', justifyContent:'center', color:'#fff' }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
           </div>
-          <span style={{ fontSize:15, fontWeight:700, color:C.ink }}>Altio <span style={{ color:C.bluePrimary }}>CV</span></span>
+          <span style={{ fontSize:15, fontWeight:700, color:C.ink }}>ALTIO<span style={{ color:C.bluePrimary }}>CV</span></span>
         </button>
         <div style={{ width:1, height:22, background:C.rule, flexShrink:0, marginRight:2 }} />
 
@@ -1749,7 +1750,7 @@ Retourne UNIQUEMENT un tableau JSON de 3 strings : ["variante 1", "variante 2", 
         {hasBulkSession && (
           <button
             onClick={() => {
-              sessionStorage.setItem('talia_bulk_returning', '1');
+              sessionStorage.setItem('altio_bulk_returning', '1');
               navigate('/bulk');
             }}
             style={{ display:'flex', alignItems:'center', gap:6, padding:'5px 11px', background:'#EEF2FF', border:'1px solid #1539B733', borderRadius:8, cursor:'pointer', fontSize:12, fontWeight:700, color:'#1539B7', fontFamily:'Manrope,sans-serif', flexShrink:0, transition:'all .15s' }}
@@ -2174,7 +2175,7 @@ Retourne UNIQUEMENT un tableau JSON de 3 strings : ["variante 1", "variante 2", 
                       <div style={{ fontSize:11.5, color:C.mute }}>PNG, SVG, JPG · fond transparent recommandé</div>
                       {logoDataURL && (
                         <button
-                          onClick={e => { e.stopPropagation(); setLogoDataURL(''); const doc=iframeRef.current?.contentDocument; if(doc) { const el=doc.querySelector('.logo-zone'); if(el) el.innerHTML='<span class="logo-placeholder-text">Logo<br>Talia</span>'; } }}
+                          onClick={e => { e.stopPropagation(); setLogoDataURL(''); const doc=iframeRef.current?.contentDocument; if(doc) { const el=doc.querySelector('.logo-zone'); if(el) el.innerHTML='<span class="logo-placeholder-text">Logo<br>ALTIO</span>'; } }}
                           style={{ marginTop:4, fontSize:11, color:'#DC2626', background:'none', border:'none', cursor:'pointer', padding:0, fontFamily:"'Manrope',sans-serif" }}
                         >Supprimer</button>
                       )}
@@ -2328,11 +2329,11 @@ Retourne UNIQUEMENT un tableau JSON de 3 strings : ["variante 1", "variante 2", 
               <div>
                 <SectionHeader icon={<IconCap />} title="Formations" subtitle="Cursus académiques et certifications" />
                 {(edFields.formations||[]).map((f, i) => (
-                  <div key={i} style={{ border:`1px solid ${C.rule}`, borderRadius:12, padding:'14px 14px 12px', marginBottom:10, position:'relative', background: f.isTalia ? '#F0F5FC' : '#fff' }}>
+                  <div key={i} style={{ border:`1px solid ${C.rule}`, borderRadius:12, padding:'14px 14px 12px', marginBottom:10, position:'relative', background: f.isAltio ? '#F0F5FC' : '#fff' }}>
                     <button className="rem-btn" onClick={() => removeEdListItem('formations', i)} style={{ position:'absolute', top:10, right:10 }}>
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                     </button>
-                    {f.isTalia && <span style={{ fontSize:11, color:C.bluePrimary, fontWeight:700, marginBottom:8, display:'block' }}>Formation Talia</span>}
+                    {f.isAltio && <span style={{ fontSize:11, color:C.bluePrimary, fontWeight:700, marginBottom:8, display:'block' }}>Formation Altio</span>}
                     <div style={{ marginBottom:10 }}><label className="ed-label">Titre</label><input className="ed-input" value={f.titre||''} onChange={e => handleEdListItem('formations', i, 'titre', e.target.value)} /></div>
                     <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
                       <div><label className="ed-label">Établissement</label><input className="ed-input" value={f.etablissement||''} onChange={e => handleEdListItem('formations', i, 'etablissement', e.target.value)} /></div>
@@ -2340,7 +2341,7 @@ Retourne UNIQUEMENT un tableau JSON de 3 strings : ["variante 1", "variante 2", 
                     </div>
                   </div>
                 ))}
-                <button className="add-btn" onClick={() => addEdListItem('formations', { titre:'', etablissement:'', periode:'', isTalia:false })}>
+                <button className="add-btn" onClick={() => addEdListItem('formations', { titre:'', etablissement:'', periode:'', isAltio:false })}>
                   + Ajouter une formation
                 </button>
               </div>
@@ -2548,7 +2549,7 @@ Retourne UNIQUEMENT un tableau JSON de 3 strings : ["variante 1", "variante 2", 
                       srcDoc={generatedHTML}
                       onLoad={handleIframeLoad}
                       sandbox="allow-same-origin allow-modals"
-                      title="CV Talia"
+                      title="CV Altio"
                       style={{ width:CV_W, height:CV_H, border:'none', display:'block', background:'#fff' }}
                     />
                   </div>
@@ -2625,7 +2626,7 @@ Retourne UNIQUEMENT un tableau JSON de 3 strings : ["variante 1", "variante 2", 
                           key={tpl.id}
                           onClick={() => {
                             setTemplateId(tpl.id); // met aussi templateIdRef à jour (useStateRef)
-                            localStorage.setItem('talia_template_id', tpl.id);
+                            localStorage.setItem('altio_template_id', tpl.id);
                             rerenderCV();
                           }}
                           style={{
@@ -2674,7 +2675,7 @@ Retourne UNIQUEMENT un tableau JSON de 3 strings : ["variante 1", "variante 2", 
                             title={tx.label}
                             onClick={() => {
                               setSidebarTextureId(tx.id);
-                              localStorage.setItem('talia_sidebar_texture_id', tx.id);
+                              localStorage.setItem('altio_sidebar_texture_id', tx.id);
                               const resolved = SIDEBAR_TEXTURES.find(t => t.id === tx.id) || SIDEBAR_TEXTURES[0];
                               sidebarTextureRef.current = resolved;
                               // Auto-sélectionner la première couleur de la texture

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+﻿import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   FORMATIONS, DATES, POSTES, COMP_TECH, COMP_SOFT, PALETTES,
@@ -76,11 +76,11 @@ function buildMock({ formation, formationVal, poste, genre, dateVal }, fileName)
     prenom:firstName, nom:'NOM (démo)', telephone:'06 00 00 00 00',
     email:'prenom.nom@email.fr', adresse:'Ville (00)', dateNaissance:'',
     poste:(poste||POSTES[formationVal]?.[0]||'POSTE VISÉ').toUpperCase(),
-    accroche:`Actuellement en recherche d'alternance dans le cadre de la formation ${formation?.l||''} au sein de l'école Talia, je suis motivé(e) à mettre mes compétences au service d'une entreprise dynamique.`,
+    accroche:`Actuellement en recherche d'alternance dans le cadre de la formation ${formation?.l||''} au sein de l'école Altio, je suis motivé(e) à mettre mes compétences au service d'une entreprise dynamique.`,
     experiences:[{ poste:'Exemple de poste', entreprise:'Entreprise exemple', lieu:'Ville', periode:'Jan. 2024 – Août 2024', missions:['Mission principale','Participation aux tâches de l\'équipe','Gestion des dossiers'] }],
     formations:[
-      { titre:formation?.l||'Formation Talia', etablissement:'Talia · France', periode:(dateVal||'Sept. 2024')+' — '+(formation?.d||'16 mois'), isTalia:true },
-      { titre:'Baccalauréat Général', etablissement:'Lycée Exemple · Ville', periode:'2023', isTalia:false },
+      { titre:formation?.l||'Formation Altio', etablissement:'Altio · France', periode:(dateVal||'Sept. 2024')+' — '+(formation?.d||'16 mois'), isAltio:true },
+      { titre:'Baccalauréat Général', etablissement:'Lycée Exemple · Ville', periode:'2023', isAltio:false },
     ],
     competences:{ techniques:[...techPool], comportementales:[...softPool], outils:['Pack Office','Google Workspace'] },
     langues:[{ langue:'Français', niveau:'Natif' },{ langue:'Anglais', niveau:'B1' }],
@@ -278,7 +278,7 @@ function GroupCard({ group, colorSet, isRunning, onUpdate, onRemove, onAddFiles,
         <div style={{ padding:18 }}>
           {/* Settings */}
           <div style={{ display:'flex', gap:10, marginBottom:16, flexWrap:'wrap' }}>
-            <SelectField label="Formation Talia *" value={group.formationVal} onChange={v => onUpdate(group.uid, { formationVal:v, dateVal:'' })}>
+            <SelectField label="Formation Altio *" value={group.formationVal} onChange={v => onUpdate(group.uid, { formationVal:v, dateVal:'' })}>
               <option value="">Choisir une formation</option>
               {(() => {
                 const grps = {};
@@ -441,9 +441,9 @@ export default function Bulk() {
 
   // ── Restaurer la session si on revient depuis l'éditeur ──
   useEffect(() => {
-    const isReturning = sessionStorage.getItem('talia_bulk_returning');
+    const isReturning = sessionStorage.getItem('altio_bulk_returning');
     if (isReturning) {
-      sessionStorage.removeItem('talia_bulk_returning');
+      sessionStorage.removeItem('altio_bulk_returning');
       const session = loadBulkSession();
       if (session?.groups?.length) {
         setGroups(session.groups);
@@ -533,7 +533,7 @@ export default function Bulk() {
     }
 
     saveBulkSession(updatedGroups);
-    sessionStorage.setItem('talia_bulk_returning', '1');
+    sessionStorage.setItem('altio_bulk_returning', '1');
     navigate('/editor/'+histId);
   }, [groups, navigate, bulkId]);
 
@@ -544,9 +544,9 @@ export default function Bulk() {
     const poste        = adaptPoste('', jobGenre);
     const groupProfile = profiles.find(p => String(p.id) === String(group.profileId)) || null;
     const profileCtx   = buildProfileContext(groupProfile);
-    const contextInfo  = `\n---\nFormation Talia : ${formation?.l||'Non précisée'} (${formation?.d||''})\nDate de rentrée : ${group.dateVal||'Non précisée'}\nPoste visé : ${poste||'Non précisé'}\nGenre : ${jobGenre==='F'?'Féminin':jobGenre==='M'?'Masculin':'Non précisé'}${profileCtx}`;
+    const contextInfo  = `\n---\nFormation Altio : ${formation?.l||'Non précisée'} (${formation?.d||''})\nDate de rentrée : ${group.dateVal||'Non précisée'}\nPoste visé : ${poste||'Non précisé'}\nGenre : ${jobGenre==='F'?'Féminin':jobGenre==='M'?'Masculin':'Non précisé'}${profileCtx}`;
 
-    const extractPrompt = `Tu es un extracteur de données CV expert. Extrais TOUTES les informations et retourne UNIQUEMENT un objet JSON valide, sans markdown, sans backticks.\n\nSTRUCTURE JSON EXACTE :\n{\n  "prenom":"string","nom":"string","telephone":"string ou vide","email":"string ou vide","adresse":"string ou vide","dateNaissance":"JJ/MM/AAAA ou vide","poste":"INTITULÉ EN MAJUSCULES","accroche":"4-6 lignes, 1ère personne, parcours réel, formation Talia, poste visé","experiences":[{"poste":"","entreprise":"","lieu":"","periode":"","missions":[]}],"formations":[{"titre":"","etablissement":"","periode":"","isTalia":false}],"competences":{"techniques":[],"comportementales":[],"outils":[]},"langues":[{"langue":"","niveau":""}],"centresInteret":[],"lettreMotivation":"Si AUCUNE expérience, 3 paragraphes séparés \\n\\n. Sinon vide."\n}\n\nRÈGLES : CONSERVER coordonnées EXACTES, TOUTES expériences/formations, 3-5 missions/expérience, Formation Talia EN PREMIER avec isTalia:true, poste adapté au genre. Répondre UNIQUEMENT avec le JSON.`;
+    const extractPrompt = `Tu es un extracteur de données CV expert. Extrais TOUTES les informations et retourne UNIQUEMENT un objet JSON valide, sans markdown, sans backticks.\n\nSTRUCTURE JSON EXACTE :\n{\n  "prenom":"string","nom":"string","telephone":"string ou vide","email":"string ou vide","adresse":"string ou vide","dateNaissance":"JJ/MM/AAAA ou vide","poste":"INTITULÉ EN MAJUSCULES","accroche":"4-6 lignes, 1ère personne, parcours réel, Formation Altio, poste visé","experiences":[{"poste":"","entreprise":"","lieu":"","periode":"","missions":[]}],"formations":[{"titre":"","etablissement":"","periode":"","isAltio":false}],"competences":{"techniques":[],"comportementales":[],"outils":[]},"langues":[{"langue":"","niveau":""}],"centresInteret":[],"lettreMotivation":"Si AUCUNE expérience, 3 paragraphes séparés \\n\\n. Sinon vide."\n}\n\nRÈGLES : CONSERVER coordonnées EXACTES, TOUTES expériences/formations, 3-5 missions/expérience, Formation Altio EN PREMIER avec isAltio:true, poste adapté au genre. Répondre UNIQUEMENT avec le JSON.`;
 
     let userContent;
     if (job.fileType==='image') {
@@ -596,8 +596,8 @@ export default function Bulk() {
     if (poste && !cvData.poste) cvData.poste = poste.toUpperCase();
     if (cvData.poste) cvData.poste = cvData.poste.toUpperCase();
     if (formation) {
-      const hasTalia = cvData.formations?.some(f => f.isTalia);
-      if (!hasTalia) { cvData.formations = cvData.formations||[]; cvData.formations.unshift({ titre:formation.l, etablissement:'Talia · France', periode:(group.dateVal||'Sept.')+' — '+formation.d, isTalia:true }); }
+      const hasAltio = cvData.formations?.some(f => f.isAltio);
+      if (!hasAltio) { cvData.formations = cvData.formations||[]; cvData.formations.unshift({ titre:formation.l, etablissement:'Altio · France', periode:(group.dateVal||'Sept.')+' — '+formation.d, isAltio:true }); }
     }
 
     const generatedHTML = renderCVFromData(cvData, PALETTES[0]);
@@ -820,7 +820,7 @@ export default function Bulk() {
 
               {!user && (
                 <div style={{ fontSize:11, color:'#92400e', background:C.orangeSoft, border:'1px solid '+C.orangeBorder, padding:'6px 12px', borderRadius:8 }}>
-                  Mode démo
+                  Mode démo — connecte-toi pour générer en IA
                 </div>
               )}
             </div>

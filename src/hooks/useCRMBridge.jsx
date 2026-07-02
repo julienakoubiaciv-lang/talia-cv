@@ -4,16 +4,22 @@
  * MESSAGES REÇUS du CRM (parent → altio-cv) :
  *   - ALTIO_CV_UPLOAD  : { candidate, file? } → ouvre Generate avec contexte candidat
  *   - ALTIO_CV_PING    : ping de vérification de présence
+ *   - ALTIO_CV_SESSION : { access_token, refresh_token } → SSO : installe la session
+ *                        Supabase de l'utilisateur (hand-off depuis le parent). Ne
+ *                        marche que si le générateur pointe le MÊME projet Supabase
+ *                        que le parent (OCTO). Origine STRICTEMENT trustée exigée.
  *
  * MESSAGES ÉMIS vers le CRM (altio-cv → parent) :
- *   - ALTIO_CV_READY   : { version } → envoyé au mount pour signaler la disponibilité
- *   - ALTIO_CV_SAVED   : { candidate_id, org_id, cv_data, html, name } → CV sauvegardé/validé
- *   - ALTIO_CV_NAV     : { path } → navigation interne (pour info)
+ *   - ALTIO_CV_READY       : { version } → envoyé au mount pour signaler la disponibilité
+ *   - ALTIO_CV_SAVED       : { candidate_id, org_id, cv_data, html, name } → CV sauvegardé/validé
+ *   - ALTIO_CV_NAV         : { path } → navigation interne (pour info)
+ *   - ALTIO_CV_SESSION_ACK : { ok, error } → accusé du hand-off de session
  *
  * STOCKAGE :
  *   - sessionStorage.altio_crm_candidate → JSON du candidat actuel (lifecycle iframe)
  */
 import { useEffect, useState, useCallback } from 'react';
+import { supabase } from '../lib/supabase';
 
 const TRUSTED_ORIGINS = [
   'https://crma.altio-wave.com',            // CRM/agent (web-v2)
@@ -100,6 +106,33 @@ export function useCRMBridge() {
         case 'ALTIO_CV_PING':
           postToCRM({ type: 'ALTIO_CV_PONG', version: CV_VERSION });
           break;
+        case 'ALTIO_CV_SESSION': {
+          // SSO — hand-off de session depuis le parent (portail étudiant / CRM).
+          // Les tokens sont sensibles : on EXIGE une origine strictement trustée,
+          // même en DEV (on ignore le bypass import.meta.env.DEV du filtre ci-dessus).
+          if (!TRUSTED_ORIGINS.includes(event.origin)) {
+            console.warn('[CRMBridge] ALTIO_CV_SESSION d\'origine non-trustée ignoré:', event.origin);
+            break;
+          }
+          const { access_token, refresh_token } = event.data;
+          if (!access_token || !refresh_token) {
+            postToCRM({ type: 'ALTIO_CV_SESSION_ACK', ok: false, error: 'tokens manquants' });
+            break;
+          }
+          if (!supabase) {
+            postToCRM({ type: 'ALTIO_CV_SESSION_ACK', ok: false, error: 'client Supabase absent' });
+            break;
+          }
+          supabase.auth
+            .setSession({ access_token, refresh_token })
+            .then(({ error }) =>
+              postToCRM({ type: 'ALTIO_CV_SESSION_ACK', ok: !error, error: error?.message || null })
+            )
+            .catch((err) =>
+              postToCRM({ type: 'ALTIO_CV_SESSION_ACK', ok: false, error: err?.message || 'setSession a échoué' })
+            );
+          break;
+        }
         default:
           break;
       }

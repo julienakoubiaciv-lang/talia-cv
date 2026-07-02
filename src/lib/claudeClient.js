@@ -105,9 +105,18 @@ export async function callClaude({
     }),
   });
 
-  // Quota dépassé → erreur typée pour que l'UI ouvre la modal upgrade
   if (res.status === 429) {
     const err = await res.json().catch(() => ({}));
+    // Cap CV élève : PAS une invite à upgrader (l'élève ne paie pas ; c'est le
+    // pro qui débloque un crédit). Message clair plutôt que la modal upgrade.
+    if (err.error === 'cv_cap_reached') {
+      throw new ClaudeProxyError(
+        `Tu as atteint ta limite de CV (${err.used ?? '?'}/${err.limit ?? '?'}). ` +
+        `Demande à ton coach ou ton école de débloquer un crédit supplémentaire.`,
+        429
+      );
+    }
+    // Quota org dépassé → erreur typée pour que l'UI ouvre la modal upgrade.
     throw new QuotaError({
       action: err.action ?? action,
       used:   err.used   ?? 0,
@@ -120,9 +129,10 @@ export async function callClaude({
     const err = await res.json().catch(() => ({}));
     // Messages FR pour les refus métier connus du proxy.
     const FRIENDLY = {
-      consent_required:  "Le consentement RGPD de ce candidat est requis avant toute génération IA.",
-      forbidden_not_pro: "Le générateur est réservé aux comptes professionnels.",
-      unknown_candidate: "Candidat introuvable.",
+      consent_required:    "Le consentement RGPD de ce candidat est requis avant toute génération IA.",
+      forbidden_no_access: "Ce compte n'a pas accès à la génération IA (profil non configuré).",
+      context_check_failed:"Impossible de vérifier ton accès pour le moment. Réessaie dans un instant.",
+      unknown_candidate:   "Candidat introuvable.",
     };
     throw new ClaudeProxyError(
       FRIENDLY[err.error] || err.detail || err.error || `Erreur Claude proxy (${res.status})`,

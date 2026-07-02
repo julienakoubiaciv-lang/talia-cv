@@ -2,13 +2,18 @@
  * claude-proxy — Supabase Edge Function (cible : projet OCTO, base unifiée)
  *
  * Proxy sécurisé vers l'API Anthropic pour le générateur / la plateforme.
- * - Auth JWT obligatoire (générateur réservé aux PROS).
- * - Vérifie le quota AU NIVEAU ORG via check_quota (fail-closed).
- * - Gate consentement RGPD : si un candidate_id est fourni pour une génération,
- *   exige candidates.consent_given = true (décision produit : consentement par candidat).
+ * - Auth JWT obligatoire. Contexte (staff | student | guest) via la RPC
+ *   SECURITY DEFINER get_user_context() — MÊME source que le front (useUserContext).
+ * - STAFF : gate consentement RGPD (candidates.consent_given si candidate_id)
+ *   + quota ORG via check_quota (fail-closed).
+ * - STUDENT : cap SERVEUR cv_count < max_cv (source = compteur cv_history dans
+ *   get_user_context ; le cap front est bypassable). Crédit pro = candidates.max_cv.
+ * - GUEST / orphelin : refusé (403 forbidden_no_access).
  * - Enregistre l'usage dans usage_events (schéma OCTO : org_id, action enum,
  *   tokens_used, cost_eur, entity_type/id, metadata). Le trigger increment_org_usage
  *   incrémente alors usage_cv_current / usage_score_current selon l'action.
+ *   user_id = FK vers profiles (staff only) → null pour un élève (attribution
+ *   via entity_id = sa fiche candidat).
  * - La clé ANTHROPIC_API_KEY n'est jamais exposée au client.
  *
  * POST /functions/v1/claude-proxy
@@ -95,50 +100,72 @@ Deno.serve(async (req) => {
       return json({ error: 'action et messages requis' }, 400);
     }
 
-    // ── Org du pro (générateur réservé aux pros). Sert au quota + au log usage. ──
-    const { data: prof } = await supabaseAdmin
-      .from('user_profiles')
-      .select('org_id')
-      .eq('user_id', user.id)
-      .maybeSingle();
-    const orgId: string | null = prof?.org_id ?? null;
-    if (!orgId) {
-      // Pas de profil pro → pas autorisé à utiliser l'IA (anti-abus étudiant).
-      return json({ error: 'forbidden_not_pro' }, 403);
+    const isCvGen = ACTION_ENUM[action] === 'cv_generation';
+
+    // ── Contexte unifié (staff | student | guest) via RPC SECURITY DEFINER ──
+    // Appelée avec le client USER (JWT) : get_user_context() lit auth.uid() en
+    // interne → un user ne peut pas demander le contexte d'un autre. Fail-closed.
+    const { data: ctx, error: ctxErr } = await supabaseUser.rpc('get_user_context');
+    if (ctxErr || !ctx || !ctx.kind) {
+      console.error('[claude-proxy] get_user_context error:', ctxErr);
+      return json({ error: 'context_check_failed' }, 503);
+    }
+    const kind: string = ctx.kind;
+    const orgId: string | null = ctx.org_id ?? null;
+
+    if (kind !== 'staff' && kind !== 'student') {
+      // Orphelin / non rattaché → pas d'accès IA.
+      return json({ error: 'forbidden_no_access' }, 403);
     }
 
-    // ── Gate consentement RGPD (si un candidat cible est fourni pour une génération) ──
-    if (candidateId && ACTION_ENUM[action] === 'cv_generation') {
-      const { data: cand } = await supabaseAdmin
-        .from('candidates')
-        .select('id, consent_given')
-        .eq('id', candidateId)
-        .maybeSingle();
-      if (!cand) return json({ error: 'unknown_candidate' }, 400);
-      if (!cand.consent_given) {
-        return json({ error: 'consent_required', candidate_id: candidateId }, 403);
+    if (kind === 'student') {
+      // ── Élève : cap SERVEUR sur les générations de CV (cv_count < max_cv).
+      // Source de vérité = get_user_context (compteur cv_history), non bypassable.
+      // Les actions non-génération (entraînement entretien, etc.) ne sont pas
+      // plafonnées par le crédit CV.
+      if (isCvGen && ctx.can_generate === false) {
+        return json({
+          error: 'cv_cap_reached',
+          used:  ctx.cv_count ?? null,
+          limit: ctx.max_cv ?? null,
+        }, 429);
       }
-    }
+      // Consentement : l'élève génère SON propre CV (consentement donné à
+      // l'inscription) → pas de gate consentement ici.
+    } else {
+      // ── STAFF (pro) : gate consentement RGPD (si candidat cible) + quota ORG.
+      if (candidateId && isCvGen) {
+        const { data: cand } = await supabaseAdmin
+          .from('candidates')
+          .select('id, consent_given')
+          .eq('id', candidateId)
+          .maybeSingle();
+        if (!cand) return json({ error: 'unknown_candidate' }, 400);
+        if (!cand.consent_given) {
+          return json({ error: 'consent_required', candidate_id: candidateId }, 403);
+        }
+      }
 
-    // ── Vérification quota (fail-closed) ───────────────────────
-    const { data: quota, error: quotaErr } = await supabaseAdmin
-      .rpc('check_quota', { p_user_id: user.id, p_action: action });
-    if (quotaErr || !quota) {
-      console.error('[claude-proxy] check_quota error:', quotaErr);
-      return json({ error: 'quota_check_failed' }, 503);
-    }
-    const quotaRow = quota?.[0];
-    if (!quotaRow) {
-      console.error('[claude-proxy] check_quota: aucune ligne', { action, user: user.id });
-      return json({ error: 'quota_check_failed' }, 503);
-    }
-    if (!quotaRow.allowed) {
-      return json({
-        error: 'quota_exceeded',
-        used:  quotaRow.used,
-        limit: quotaRow.limit,
-        tier:  quotaRow.tier,
-      }, 429);
+      // Vérification quota org (fail-closed).
+      const { data: quota, error: quotaErr } = await supabaseAdmin
+        .rpc('check_quota', { p_user_id: user.id, p_action: action });
+      if (quotaErr || !quota) {
+        console.error('[claude-proxy] check_quota error:', quotaErr);
+        return json({ error: 'quota_check_failed' }, 503);
+      }
+      const quotaRow = quota?.[0];
+      if (!quotaRow) {
+        console.error('[claude-proxy] check_quota: aucune ligne', { action, user: user.id });
+        return json({ error: 'quota_check_failed' }, 503);
+      }
+      if (!quotaRow.allowed) {
+        return json({
+          error: 'quota_exceeded',
+          used:  quotaRow.used,
+          limit: quotaRow.limit,
+          tier:  quotaRow.tier,
+        }, 429);
+      }
     }
 
     // ── Appel Anthropic ────────────────────────────────────────
@@ -172,14 +199,20 @@ Deno.serve(async (req) => {
       const outputTokens = usage.output_tokens ?? 0;
       const costEur      = estimateCostUsd(model, inputTokens, cachedTokens, outputTokens) * USD_TO_EUR;
 
+      // Attribution : le candidat cible passé par le pro, sinon la fiche de
+      // l'élève lui-même (kind=student → ctx.candidate_id).
+      const entityId: string | null = candidateId ?? ctx.candidate_id ?? null;
+      // usage_events.user_id → FK vers `profiles` (staff only). Un élève n'a pas
+      // de ligne profiles → user_id null pour lui (attribution via entity_id).
+      const usageUserId: string | null = kind === 'staff' ? user.id : null;
       const { error: insErr } = await supabaseAdmin.from('usage_events').insert({
         org_id:      orgId,
-        user_id:     user.id,
+        user_id:     usageUserId,
         action:      enumAction,
         tokens_used: inputTokens + outputTokens,
         cost_eur:    costEur,
-        entity_type: candidateId ? 'candidate' : null,
-        entity_id:   candidateId,
+        entity_type: entityId ? 'candidate' : null,
+        entity_id:   entityId,
         metadata:    metadata ?? {},
       });
       if (insErr) console.error('[claude-proxy] usage_events insert error:', insErr);

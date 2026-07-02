@@ -610,7 +610,7 @@ export default function Home() {
   const [showOnboard, setShowOnboard] = useState(() => { try { return !localStorage.getItem('altio_onboarded'); } catch { return false; } });
   const { mode, toggle: toggleTheme } = useTheme();
   const isEncadrant = useEncadrant();
-  const { isStudent } = useUserContext();
+  const { isStudent, firstName } = useUserContext();
   useSeo({ title: 'Altio CV — Générateur de CV gratuit & préparation à l\'emploi', description: 'Crée ton CV gratuitement et entraîne-toi à décrocher ton poste : entretien, tests de recrutement, oral, lettre de motivation. Gagne en employabilité, étape par étape.' });
 
   // Rafraîchit la notice de bienvenue une fois le rattachement école résolu.
@@ -817,7 +817,7 @@ export default function Home() {
         {/* Tableau de bord */}
         <div style={{ marginBottom: isMobile ? 16 : 22 }}>
           <h1 style={{ fontSize: isMobile ? 28 : 42, fontWeight: 800, color: C.ink, letterSpacing: '-1px', lineHeight: 1.05, margin: 0 }}>
-            {user ? 'Bonjour 👋' : 'Bienvenue sur Altio CV'}
+            {user ? `Bonjour${firstName ? ` ${firstName}` : ''} 👋` : 'Bienvenue sur Altio CV'}
           </h1>
           <p style={{ fontSize: isMobile ? 13.5 : 15.5, color: C.ink2, marginTop: 8, lineHeight: 1.5, maxWidth: 520 }}>
             Prépare-toi à décrocher ton poste : CV, entraînements et suivi, au même endroit.

@@ -56,6 +56,7 @@ export function useUserContext() {
     kind:        ctx.kind || 'guest',
     isStudent:   ctx.kind === 'student',
     isStaff:     ctx.kind === 'staff',
+    firstName:   ctx.first_name ?? null,
     candidateId: ctx.candidate_id ?? null,
     orgId:       ctx.org_id ?? null,
     role:        ctx.role ?? null,

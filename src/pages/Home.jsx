@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { saveEditorState, PALETTES, colorForFormation } from '@/lib/cvData';
-import { getHistorySync, deleteHistory } from '@/lib/historySync';
+import { getHistorySync, getHistory, deleteHistory } from '@/lib/historySync';
 import { useCRMBridge } from '@/hooks/useCRMBridge.jsx';
 import { useAuth } from '@/hooks/useAuth.jsx';
 import { useIsMobile } from '@/hooks/useWindowWidth';
@@ -623,7 +623,12 @@ export default function Home() {
   const dashDiag = useMemo(() => { try { return getDiagnostic(); } catch { return null; } }, []);
   const [leadSentIds, setLeadSentIds] = useState(new Set()); // IDs déjà envoyés au CRM
 
-  useEffect(() => { setCvList(getHistorySync()); }, []);
+  // Cache local immédiat, puis hydratation cloud (multi-appareil) pour un
+  // utilisateur connecté : restaure les CV persistés dans cv_history (OCTO).
+  useEffect(() => {
+    setCvList(getHistorySync());
+    if (user) getHistory().then((arr) => { if (Array.isArray(arr)) setCvList(arr); }).catch(() => {});
+  }, [user]);
 
   // Détection du token CRM dans l'URL (?crm_token=…)
   useEffect(() => { linkFromURL(); }, [linkFromURL]);

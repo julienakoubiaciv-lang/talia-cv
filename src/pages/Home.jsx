@@ -22,6 +22,8 @@ import GameOnboarding from '@/components/GameOnboarding';
 import { alpha } from '@/lib/gameTheme';
 import { useTheme } from '@/hooks/useTheme.jsx';
 import EnergyBar from '@/components/EnergyBar';
+import { useUserContext } from '@/hooks/useUserContext';
+import EspaceEtudiant from '@/components/espace/EspaceEtudiant.jsx';
 
 /* ─── Design tokens ─────────────────────────────────────────────────────── */
 const C = {
@@ -536,12 +538,14 @@ const NAV_ITEMS = [
   { id: 'home',        icon: '🏠', label: 'Accueil' },
   { id: 'cv',          icon: '📄', label: 'Mes CV' },
   { id: 'prep',        icon: '🎯', label: 'Préparation' },
+  { id: 'espace',      icon: '🎓', label: 'Mon espace', studentOnly: true },
   { id: 'encadrement', icon: '👩‍🏫', label: 'Encadrement', optional: true },
   { id: 'account',     icon: '⚙️', label: 'Compte' },
 ];
 
-function Sidebar({ section, setSection, isMobile, showEncadrement }) {
-  const items = NAV_ITEMS.filter((n) => !n.optional || showEncadrement);
+function Sidebar({ section, setSection, isMobile, showEncadrement, showEspace }) {
+  const items = NAV_ITEMS.filter((n) =>
+    (!n.optional || showEncadrement) && (!n.studentOnly || showEspace));
   if (isMobile) {
     return (
       <nav style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 40, display: 'flex',
@@ -606,6 +610,7 @@ export default function Home() {
   const [showOnboard, setShowOnboard] = useState(() => { try { return !localStorage.getItem('altio_onboarded'); } catch { return false; } });
   const { mode, toggle: toggleTheme } = useTheme();
   const isEncadrant = useEncadrant();
+  const { isStudent } = useUserContext();
   useSeo({ title: 'Altio CV — Générateur de CV gratuit & préparation à l\'emploi', description: 'Crée ton CV gratuitement et entraîne-toi à décrocher ton poste : entretien, tests de recrutement, oral, lettre de motivation. Gagne en employabilité, étape par étape.' });
 
   // Rafraîchit la notice de bienvenue une fois le rattachement école résolu.
@@ -804,7 +809,7 @@ export default function Home() {
 
       {/* ── Layout : sidebar gauche + contenu ────────────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: isMobile ? 0 : 28, maxWidth: 1300, margin: '0 auto', padding: isMobile ? '16px 0 88px' : '28px 28px 80px' }}>
-        <Sidebar section={section} setSection={setSection} isMobile={isMobile} showEncadrement={isEncadrant} />
+        <Sidebar section={section} setSection={setSection} isMobile={isMobile} showEncadrement={isEncadrant} showEspace={isStudent} />
         <main style={{ flex: 1, minWidth: 0, maxWidth: 1180, padding: isMobile ? '0 16px' : 0 }}>
 
         {section === 'home' && (
@@ -1291,6 +1296,8 @@ export default function Home() {
         })}
         </>
         )}
+
+        {section === 'espace' && isStudent && <EspaceEtudiant isMobile={isMobile} />}
 
         {section === 'encadrement' && (
           <>

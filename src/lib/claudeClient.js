@@ -25,6 +25,7 @@
 import { supabase, supabaseReady } from '@/lib/supabase';
 import { isDemoMode } from '@/lib/demoMode';
 import { mockClaudeResponse } from '@/lib/demoResponses';
+import { getCurrentCandidate } from '@/hooks/useCRMBridge';
 
 const FN_URL = supabaseReady
   ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/claude-proxy`
@@ -88,13 +89,20 @@ export async function callClaude({
     );
   }
 
+  // Candidat ciblé (mode CRM intégré) → permet au proxy d'appliquer le gate
+  // consentement RGPD sur les générations et de tracer l'usage par candidat.
+  const candidateId = getCurrentCandidate()?.id ?? null;
+
   const res = await fetch(FN_URL, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${session.access_token}`,
       'Content-Type':  'application/json',
     },
-    body: JSON.stringify({ action, model, system, messages, max_tokens, metadata }),
+    body: JSON.stringify({
+      action, model, system, messages, max_tokens, metadata,
+      candidate_id: candidateId,
+    }),
   });
 
   // Quota dépassé → erreur typée pour que l'UI ouvre la modal upgrade
@@ -110,8 +118,14 @@ export async function callClaude({
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
+    // Messages FR pour les refus métier connus du proxy.
+    const FRIENDLY = {
+      consent_required:  "Le consentement RGPD de ce candidat est requis avant toute génération IA.",
+      forbidden_not_pro: "Le générateur est réservé aux comptes professionnels.",
+      unknown_candidate: "Candidat introuvable.",
+    };
     throw new ClaudeProxyError(
-      err.detail || err.error || `Erreur Claude proxy (${res.status})`,
+      FRIENDLY[err.error] || err.detail || err.error || `Erreur Claude proxy (${res.status})`,
       res.status
     );
   }

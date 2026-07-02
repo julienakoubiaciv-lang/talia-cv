@@ -54,6 +54,23 @@ export const PLANS = {
     crmSync:            false,
     templateIds:        ['classic', 'minimal', 'compact', 'impact'],
   },
+  // Élève OCTO (compte lié à une fiche candidat, modèle org consolidé).
+  // Cap de CV « crédit » ajustable par le pro (candidates.max_cv, défaut 3) :
+  // useEntitlements surcharge maxCVs avec la valeur de get_user_context().
+  // ⚠️ Ce tier ÉCRASE tout autre tier (jamais résolu via betterTier) — sinon
+  // un élève rattaché à une école hériterait de l'illimité (cap contourné).
+  student: {
+    id:                 'student',
+    label:              'Élève',
+    emoji:              '🎓',
+    maxCVs:             3,
+    maxProfiles:        1,
+    maxBulkPerSession:  0,
+    bulkEnabled:        false,
+    cloudSync:          true,
+    crmSync:            true,
+    templateIds:        ['classic', 'minimal', 'compact', 'impact'],
+  },
   // Forfait « parrainé » : accès offert à un élève via son école/entreprise.
   // Pris en charge par l'organisation (sièges), pas de paiement individuel.
   school: {

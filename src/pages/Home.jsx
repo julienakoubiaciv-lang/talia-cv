@@ -1201,6 +1201,7 @@ export default function Home() {
               >
                 <IconPlus s={15} /> Créer mon premier CV
               </button>
+              {!isStudent && (
               <button
                 onClick={() => navigate('/bulk')}
                 style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '14px 24px', background: C.bg, color: C.ink, border: `1.5px solid ${C.rule}`, borderRadius: 99, fontSize: 15, fontWeight: 700, cursor: 'pointer', letterSpacing: '-0.1px', transition: 'border-color .15s' }}
@@ -1210,6 +1211,7 @@ export default function Home() {
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
                 Générer en masse
               </button>
+              )}
             </div>
             <p style={{ fontSize: 12, color: C.mute, marginTop: 14 }}>Gratuit · Aucune inscription requise</p>
           </div>
@@ -1231,6 +1233,7 @@ export default function Home() {
               </div>
 
               {/* Bulk card */}
+              {!isStudent && (
               <div onClick={() => navigate('/bulk')} style={{ border: `1.5px dashed ${C.rule}`, borderRadius: 16, padding: '32px 24px', display: 'flex', alignItems: 'center', gap: 16, cursor: 'pointer', background: C.bg, transition: 'border-color .2s, background .2s', minHeight: 110, animation: 'cardIn 0.65s cubic-bezier(.16,.84,.24,1) 0.05s both' }}
                 onMouseEnter={e => { e.currentTarget.style.borderColor = '#7c3aed'; e.currentTarget.style.background = '#f5f3ff'; }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = C.rule; e.currentTarget.style.background = C.bg; }}>
@@ -1245,6 +1248,7 @@ export default function Home() {
                   <div style={{ fontSize: 12.5, color: C.mute }}>Plusieurs CV en une fois</div>
                 </div>
               </div>
+              )}
             </div>
 
             {/* Grille des CV existants (mode classique) */}

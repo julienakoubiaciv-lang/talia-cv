@@ -16,10 +16,11 @@
 import { useEffect, useState, useCallback } from 'react';
 
 const TRUSTED_ORIGINS = [
-  'https://crm.altio-wave.app',
-  'https://altio-saas.vercel.app',
+  'https://crma.altio-wave.com',            // CRM/agent (web-v2)
+  'https://espace-etudiant.altio-wave.com', // portail étudiant (web-v2)
+  'https://crm.altio-wave.com',             // legacy talia-app.html
   // localhost en dev
-  'http://localhost:3000', 'http://localhost:5173', 'http://localhost:4173',
+  'http://localhost:3000', 'http://localhost:5173', 'http://localhost:4173', 'http://localhost:3011',
 ];
 
 const CV_VERSION = '1.0.0';

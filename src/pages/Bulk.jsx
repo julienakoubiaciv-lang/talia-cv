@@ -424,7 +424,7 @@ function GroupCard({ group, colorSet, isRunning, onUpdate, onRemove, onAddFiles,
 export default function Bulk() {
   const navigate = useNavigate();
   const { toasts, show: showToast, remove: removeToast } = useToast();
-  const { canBulk, nextPlan } = useEntitlements();
+  const { canBulk, nextPlan, isStudent } = useEntitlements();
 
   // Migration V0 : Anthropic via Edge Function. L'utilisateur doit être connecté.
   const { user } = useAuth();
@@ -693,8 +693,12 @@ export default function Bulk() {
       locked={!canBulk}
       feature="Génération en masse"
       next={nextPlan || 'Personnel'}
-      description="La génération en masse (plusieurs CV en parallèle) est disponible à partir du plan Personnel."
-      onUpgrade={() => navigate('/pricing')}
+      description={isStudent
+        // Élève : pas d'upsell (il ne paie pas) — outil réservé aux pros.
+        ? "La génération en masse est un outil réservé aux professionnels (coachs et écoles). Ton espace te permet de créer et perfectionner ton propre CV."
+        : "La génération en masse (plusieurs CV en parallèle) est disponible à partir du plan Personnel."}
+      onUpgrade={isStudent ? null : () => navigate('/pricing')}
+      lockedNote="Réservé aux comptes professionnels."
       onBack={() => navigate('/')}
     >
     <div style={{ minHeight:'100vh', background:C.surface, fontFamily:'Manrope,sans-serif' }}>

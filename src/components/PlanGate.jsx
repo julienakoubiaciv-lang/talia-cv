@@ -42,6 +42,8 @@ export function PlanGate({
   next         = 'Personnel',
   description  = null,
   onUpgrade    = null,
+  // Note affichée quand il n'y a pas de CTA d'upgrade (ex. élève : pas d'upsell).
+  lockedNote   = 'Contactez votre administrateur pour activer ce plan.',
   onBack       = null,
   children,
 }) {
@@ -95,7 +97,7 @@ export function PlanGate({
             </button>
           ) : (
             <div style={{ fontSize: 12, color: C.mute }}>
-              Contactez votre administrateur pour activer ce plan.
+              {lockedNote}
             </div>
           )}
 

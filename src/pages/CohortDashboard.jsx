@@ -17,6 +17,14 @@ import { studentPillars, needsFollowup } from '@/lib/demoCohort';
 import { rosterToCSV, downloadCSV } from '@/lib/cohortServer';
 import { OUTCOMES, outcomeMeta, DEFAULT_OUTCOME, isSettled } from '@/lib/cohortOutcome';
 
+/** Ce que le conseiller doit faire quand la relance ne part pas. */
+const NUDGE_ERRORS = {
+  email_not_configured: "L'envoi d'emails n'est pas encore configuré pour ton école.",
+  student_has_no_email: "Cet élève n'a pas d'adresse email renseignée.",
+  forbidden: "Tu n'encadres pas cet élève.",
+  not_authenticated: 'Reconnecte-toi pour envoyer une relance.',
+};
+
 const scoreColor = (s) => (s >= 70 ? C.green : s >= 40 ? C.amber : C.red);
 const initials = (name = '') => name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
 
@@ -35,8 +43,13 @@ export default function CohortDashboard() {
   const [toast, setToast] = useState('');
   const [promo, setPromo] = useState('all');  // filtre promo : 'all' | id | 'none'
 
-  const flash = (msg) => { setToast(msg); setTimeout(() => setToast(''), 2600); };
-  const relancer = (s) => { nudge(s); flash(`Relance envoyée à ${s.name} 📨`); };
+  const flash = (msg) => { setToast(msg); setTimeout(() => setToast(''), 3400); };
+
+  const relancer = async (s) => {
+    flash(`Envoi de la relance à ${s.name}…`);
+    const res = await nudge(s);
+    flash(res?.ok ? `Relance envoyée à ${s.name} 📨` : NUDGE_ERRORS[res?.reason] || "L'envoi a échoué. Réessaie dans un instant.");
+  };
 
   // Les élèves affichés : ceux de la promo sélectionnée.
   const visible = useMemo(() => {

@@ -36,18 +36,23 @@ export async function createInvite({ orgId, managerId, managerName, cohortId = n
 }
 
 /**
- * Relance un élève (trace la demande ; l'envoi réel est fait côté serveur).
+ * Relance un élève par email via l'Edge Function send-nudge (qui vérifie les
+ * droits, envoie le message et journalise le résultat réel dans student_nudges).
  * Démo → succès simulé (l'UI affiche le toast).
- * @returns {Promise<boolean>}
+ * @returns {Promise<{ok: boolean, reason?: string}>}
  */
 export async function nudgeStudent({ studentId, orgId = null, message = '' } = {}) {
-  if (isDemoMode()) return true;
-  if (!supabaseReady || !supabase || !isAuthenticated()) return false;
-  const { error } = await supabase.from('student_nudges').insert({
-    student_id: studentId, org_id: orgId, manager_id: getCurrentUserId(), message, channel: 'email',
+  if (isDemoMode()) return { ok: true };
+  if (!supabaseReady || !supabase || !isAuthenticated()) return { ok: false, reason: 'not_authenticated' };
+  const { data, error } = await supabase.functions.invoke('send-nudge', {
+    body: { student_id: studentId, org_id: orgId, message },
   });
-  if (error) { console.warn('[cohortServer] nudge:', error.message); return false; }
-  return true;
+  if (error || !data?.ok) {
+    const reason = data?.error || error?.message || 'send_failed';
+    console.warn('[cohortServer] nudge:', reason);
+    return { ok: false, reason };
+  }
+  return { ok: true };
 }
 
 /**

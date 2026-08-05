@@ -51,6 +51,26 @@ export function demoOrgTier() {
   return demoMembership()?.tier || null;
 }
 
+/**
+ * Crée l'espace d'un coach en démo : l'utilisateur devient la direction de sa
+ * propre organisation « cowork », comme le fera create_coach_org() en réel.
+ */
+export function createDemoCoachOrg(name) {
+  const orgName = String(name || '').trim();
+  if (!orgName) return { ok: false, reason: 'name_required' };
+  const orgId = `demo-coach-${Date.now().toString(36)}`;
+  const membership = {
+    orgId, orgName, type: 'cowork', tier: 'cowork', cohort: '',
+    manager: 'moi', role: 'admin', joinedAt: new Date().toISOString(),
+  };
+  try {
+    localStorage.setItem(LS_MEMBER, JSON.stringify(membership));
+    // Le coach voit l'espace d'encadrement dès la création de son espace.
+    localStorage.setItem('altio_demo_encadrant', '1');
+  } catch { /* ignore */ }
+  return { ok: true, org_id: orgId, org_name: orgName, reason: 'created' };
+}
+
 /** Quitte l'école de démo (pour réinitialiser une simulation). */
 export function leaveDemoOrg() {
   try { localStorage.removeItem(LS_MEMBER); } catch { /* ignore */ }

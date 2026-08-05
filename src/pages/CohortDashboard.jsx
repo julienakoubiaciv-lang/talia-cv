@@ -13,13 +13,15 @@ import { C, FONT, alpha } from '@/lib/gameTheme';
 import ModuleTopBar from '@/components/ModuleTopBar';
 import { useNavigate } from 'react-router-dom';
 import { useCohort } from '@/hooks/useCohort';
-import { studentPillars, needsFollowup } from '@/lib/demoCohort';
+import { needsFollowup } from '@/lib/demoCohort';
 import { rosterToCSV, downloadCSV } from '@/lib/cohortServer';
 import { OUTCOMES, outcomeMeta, DEFAULT_OUTCOME, isSettled } from '@/lib/cohortOutcome';
 import {
   APP_STATUS, appStatusMeta, isPlacement,
   listApplications, addApplication, updateApplication, deleteApplication, fetchApplicationStats,
 } from '@/lib/applications';
+import { pillarsFromProgress, moduleBreakdown, badgesFromProgress, hasProgress } from '@/lib/studentProgress';
+import { fetchCvStats } from '@/lib/cohortServer';
 
 /** Ce que le conseiller doit faire quand la relance ne part pas. */
 const NUDGE_ERRORS = {
@@ -254,7 +256,21 @@ function OutcomeBadge({ outcome }) {
 
 // ── Fiche élève (bilan détaillé) ──────────────────────────────────────────────
 function FicheModal({ student, conseiller, cohortName, orgId, onClose, onRelance, onOutcome, onApplicationsChange }) {
-  const pillars = useMemo(() => studentPillars(student), [student]);
+  const [cvStats, setCvStats] = useState(null);
+
+  useEffect(() => {
+    let alive = true;
+    fetchCvStats([student.id]).then((r) => { if (alive) setCvStats(r[student.id] || null); });
+    return () => { alive = false; };
+  }, [student.id]);
+
+  // Bilan calculé sur la progression réelle de l'accompagné, via le même
+  // algorithme que celui qu'il voit lui-même sur /diagnostic.
+  const diag = useMemo(() => pillarsFromProgress(student.progress, cvStats), [student.progress, cvStats]);
+  const pillars = diag.pillars;
+  const modules = useMemo(() => moduleBreakdown(student.progress), [student.progress]);
+  const badges = useMemo(() => badgesFromProgress(student.progress), [student.progress]);
+  const active = hasProgress(student.progress);
   return (
     <div style={S.overlay} onClick={onClose}>
       <div style={S.modal} onClick={(e) => e.stopPropagation()}>
@@ -294,17 +310,60 @@ function FicheModal({ student, conseiller, cohortName, orgId, onClose, onRelance
           )}
         </div>
 
-        <div style={S.sectionLabel}>Bilan par pilier</div>
-        <div style={{ display: 'grid', gap: 9 }}>
-          {pillars.map((p) => (
-            <div key={p.id} style={S.pillarRow}>
-              <span style={{ fontSize: 15, width: 22 }}>{p.emoji}</span>
-              <span style={S.pillarLabel}>{p.label}</span>
-              <div style={S.pillarBar}><div style={{ ...S.pillarFill, width: `${p.score}%`, background: scoreColor(p.score) }} /></div>
-              <span style={{ ...S.pillarPct, color: scoreColor(p.score) }}>{p.score}%</span>
+        {!active ? (
+          <div style={S.appEmpty}>
+            Cet accompagné ne s'est pas encore connecté — aucune progression à afficher.
+          </div>
+        ) : (
+          <>
+            <div style={S.sectionLabel}>Bilan par pilier · {diag.global}%</div>
+            <div style={{ display: 'grid', gap: 9 }}>
+              {pillars.map((p) => (
+                <div key={p.id} style={S.pillarRow}>
+                  <span style={{ fontSize: 15, width: 22 }}>{p.emoji}</span>
+                  <span style={S.pillarLabel}>{p.label}</span>
+                  <div style={S.pillarBar}><div style={{ ...S.pillarFill, width: `${p.score}%`, background: scoreColor(p.score) }} /></div>
+                  <span style={{ ...S.pillarPct, color: scoreColor(p.score) }}>{p.score}%</span>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+
+            <div style={S.sectionLabel}>Devoirs &amp; exercices</div>
+            <div style={S.modGrid}>
+              {modules.map((m) => (
+                <div key={m.id} style={S.modCard}>
+                  <span style={S.modEmoji}>{m.emoji}</span>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={S.modLabel}>{m.label}</div>
+                    <div style={S.modValue}>
+                      {m.total !== undefined
+                        ? `${m.done} / ${m.total} ${m.unit}`
+                        : m.count !== undefined
+                          ? `${m.count}`
+                          : m.plays > 0 ? `${m.note}/20 · ${m.plays} essai${m.plays > 1 ? 's' : ''}` : 'Pas encore fait'}
+                    </div>
+                  </div>
+                </div>
+              ))}
+              <div style={S.modCard}>
+                <span style={S.modEmoji}>📄</span>
+                <div style={{ minWidth: 0 }}>
+                  <div style={S.modLabel}>CV produits</div>
+                  <div style={S.modValue}>{cvStats ? cvStats.cv_count : '—'}</div>
+                </div>
+              </div>
+            </div>
+
+            {badges.length > 0 && (
+              <>
+                <div style={S.sectionLabel}>Badges · {badges.length}</div>
+                <div style={S.badgeRow}>
+                  {badges.map((b) => <span key={b} style={S.badge}>🏅 {b.replace(/_/g, ' ')}</span>)}
+                </div>
+              </>
+            )}
+          </>
+        )}
 
         <ApplicationsSection student={student} orgId={orgId} onChange={onApplicationsChange} />
 
@@ -541,6 +600,13 @@ const S = {
   appRole: { fontSize: 12, color: C.mute, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
   appStatus: { flexShrink: 0, background: C.card, border: '1.5px solid', borderRadius: 99, padding: '5px 9px', fontSize: 11.5, fontWeight: 800, fontFamily: FONT, cursor: 'pointer', appearance: 'auto' },
   appDel: { flexShrink: 0, background: 'none', border: 'none', color: C.mute, fontSize: 19, lineHeight: 1, cursor: 'pointer', padding: '0 2px' },
+  modGrid: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 },
+  modCard: { display: 'flex', alignItems: 'center', gap: 9, background: C.bg, border: `1px solid ${C.line2}`, borderRadius: 12, padding: '10px 12px' },
+  modEmoji: { fontSize: 16, flexShrink: 0 },
+  modLabel: { fontSize: 12, color: C.mute, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+  modValue: { fontSize: 13.5, fontWeight: 800, color: C.ink, marginTop: 1 },
+  badgeRow: { display: 'flex', flexWrap: 'wrap', gap: 7 },
+  badge: { fontSize: 12, fontWeight: 700, color: C.ink2, background: C.bg, border: `1px solid ${C.line}`, borderRadius: 99, padding: '5px 11px', textTransform: 'capitalize' },
   appEmpty: { background: C.bg, border: `1px dashed ${C.line}`, borderRadius: 12, padding: '14px', textAlign: 'center', color: C.mute, fontSize: 13 },
   meta: { fontSize: 12, color: C.mute, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
   barWrap: { display: 'flex', alignItems: 'center', gap: 8, marginTop: 6, maxWidth: 240 },

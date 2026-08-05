@@ -11,7 +11,7 @@ import { supabase, supabaseReady } from './supabase';
 import { isAuthenticated, getCurrentUserId } from './currentUser';
 import { isDemoMode } from './demoMode';
 import { createDemoInvite } from './demoOrg';
-import { setStudentOutcome as setDemoOutcome } from './demoCohort';
+import { setStudentOutcome as setDemoOutcome, getRoster } from './demoCohort';
 import { outcomeLabel } from './cohortOutcome';
 
 const randToken = () =>
@@ -78,6 +78,33 @@ export async function createCohort({ orgId, name } = {}) {
     .insert({ org_id: orgId, name }).select('id, name').single();
   if (error) { console.warn('[cohortServer] createCohort:', error.message); return null; }
   return data;
+}
+
+/**
+ * Nombre de CV produits par accompagné (jamais leur contenu : la vue
+ * student_cv_stats n'expose que des compteurs).
+ * @returns {Promise<Record<string, {cv_count:number, last_cv_at:string|null}>>}
+ */
+export async function fetchCvStats(studentIds = []) {
+  const out = {};
+  if (!studentIds.length) return out;
+
+  if (isDemoMode()) {
+    const roster = getRoster();
+    for (const id of studentIds) {
+      const s = roster.find((r) => r.id === id);
+      out[id] = { cv_count: s?.cvCount ?? 0, last_cv_at: null };
+    }
+    return out;
+  }
+
+  if (!supabaseReady || !supabase || !isAuthenticated()) return out;
+  const { data, error } = await supabase.from('student_cv_stats')
+    .select('student_id, cv_count, last_cv_at')
+    .in('student_id', studentIds);
+  if (error) { console.warn('[cohortServer] cvStats:', error.message); return out; }
+  for (const r of data || []) out[r.student_id] = { cv_count: r.cv_count, last_cv_at: r.last_cv_at };
+  return out;
 }
 
 /** Construit un CSV de la cohorte (pur, testable). */

@@ -40,13 +40,28 @@ export const DEMO_COHORTS = [
   { id: 'bachelor-rh-24', name: 'Bachelor RH · 2024' },
 ];
 
+/** Progression simulée : mêmes clés que user_progress.data en réel. */
+function demoProgress({ interview = {}, jobs = 0, codes = 0, recruit = 0, oral = 0, letters = 0, badges = [] }) {
+  const jobsProgress = {};
+  for (let i = 0; i < jobs; i++) jobsProgress[`metier-${i}`] = { validated: true };
+  return {
+    altio_player: { badges },
+    altio_interview_progress: interview,
+    altio_jobs_progress: jobsProgress,
+    altio_codes_progress: { bestNote: codes, plays: codes ? 2 : 0 },
+    altio_recruit_progress: { bestNote: recruit, plays: recruit ? 1 : 0 },
+    altio_oral_progress: { bestNote: oral, plays: oral ? 3 : 0 },
+    altio_letters_count: letters,
+  };
+}
+
 const DEFAULT_ROSTER = [
-  { id: 's1', name: 'Léa Martin',     email: 'lea.martin@email.fr',    manager: 'karim', cohortId: 'bts-ndrc-24',   outcome: 'placed',        employability: 72, xp: 1240, streak: 4, lastActive: "aujourd'hui" },
-  { id: 's2', name: 'Hugo Bernard',   email: 'hugo.bernard@email.fr',  manager: 'karim', cohortId: 'bts-ndrc-24',   outcome: 'job_searching', employability: 38, xp: 420,  streak: 0, lastActive: 'il y a 6 j' },
-  { id: 's3', name: 'Inès Dubois',    email: 'ines.dubois@email.fr',   manager: 'karim', cohortId: 'bts-ndrc-24',   outcome: 'graduated',     employability: 91, xp: 2680, streak: 12, lastActive: "aujourd'hui" },
-  { id: 's4', name: 'Tom Petit',      email: 'tom.petit@email.fr',     manager: 'nadia', cohortId: 'bachelor-rh-24', outcome: 'job_searching', employability: 55, xp: 760,  streak: 2, lastActive: 'hier' },
-  { id: 's5', name: 'Sarah Moreau',   email: 'sarah.moreau@email.fr',  manager: 'nadia', cohortId: 'bachelor-rh-24', outcome: 'in_training',   employability: 14, xp: 120,  streak: 0, lastActive: 'il y a 11 j' },
-  { id: 's6', name: 'Yanis Lefevre',  email: 'yanis.lefevre@email.fr', manager: 'nadia', cohortId: 'bachelor-rh-24', outcome: 'placed',        employability: 64, xp: 980,  streak: 5, lastActive: 'hier' },
+  { id: 's1', name: 'Léa Martin',     email: 'lea.martin@email.fr',    manager: 'karim', cohortId: 'bts-ndrc-24',   outcome: 'placed',        employability: 72, xp: 1240, streak: 4, lastActive: "aujourd'hui", cvCount: 3, progress: demoProgress({ interview: { motivation: { best: 85, plays: 4 }, parcours: { best: 70, plays: 2 }, projet: { best: 60, plays: 1 } }, jobs: 5, codes: 16, recruit: 13, oral: 15, letters: 3, badges: ['first_cv', 'oral_pro'] }) },
+  { id: 's2', name: 'Hugo Bernard',   email: 'hugo.bernard@email.fr',  manager: 'karim', cohortId: 'bts-ndrc-24',   outcome: 'job_searching', employability: 38, xp: 420,  streak: 0, lastActive: 'il y a 6 j', cvCount: 1, progress: demoProgress({ interview: { motivation: { best: 40, plays: 1 } }, jobs: 1, codes: 8, recruit: 0, oral: 0, letters: 1, badges: ['first_cv'] }) },
+  { id: 's3', name: 'Inès Dubois',    email: 'ines.dubois@email.fr',   manager: 'karim', cohortId: 'bts-ndrc-24',   outcome: 'graduated',     employability: 91, xp: 2680, streak: 12, lastActive: "aujourd'hui", cvCount: 4, progress: demoProgress({ interview: { motivation: { best: 95, plays: 6 }, parcours: { best: 90, plays: 4 }, projet: { best: 85, plays: 3 }, equipe: { best: 80, plays: 2 } }, jobs: 9, codes: 18, recruit: 17, oral: 19, letters: 5, badges: ['first_cv', 'oral_pro', 'streak_7', 'job_expert'] }) },
+  { id: 's4', name: 'Tom Petit',      email: 'tom.petit@email.fr',     manager: 'nadia', cohortId: 'bachelor-rh-24', outcome: 'job_searching', employability: 55, xp: 760,  streak: 2, lastActive: 'hier', cvCount: 2, progress: demoProgress({ interview: { motivation: { best: 55, plays: 2 } }, jobs: 3, codes: 12, recruit: 9, oral: 11, letters: 2, badges: ['first_cv'] }) },
+  { id: 's5', name: 'Sarah Moreau',   email: 'sarah.moreau@email.fr',  manager: 'nadia', cohortId: 'bachelor-rh-24', outcome: 'in_training',   employability: 14, xp: 120,  streak: 0, lastActive: 'il y a 11 j', cvCount: 0, progress: demoProgress({ interview: {}, jobs: 0, codes: 0, recruit: 0, oral: 0, letters: 0, badges: [] }) },
+  { id: 's6', name: 'Yanis Lefevre',  email: 'yanis.lefevre@email.fr', manager: 'nadia', cohortId: 'bachelor-rh-24', outcome: 'placed',        employability: 64, xp: 980,  streak: 5, lastActive: 'hier', cvCount: 2, progress: demoProgress({ interview: { motivation: { best: 65, plays: 3 }, parcours: { best: 55, plays: 2 } }, jobs: 4, codes: 14, recruit: 11, oral: 13, letters: 2, badges: ['first_cv', 'streak_7'] }) },
 ];
 
 function read() {
@@ -108,25 +123,9 @@ export function getVisibleRoster() {
   return v.role === 'admin' ? roster : roster.filter((s) => s.manager === v.id);
 }
 
-// ── Fiche élève : piliers d'employabilité (dérivés, déterministes) ────────────
-export const PILLARS = [
-  { id: 'cv',          label: 'CV prêt',        emoji: '📄' },
-  { id: 'entretien',   label: 'Entretien',      emoji: '🎤' },
-  { id: 'metier',      label: 'Métiers',        emoji: '🧭' },
-  { id: 'codes',       label: 'Savoir-être',    emoji: '🏢' },
-  { id: 'candidature', label: 'Candidature',    emoji: '✉️' },
-  { id: 'recrutement', label: 'Tests',          emoji: '🧩' },
-];
-
-/** Détail par pilier pour un élève (démo : dérivé du score global). */
-export function studentPillars(s) {
-  const base = typeof s.employability === 'number' ? s.employability : Math.min(100, Math.round((s.xp || 0) / 30));
-  const seed = [...(s.id || 'x')].reduce((a, c) => a + c.charCodeAt(0), 0);
-  return PILLARS.map((p, i) => {
-    const off = ((seed * (i + 3)) % 37) - 18; // -18..+18, déterministe
-    return { ...p, score: Math.max(0, Math.min(100, base + off)) };
-  });
-}
+// Les piliers d'employabilité sont désormais calculés sur la progression
+// réelle de l'accompagné (voir lib/studentProgress.js), plus par dérivation
+// du score global : le coach voit ce que voit l'élève.
 
 /** Un élève « décroche » : inactif, sans série, ou employabilité faible. */
 export function needsFollowup(s) {

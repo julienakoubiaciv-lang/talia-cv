@@ -61,6 +61,7 @@ export function useCohort() {
             manager: r.manager_id,
             cohortId: r.cohort_id || null,
             outcome: r.outcome || DEFAULT_OUTCOME,
+            progress: r.progress || null,
             employability: typeof r.employability === 'number' ? r.employability : null,
             xp: r.xp || 0, streak: r.day_streak || 0,
             lastActive: r.updated_at ? new Date(r.updated_at).toLocaleDateString('fr-FR') : '—',

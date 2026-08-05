@@ -16,6 +16,10 @@ import { useCohort } from '@/hooks/useCohort';
 import { studentPillars, needsFollowup } from '@/lib/demoCohort';
 import { rosterToCSV, downloadCSV } from '@/lib/cohortServer';
 import { OUTCOMES, outcomeMeta, DEFAULT_OUTCOME, isSettled } from '@/lib/cohortOutcome';
+import {
+  APP_STATUS, appStatusMeta, isPlacement,
+  listApplications, addApplication, updateApplication, deleteApplication, fetchApplicationStats,
+} from '@/lib/applications';
 
 /** Ce que le conseiller doit faire quand la relance ne part pas. */
 const NUDGE_ERRORS = {
@@ -31,7 +35,7 @@ const initials = (name = '') => name.split(' ').map((w) => w[0]).slice(0, 2).joi
 export default function CohortDashboard() {
   const navigate = useNavigate();
   const {
-    loading, viewer, students, conseillers, cohorts, orgName, reassign, isDemo, persona,
+    loading, viewer, students, conseillers, cohorts, orgName, orgId, reassign, isDemo, persona,
     switchPersona, makeInvite, nudge, updateOutcome, addCohort,
   } = useCohort();
   const isAdmin = viewer?.role === 'admin';
@@ -42,6 +46,17 @@ export default function CohortDashboard() {
   const [invite, setInvite] = useState(false); // modal invitation
   const [toast, setToast] = useState('');
   const [promo, setPromo] = useState('all');  // filtre promo : 'all' | id | 'none'
+  const [appStats, setAppStats] = useState({});  // candidatures par élève
+  const [appTick, setAppTick] = useState(0);
+
+  // Compteurs de candidatures : chargés à part, la vue cohorte ne les porte pas.
+  useEffect(() => {
+    let alive = true;
+    const ids = students.map((s) => s.id);
+    if (!ids.length) { setAppStats({}); return; }
+    fetchApplicationStats(ids).then((r) => { if (alive) setAppStats(r); });
+    return () => { alive = false; };
+  }, [students, appTick]);
 
   const flash = (msg) => { setToast(msg); setTimeout(() => setToast(''), 3400); };
 
@@ -78,7 +93,9 @@ export default function CohortDashboard() {
       : Math.round(visible.reduce((a, s) => a + (s.xp || 0), 0) / visible.length);
     const placed = visible.filter((s) => isSettled(s.outcome) && s.outcome !== 'dropped_out').length;
     const risk = visible.filter(needsFollowup).length;
-    return { n: visible.length, avg, placed, risk, hasEmp };
+    // Ce que le coach montre à son client : combien ont vraiment signé.
+    const rate = visible.length ? Math.round((placed / visible.length) * 100) : 0;
+    return { n: visible.length, avg, placed, risk, rate, hasEmp };
   }, [visible]);
 
   return (
@@ -134,7 +151,7 @@ export default function CohortDashboard() {
         <div style={S.statRow}>
           <Stat value={stats.n} label="élèves" />
           <Stat value={stats.hasEmp ? `${stats.avg}%` : stats.avg} label={stats.hasEmp ? 'employabilité moy.' : 'XP moy.'} color={stats.hasEmp ? scoreColor(stats.avg) : C.blue} />
-          <Stat value={stats.placed} label="placés / diplômés" color={stats.placed ? C.green : C.mute} />
+          <Stat value={`${stats.rate}%`} label={`placés · ${stats.placed}/${stats.n}`} color={stats.placed ? C.green : C.mute} />
           <Stat value={stats.risk} label="à relancer" color={stats.risk ? C.red : C.mute} />
         </div>
 
@@ -161,6 +178,12 @@ export default function CohortDashboard() {
                     <div style={S.meta}>
                       {s.email}
                       {promo === 'all' && s.cohortId && ` · ${cohortNameOf(s.cohortId)}`}
+                      {appStats[s.id]?.total > 0 && (
+                        <span style={S.appCount}>
+                          {' · '}{appStats[s.id].total} candidature{appStats[s.id].total > 1 ? 's' : ''}
+                          {appStats[s.id].signed > 0 && <span style={{ color: C.green, fontWeight: 800 }}> · {appStats[s.id].signed} signé{appStats[s.id].signed > 1 ? 's' : ''}</span>}
+                        </span>
+                      )}
                     </div>
                     {typeof s.employability === 'number' && (
                       <div style={S.barWrap}>
@@ -192,6 +215,8 @@ export default function CohortDashboard() {
           student={fiche}
           conseiller={nameOf(fiche.manager)}
           cohortName={cohortNameOf(fiche.cohortId)}
+          orgId={orgId}
+          onApplicationsChange={() => setAppTick((t) => t + 1)}
           onClose={() => setFiche(null)}
           onRelance={() => { relancer(fiche); }}
           onOutcome={async (o) => { await setOutcome(fiche, o); setFiche({ ...fiche, outcome: o }); }}
@@ -228,7 +253,7 @@ function OutcomeBadge({ outcome }) {
 }
 
 // ── Fiche élève (bilan détaillé) ──────────────────────────────────────────────
-function FicheModal({ student, conseiller, cohortName, onClose, onRelance, onOutcome }) {
+function FicheModal({ student, conseiller, cohortName, orgId, onClose, onRelance, onOutcome, onApplicationsChange }) {
   const pillars = useMemo(() => studentPillars(student), [student]);
   return (
     <div style={S.overlay} onClick={onClose}>
@@ -281,9 +306,107 @@ function FicheModal({ student, conseiller, cohortName, onClose, onRelance, onOut
           ))}
         </div>
 
+        <ApplicationsSection student={student} orgId={orgId} onChange={onApplicationsChange} />
+
         <button style={S.modalCta} onClick={() => { onRelance(); onClose(); }}>📨 Relancer cet élève</button>
       </div>
     </div>
+  );
+}
+
+/**
+ * Candidatures de l'accompagné — entreprise, poste, où ça en est.
+ * C'est ce qui permet au coach de démontrer un placement, là où XP et série
+ * ne disent rien de la recherche réelle.
+ */
+function ApplicationsSection({ student, orgId, onChange }) {
+  const [apps, setApps] = useState(null); // null = chargement
+  const [adding, setAdding] = useState(false);
+  const [company, setCompany] = useState('');
+  const [role, setRole] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    listApplications(student.id).then((r) => { if (alive) setApps(r); });
+    return () => { alive = false; };
+  }, [student.id]);
+
+  const refresh = async () => {
+    const r = await listApplications(student.id);
+    setApps(r);
+    onChange?.();
+  };
+
+  const add = async () => {
+    if (!company.trim() || busy) return;
+    setBusy(true);
+    await addApplication({ studentId: student.id, orgId, company, roleTitle: role });
+    setBusy(false);
+    setCompany(''); setRole(''); setAdding(false);
+    refresh();
+  };
+
+  const setStatus = async (id, status) => { await updateApplication(id, { status }); refresh(); };
+  const remove = async (id) => { await deleteApplication(id); refresh(); };
+
+  const signed = (apps || []).filter((a) => isPlacement(a.status)).length;
+
+  return (
+    <>
+      <div style={S.appHead}>
+        <span style={{ ...S.sectionLabel, margin: 0 }}>
+          Candidatures{apps?.length ? ` · ${apps.length}` : ''}
+          {signed > 0 && <span style={S.appSigned}>{signed} signé{signed > 1 ? 's' : ''}</span>}
+        </span>
+        <button style={S.appAdd} onClick={() => setAdding((v) => !v)}>
+          {adding ? 'Annuler' : '+ Ajouter'}
+        </button>
+      </div>
+
+      {adding && (
+        <div style={S.appForm}>
+          <input style={S.appInput} value={company} autoFocus placeholder="Entreprise"
+            onChange={(e) => setCompany(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') add(); }} />
+          <input style={S.appInput} value={role} placeholder="Poste (optionnel)"
+            onChange={(e) => setRole(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') add(); }} />
+          <button style={{ ...S.appSave, opacity: company.trim() && !busy ? 1 : 0.5 }}
+            onClick={add} disabled={!company.trim() || busy}>
+            {busy ? '…' : 'Ajouter'}
+          </button>
+        </div>
+      )}
+
+      {apps === null ? (
+        <div style={S.appEmpty}>Chargement…</div>
+      ) : apps.length === 0 ? (
+        <div style={S.appEmpty}>Aucune candidature enregistrée.</div>
+      ) : (
+        <div style={{ display: 'grid', gap: 8 }}>
+          {apps.map((a) => {
+            const m = appStatusMeta(a.status);
+            return (
+              <div key={a.id} style={S.appRow}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={S.appCompany}>{a.company}</div>
+                  {a.role_title && <div style={S.appRole}>{a.role_title}</div>}
+                </div>
+                <select
+                  value={a.status}
+                  onChange={(e) => setStatus(a.id, e.target.value)}
+                  aria-label={`Statut de la candidature ${a.company}`}
+                  style={{ ...S.appStatus, color: m.color, borderColor: alpha(m.color, 40) }}>
+                  {APP_STATUS.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
+                </select>
+                <button style={S.appDel} onClick={() => remove(a.id)} title="Supprimer" aria-label={`Supprimer la candidature ${a.company}`}>×</button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </>
   );
 }
 
@@ -404,6 +527,21 @@ const S = {
   outcomePicker: { display: 'flex', flexWrap: 'wrap', gap: 7 },
   outcomeOpt: { background: C.bg, color: C.ink2, border: `1.5px solid ${C.line}`, borderRadius: 99, padding: '6px 12px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: FONT },
   newPromoRow: { display: 'flex', gap: 8, marginTop: 8 },
+
+  // Candidatures
+  appCount: { color: C.ink2, fontWeight: 600 },
+  appHead: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, margin: '18px 0 10px' },
+  appSigned: { marginLeft: 8, fontSize: 10.5, fontWeight: 800, color: C.green, background: alpha(C.green, 12), padding: '2px 8px', borderRadius: 99, textTransform: 'none', letterSpacing: 0 },
+  appAdd: { flexShrink: 0, background: C.bg, color: C.blue, border: `1px solid ${C.line}`, borderRadius: 10, padding: '6px 11px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: FONT },
+  appForm: { display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 8, marginBottom: 10 },
+  appInput: { minWidth: 0, background: C.bg, color: C.ink, border: `1.5px solid ${C.line}`, borderRadius: 10, padding: '9px 11px', fontSize: 13, fontFamily: FONT, outline: 'none' },
+  appSave: { flexShrink: 0, background: C.blue, color: '#fff', border: 'none', borderRadius: 10, padding: '9px 14px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: FONT },
+  appRow: { display: 'flex', alignItems: 'center', gap: 9, background: C.bg, border: `1px solid ${C.line2}`, borderRadius: 12, padding: '9px 11px' },
+  appCompany: { fontSize: 13.5, fontWeight: 700, color: C.ink, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+  appRole: { fontSize: 12, color: C.mute, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+  appStatus: { flexShrink: 0, background: C.card, border: '1.5px solid', borderRadius: 99, padding: '5px 9px', fontSize: 11.5, fontWeight: 800, fontFamily: FONT, cursor: 'pointer', appearance: 'auto' },
+  appDel: { flexShrink: 0, background: 'none', border: 'none', color: C.mute, fontSize: 19, lineHeight: 1, cursor: 'pointer', padding: '0 2px' },
+  appEmpty: { background: C.bg, border: `1px dashed ${C.line}`, borderRadius: 12, padding: '14px', textAlign: 'center', color: C.mute, fontSize: 13 },
   meta: { fontSize: 12, color: C.mute, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
   barWrap: { display: 'flex', alignItems: 'center', gap: 8, marginTop: 6, maxWidth: 240 },
   bar: { flex: 1, height: 6, background: C.track, borderRadius: 99, overflow: 'hidden' },

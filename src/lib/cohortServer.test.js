@@ -27,4 +27,22 @@ describe('rosterToCSV', () => {
   it('roster vide → en-tête seul', () => {
     expect(rosterToCSV([], nameOf).split('\r\n')).toHaveLength(1);
   });
+
+  it('exporte la promo et le statut de parcours', () => {
+    const csv = rosterToCSV(
+      [{ name: 'Léa Martin', email: 'lea@x.fr', manager: 'karim', cohortId: 'c1', outcome: 'graduated', employability: 72, xp: 1240, streak: 4, lastActive: "aujourd'hui" }],
+      nameOf,
+      (id) => ({ c1: 'BTS NDRC · 2024' }[id] || ''),
+    );
+    const [head, row] = csv.split('\r\n');
+    expect(head).toContain('Promo');
+    expect(head).toContain('Statut');
+    expect(row).toContain('BTS NDRC · 2024');
+    expect(row).toContain('Diplômé');
+  });
+
+  it('statut absent → libellé par défaut', () => {
+    const row = rosterToCSV([{ name: 'X', email: 'x@y.fr', manager: 'karim' }], nameOf).split('\r\n')[1];
+    expect(row).toContain('En formation');
+  });
 });

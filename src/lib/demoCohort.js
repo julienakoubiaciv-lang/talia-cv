@@ -8,7 +8,12 @@
  * Le roster est persistné en localStorage pour que la réattribution tienne
  * pendant la session. On peut changer de « persona » (qui regarde).
  */
-const LS_ROSTER  = 'altio_demo_roster';
+import { isSettled } from './cohortOutcome';
+
+// v2 : le roster porte désormais promo + statut de parcours. La clé est
+// versionnée pour qu'une démo ouverte avant cette évolution reparte du modèle
+// à jour plutôt que d'afficher des élèves sans promo.
+const LS_ROSTER  = 'altio_demo_roster_v2';
 const LS_PERSONA = 'altio_demo_persona';
 const LS_ENCADRANT = 'altio_demo_encadrant'; // en démo : se voir comme encadrant
 
@@ -27,15 +32,21 @@ export const DEMO_CONSEILLERS = [
   { id: 'nadia', name: 'Nadia M.' },
 ];
 
-export const DEMO_ORG_NAME = 'École Talia Paris';
+export const DEMO_ORG_NAME = 'École Altio Paris';
+
+/** Promos de l'école de démo. */
+export const DEMO_COHORTS = [
+  { id: 'bts-ndrc-24', name: 'BTS NDRC · 2024' },
+  { id: 'bachelor-rh-24', name: 'Bachelor RH · 2024' },
+];
 
 const DEFAULT_ROSTER = [
-  { id: 's1', name: 'Léa Martin',     email: 'lea.martin@email.fr',    manager: 'karim', employability: 72, xp: 1240, streak: 4, lastActive: "aujourd'hui" },
-  { id: 's2', name: 'Hugo Bernard',   email: 'hugo.bernard@email.fr',  manager: 'karim', employability: 38, xp: 420,  streak: 0, lastActive: 'il y a 6 j' },
-  { id: 's3', name: 'Inès Dubois',    email: 'ines.dubois@email.fr',   manager: 'karim', employability: 91, xp: 2680, streak: 12, lastActive: "aujourd'hui" },
-  { id: 's4', name: 'Tom Petit',      email: 'tom.petit@email.fr',     manager: 'nadia', employability: 55, xp: 760,  streak: 2, lastActive: 'hier' },
-  { id: 's5', name: 'Sarah Moreau',   email: 'sarah.moreau@email.fr',  manager: 'nadia', employability: 14, xp: 120,  streak: 0, lastActive: 'il y a 11 j' },
-  { id: 's6', name: 'Yanis Lefevre',  email: 'yanis.lefevre@email.fr', manager: 'nadia', employability: 64, xp: 980,  streak: 5, lastActive: 'hier' },
+  { id: 's1', name: 'Léa Martin',     email: 'lea.martin@email.fr',    manager: 'karim', cohortId: 'bts-ndrc-24',   outcome: 'placed',        employability: 72, xp: 1240, streak: 4, lastActive: "aujourd'hui" },
+  { id: 's2', name: 'Hugo Bernard',   email: 'hugo.bernard@email.fr',  manager: 'karim', cohortId: 'bts-ndrc-24',   outcome: 'job_searching', employability: 38, xp: 420,  streak: 0, lastActive: 'il y a 6 j' },
+  { id: 's3', name: 'Inès Dubois',    email: 'ines.dubois@email.fr',   manager: 'karim', cohortId: 'bts-ndrc-24',   outcome: 'graduated',     employability: 91, xp: 2680, streak: 12, lastActive: "aujourd'hui" },
+  { id: 's4', name: 'Tom Petit',      email: 'tom.petit@email.fr',     manager: 'nadia', cohortId: 'bachelor-rh-24', outcome: 'job_searching', employability: 55, xp: 760,  streak: 2, lastActive: 'hier' },
+  { id: 's5', name: 'Sarah Moreau',   email: 'sarah.moreau@email.fr',  manager: 'nadia', cohortId: 'bachelor-rh-24', outcome: 'in_training',   employability: 14, xp: 120,  streak: 0, lastActive: 'il y a 11 j' },
+  { id: 's6', name: 'Yanis Lefevre',  email: 'yanis.lefevre@email.fr', manager: 'nadia', cohortId: 'bachelor-rh-24', outcome: 'placed',        employability: 64, xp: 980,  streak: 5, lastActive: 'hier' },
 ];
 
 function read() {
@@ -58,6 +69,16 @@ export function reassignStudent(studentId, managerId) {
   const s = roster.find((x) => x.id === studentId);
   if (!s || !DEMO_CONSEILLERS.some((c) => c.id === managerId)) return roster;
   s.manager = managerId;
+  write(roster);
+  return roster;
+}
+
+/** Met à jour le statut de parcours d'un élève. */
+export function setStudentOutcome(studentId, outcome) {
+  const roster = read();
+  const s = roster.find((x) => x.id === studentId);
+  if (!s) return roster;
+  s.outcome = outcome;
   write(roster);
   return roster;
 }
@@ -110,6 +131,8 @@ export function studentPillars(s) {
 /** Un élève « décroche » : inactif, sans série, ou employabilité faible. */
 export function needsFollowup(s) {
   if (!s) return false;
+  // Un élève placé, diplômé ou sorti du parcours n'est pas un décrocheur.
+  if (isSettled(s.outcome)) return false;
   if (/il y a/i.test(s.lastActive || '')) return true;
   if ((s.streak || 0) === 0) return true;
   if (typeof s.employability === 'number' && s.employability < 40) return true;

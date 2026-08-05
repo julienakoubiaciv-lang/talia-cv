@@ -11,6 +11,8 @@ import { supabase, supabaseReady } from './supabase';
 import { isAuthenticated, getCurrentUserId } from './currentUser';
 import { isDemoMode } from './demoMode';
 import { createDemoInvite } from './demoOrg';
+import { setStudentOutcome as setDemoOutcome } from './demoCohort';
+import { outcomeLabel } from './cohortOutcome';
 
 const randToken = () =>
   'INV-' + Math.random().toString(36).slice(2, 8).toUpperCase() + Date.now().toString(36).toUpperCase();
@@ -48,15 +50,40 @@ export async function nudgeStudent({ studentId, orgId = null, message = '' } = {
   return true;
 }
 
+/**
+ * Met à jour le statut de parcours d'un élève (en formation → diplômé…).
+ * Démo → mise à jour du roster simulé.
+ * @returns {Promise<boolean>}
+ */
+export async function setOutcome({ studentId, orgId, outcome } = {}) {
+  if (isDemoMode()) { setDemoOutcome(studentId, outcome); return true; }
+  if (!supabaseReady || !supabase || !isAuthenticated()) return false;
+  const { error } = await supabase.from('org_members')
+    .update({ outcome, outcome_updated_at: new Date().toISOString() })
+    .eq('user_id', studentId).eq('org_id', orgId);
+  if (error) { console.warn('[cohortServer] setOutcome:', error.message); return false; }
+  return true;
+}
+
+/** Crée une promo dans l'organisation. Démo → promo locale. */
+export async function createCohort({ orgId, name } = {}) {
+  if (isDemoMode()) return { id: `demo-${Date.now()}`, name };
+  if (!supabaseReady || !supabase || !isAuthenticated() || !orgId) return null;
+  const { data, error } = await supabase.from('cohorts')
+    .insert({ org_id: orgId, name }).select('id, name').single();
+  if (error) { console.warn('[cohortServer] createCohort:', error.message); return null; }
+  return data;
+}
+
 /** Construit un CSV de la cohorte (pur, testable). */
-export function rosterToCSV(students = [], nameOf = (id) => id) {
-  const head = ['Nom', 'Email', 'Conseiller', 'Employabilité (%)', 'XP', 'Série (j)', 'Dernière activité'];
+export function rosterToCSV(students = [], nameOf = (id) => id, cohortNameOf = () => '') {
+  const head = ['Nom', 'Email', 'Promo', 'Conseiller', 'Statut', 'Employabilité (%)', 'XP', 'Série (j)', 'Dernière activité'];
   const esc = (v) => {
     const s = String(v ?? '');
     return /[",;\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
   const rows = students.map((s) => [
-    s.name, s.email, nameOf(s.manager),
+    s.name, s.email, cohortNameOf(s.cohortId), nameOf(s.manager), outcomeLabel(s.outcome),
     typeof s.employability === 'number' ? s.employability : '',
     s.xp ?? 0, s.streak ?? 0, s.lastActive ?? '',
   ].map(esc).join(';'));

@@ -15,38 +15,58 @@ import { useNavigate } from 'react-router-dom';
 import { useCohort } from '@/hooks/useCohort';
 import { studentPillars, needsFollowup } from '@/lib/demoCohort';
 import { rosterToCSV, downloadCSV } from '@/lib/cohortServer';
+import { OUTCOMES, outcomeMeta, DEFAULT_OUTCOME, isSettled } from '@/lib/cohortOutcome';
 
 const scoreColor = (s) => (s >= 70 ? C.green : s >= 40 ? C.amber : C.red);
 const initials = (name = '') => name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
 
 export default function CohortDashboard() {
   const navigate = useNavigate();
-  const { loading, viewer, students, conseillers, orgName, reassign, isDemo, persona, switchPersona, makeInvite, nudge } = useCohort();
+  const {
+    loading, viewer, students, conseillers, cohorts, orgName, reassign, isDemo, persona,
+    switchPersona, makeInvite, nudge, updateOutcome, addCohort,
+  } = useCohort();
   const isAdmin = viewer?.role === 'admin';
   const nameOf = (id) => conseillers.find((c) => c.id === id)?.name || '—';
+  const cohortNameOf = (id) => cohorts.find((c) => c.id === id)?.name || '';
 
   const [fiche, setFiche] = useState(null);   // élève ouvert
   const [invite, setInvite] = useState(false); // modal invitation
   const [toast, setToast] = useState('');
+  const [promo, setPromo] = useState('all');  // filtre promo : 'all' | id | 'none'
 
   const flash = (msg) => { setToast(msg); setTimeout(() => setToast(''), 2600); };
   const relancer = (s) => { nudge(s); flash(`Relance envoyée à ${s.name} 📨`); };
+
+  // Les élèves affichés : ceux de la promo sélectionnée.
+  const visible = useMemo(() => {
+    if (promo === 'all') return students;
+    if (promo === 'none') return students.filter((s) => !s.cohortId);
+    return students.filter((s) => s.cohortId === promo);
+  }, [students, promo]);
+
+  const setOutcome = async (s, outcome) => {
+    await updateOutcome(s.id, outcome);
+    flash(`${s.name} — ${outcomeMeta(outcome).label}`);
+  };
+
   const exportCSV = () => {
-    const csv = rosterToCSV(students, nameOf);
-    downloadCSV(`cohorte-${new Date().toISOString().slice(0, 10)}.csv`, csv);
+    const csv = rosterToCSV(visible, nameOf, cohortNameOf);
+    const suffix = promo === 'all' ? '' : `-${(cohortNameOf(promo) || 'sans-promo').replace(/\s+/g, '-').toLowerCase()}`;
+    downloadCSV(`cohorte${suffix}-${new Date().toISOString().slice(0, 10)}.csv`, csv);
     flash('Export CSV téléchargé ⬇');
   };
 
   const stats = useMemo(() => {
-    if (!students.length) return { n: 0, avg: 0, active: 0, risk: 0 };
-    const hasEmp = students.every((s) => typeof s.employability === 'number');
+    if (!visible.length) return { n: 0, avg: 0, placed: 0, risk: 0 };
+    const hasEmp = visible.every((s) => typeof s.employability === 'number');
     const avg = hasEmp
-      ? Math.round(students.reduce((a, s) => a + s.employability, 0) / students.length)
-      : Math.round(students.reduce((a, s) => a + (s.xp || 0), 0) / students.length);
-    const active = students.filter((s) => /aujourd|hier/i.test(s.lastActive || '')).length;
-    const risk = students.filter(needsFollowup).length;
-    return { n: students.length, avg, active, risk, hasEmp };
-  }, [students]);
+      ? Math.round(visible.reduce((a, s) => a + s.employability, 0) / visible.length)
+      : Math.round(visible.reduce((a, s) => a + (s.xp || 0), 0) / visible.length);
+    const placed = visible.filter((s) => isSettled(s.outcome) && s.outcome !== 'dropped_out').length;
+    const risk = visible.filter(needsFollowup).length;
+    return { n: visible.length, avg, placed, risk, hasEmp };
+  }, [visible]);
 
   return (
     <div style={S.shell}>
@@ -73,29 +93,62 @@ export default function CohortDashboard() {
           </div>
         )}
 
+        {/* Filtre par promo */}
+        {(cohorts.length > 0 || students.some((s) => !s.cohortId)) && (
+          <div style={S.promoRow}>
+            <button onClick={() => setPromo('all')}
+              style={{ ...S.promoBtn, ...(promo === 'all' ? S.promoOn : {}) }}>
+              Toutes les promos
+            </button>
+            {cohorts.map((c) => (
+              <button key={c.id} onClick={() => setPromo(c.id)}
+                style={{ ...S.promoBtn, ...(promo === c.id ? S.promoOn : {}) }}>
+                {c.name}
+                <span style={S.promoCount}>{students.filter((s) => s.cohortId === c.id).length}</span>
+              </button>
+            ))}
+            {students.some((s) => !s.cohortId) && (
+              <button onClick={() => setPromo('none')}
+                style={{ ...S.promoBtn, ...(promo === 'none' ? S.promoOn : {}) }}>
+                Sans promo
+                <span style={S.promoCount}>{students.filter((s) => !s.cohortId).length}</span>
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Résumé */}
         <div style={S.statRow}>
           <Stat value={stats.n} label="élèves" />
           <Stat value={stats.hasEmp ? `${stats.avg}%` : stats.avg} label={stats.hasEmp ? 'employabilité moy.' : 'XP moy.'} color={stats.hasEmp ? scoreColor(stats.avg) : C.blue} />
-          <Stat value={stats.active} label="actifs récemment" color={C.green} />
+          <Stat value={stats.placed} label="placés / diplômés" color={stats.placed ? C.green : C.mute} />
           <Stat value={stats.risk} label="à relancer" color={stats.risk ? C.red : C.mute} />
         </div>
 
         {/* Liste */}
         {loading ? (
           <div style={S.empty}>Chargement…</div>
-        ) : students.length === 0 ? (
-          <div style={S.empty}>Aucun élève pour cette vue.</div>
+        ) : visible.length === 0 ? (
+          <div style={S.empty}>
+            {students.length === 0 ? 'Aucun élève pour cette vue.' : 'Aucun élève dans cette promo.'}
+          </div>
         ) : (
           <div style={S.list}>
-            {students.map((s) => {
+            {visible.map((s) => {
               const risk = needsFollowup(s);
               return (
                 <div key={s.id} style={{ ...S.row, ...(risk ? S.rowRisk : {}) }}>
                   <button style={S.avatar} onClick={() => setFiche(s)} title="Voir la fiche">{initials(s.name)}</button>
                   <div style={{ flex: 1, minWidth: 0, cursor: 'pointer' }} onClick={() => setFiche(s)}>
-                    <div style={S.name}>{s.name}{risk && <span style={S.riskFlag}>⚠️ à relancer</span>}</div>
-                    <div style={S.meta}>{s.email}</div>
+                    <div style={S.name}>
+                      {s.name}
+                      <OutcomeBadge outcome={s.outcome} />
+                      {risk && <span style={S.riskFlag}>⚠️ à relancer</span>}
+                    </div>
+                    <div style={S.meta}>
+                      {s.email}
+                      {promo === 'all' && s.cohortId && ` · ${cohortNameOf(s.cohortId)}`}
+                    </div>
                     {typeof s.employability === 'number' && (
                       <div style={S.barWrap}>
                         <div style={S.bar}><div style={{ ...S.barFill, width: `${s.employability}%`, background: scoreColor(s.employability) }} /></div>
@@ -121,8 +174,22 @@ export default function CohortDashboard() {
         )}
       </div>
 
-      {fiche && <FicheModal student={fiche} conseiller={nameOf(fiche.manager)} onClose={() => setFiche(null)} onRelance={() => { relancer(fiche); }} />}
-      {invite && <InviteModal viewer={viewer} conseillers={conseillers} isAdmin={isAdmin} makeInvite={makeInvite} onClose={() => setInvite(false)} />}
+      {fiche && (
+        <FicheModal
+          student={fiche}
+          conseiller={nameOf(fiche.manager)}
+          cohortName={cohortNameOf(fiche.cohortId)}
+          onClose={() => setFiche(null)}
+          onRelance={() => { relancer(fiche); }}
+          onOutcome={async (o) => { await setOutcome(fiche, o); setFiche({ ...fiche, outcome: o }); }}
+        />
+      )}
+      {invite && (
+        <InviteModal
+          viewer={viewer} conseillers={conseillers} cohorts={cohorts} isAdmin={isAdmin}
+          makeInvite={makeInvite} addCohort={addCohort} onClose={() => setInvite(false)}
+        />
+      )}
       {toast && <div style={S.toast}>{toast}</div>}
     </div>
   );
@@ -137,8 +204,18 @@ function Stat({ value, label, color = C.ink }) {
   );
 }
 
+/** Pastille de statut de parcours (en formation → diplômé). */
+function OutcomeBadge({ outcome }) {
+  const m = outcomeMeta(outcome || DEFAULT_OUTCOME);
+  return (
+    <span style={{ ...S.outcomeBadge, color: m.color, background: alpha(m.color, 12), border: `1px solid ${alpha(m.color, 30)}` }}>
+      {m.short}
+    </span>
+  );
+}
+
 // ── Fiche élève (bilan détaillé) ──────────────────────────────────────────────
-function FicheModal({ student, conseiller, onClose, onRelance }) {
+function FicheModal({ student, conseiller, cohortName, onClose, onRelance, onOutcome }) {
   const pillars = useMemo(() => studentPillars(student), [student]);
   return (
     <div style={S.overlay} onClick={onClose}>
@@ -147,9 +224,27 @@ function FicheModal({ student, conseiller, onClose, onRelance }) {
           <div style={S.avatarLg}>{initials(student.name)}</div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={S.modalTitle}>{student.name}</div>
-            <div style={S.modalSub}>{student.email} · {conseiller}</div>
+            <div style={S.modalSub}>
+              {student.email} · {conseiller}{cohortName ? ` · ${cohortName}` : ''}
+            </div>
           </div>
           <button style={S.close} onClick={onClose}>×</button>
+        </div>
+
+        <div style={S.sectionLabel}>Où en est cet élève ?</div>
+        <div style={S.outcomePicker}>
+          {OUTCOMES.map((o) => {
+            const on = (student.outcome || DEFAULT_OUTCOME) === o.id;
+            return (
+              <button key={o.id} onClick={() => onOutcome(o.id)}
+                style={{
+                  ...S.outcomeOpt,
+                  ...(on ? { background: alpha(o.color, 14), border: `1.5px solid ${o.color}`, color: o.color } : {}),
+                }}>
+                {o.label}
+              </button>
+            );
+          })}
         </div>
 
         <div style={S.ficheStats}>
@@ -180,17 +275,30 @@ function FicheModal({ student, conseiller, onClose, onRelance }) {
 }
 
 // ── Inviter des élèves (lien) ─────────────────────────────────────────────────
-function InviteModal({ viewer, conseillers, isAdmin, makeInvite, onClose }) {
+function InviteModal({ viewer, conseillers, cohorts, isAdmin, makeInvite, addCohort, onClose }) {
   const [mgr, setMgr] = useState(isAdmin ? (conseillers[0]?.id || '') : (viewer?.id || ''));
+  const [cohortId, setCohortId] = useState('');
+  const [newPromo, setNewPromo] = useState('');
+  const [creating, setCreating] = useState(false);
   const [token, setToken] = useState('');
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     let alive = true;
+    setToken('');
     const m = conseillers.find((c) => c.id === mgr);
-    makeInvite(mgr, m?.name).then((t) => { if (alive) setToken(t || ''); });
+    makeInvite(mgr, m?.name, cohortId || null).then((t) => { if (alive) setToken(t || ''); });
     return () => { alive = false; };
-  }, [mgr, makeInvite, conseillers]);
+  }, [mgr, cohortId, makeInvite, conseillers]);
+
+  const create = async () => {
+    const name = newPromo.trim();
+    if (!name) return;
+    setCreating(true);
+    const c = await addCohort(name);
+    setCreating(false);
+    if (c) { setCohortId(c.id); setNewPromo(''); }
+  };
 
   const link = token ? `${window.location.origin}/?org_invite=${token}` : 'Génération du lien…';
   const copy = () => { if (!token) return; try { navigator.clipboard.writeText(link); setCopied(true); setTimeout(() => setCopied(false), 1600); } catch { /* */ } };
@@ -215,13 +323,29 @@ function InviteModal({ viewer, conseillers, isAdmin, makeInvite, onClose }) {
           </>
         )}
 
+        <div style={S.sectionLabel}>Promo</div>
+        <select style={S.select} value={cohortId} onChange={(e) => setCohortId(e.target.value)}>
+          <option value="">Sans promo</option>
+          {cohorts.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+        </select>
+        <div style={S.newPromoRow}>
+          <input
+            style={S.linkInput} value={newPromo} placeholder="Créer une promo — ex. BTS NDRC · 2026"
+            onChange={(e) => setNewPromo(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') create(); }}
+          />
+          <button style={{ ...S.copyBtn, opacity: newPromo.trim() ? 1 : 0.5 }} onClick={create} disabled={!newPromo.trim() || creating}>
+            {creating ? '…' : 'Créer'}
+          </button>
+        </div>
+
         <div style={S.sectionLabel}>Lien d'invitation</div>
         <div style={S.linkRow}>
           <input style={S.linkInput} value={link} readOnly onFocus={(e) => e.target.select()} />
           <button style={S.copyBtn} onClick={copy}>{copied ? '✓ Copié' : 'Copier'}</button>
         </div>
         <p style={S.hint}>
-          L'élève qui ouvre ce lien rejoint le groupe du conseiller, sans payer.
+          L'élève qui ouvre ce lien rejoint le groupe du conseiller{cohortId ? ' et la promo choisie' : ''}, sans payer.
           (Sièges, expiration et email peuvent être gérés côté école.)
         </p>
       </div>
@@ -247,6 +371,11 @@ const S = {
   personaBtn: { background: C.card, color: C.ink2, border: `1px solid ${C.line}`, borderRadius: 99, padding: '6px 12px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: FONT },
   personaOn: { background: C.blue, color: '#fff', borderColor: C.blue },
 
+  promoRow: { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 14 },
+  promoBtn: { display: 'inline-flex', alignItems: 'center', gap: 7, background: C.card, color: C.ink2, border: `1px solid ${C.line}`, borderRadius: 99, padding: '7px 13px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: FONT },
+  promoOn: { background: C.blue, color: '#fff', border: `1px solid ${C.blue}` },
+  promoCount: { fontSize: 11, fontWeight: 800, opacity: 0.7 },
+
   statRow: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 16 },
   stat: { background: C.card, border: `1px solid ${C.line}`, borderRadius: 14, padding: '12px 10px', textAlign: 'center' },
   statValue: { fontSize: 24, fontWeight: 800, letterSpacing: -0.5 },
@@ -258,6 +387,10 @@ const S = {
   avatar: { width: 40, height: 40, flexShrink: 0, borderRadius: '50%', background: C.blueSoft, color: C.blue, border: 'none', display: 'grid', placeItems: 'center', fontSize: 13.5, fontWeight: 800, cursor: 'pointer', fontFamily: FONT },
   name: { fontSize: 14.5, fontWeight: 700, color: C.ink, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
   riskFlag: { fontSize: 11, fontWeight: 800, color: C.red, background: alpha(C.red, 12), padding: '2px 7px', borderRadius: 99 },
+  outcomeBadge: { fontSize: 10.5, fontWeight: 800, letterSpacing: 0.2, padding: '2px 8px', borderRadius: 99, textTransform: 'uppercase' },
+  outcomePicker: { display: 'flex', flexWrap: 'wrap', gap: 7 },
+  outcomeOpt: { background: C.bg, color: C.ink2, border: `1.5px solid ${C.line}`, borderRadius: 99, padding: '6px 12px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: FONT },
+  newPromoRow: { display: 'flex', gap: 8, marginTop: 8 },
   meta: { fontSize: 12, color: C.mute, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
   barWrap: { display: 'flex', alignItems: 'center', gap: 8, marginTop: 6, maxWidth: 240 },
   bar: { flex: 1, height: 6, background: C.track, borderRadius: 99, overflow: 'hidden' },

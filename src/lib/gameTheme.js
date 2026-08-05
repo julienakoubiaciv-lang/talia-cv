@@ -10,8 +10,14 @@
  * aux composants. Pour une couleur translucide à partir d'un token, utiliser
  * `alpha(C.green, 20)` (→ color-mix) plutôt que la concaténation hex.
  */
-export const FONT  = "'Manrope', system-ui, -apple-system, sans-serif";
-export const SERIF = "'Playfair Display', Georgia, serif";
+/**
+ * Charte : Manrope pour les titres/display, Inter pour le corps de texte.
+ * `FONT` = stack par défaut des composants (corps), `DISPLAY` = titres.
+ * DM Sans reste réservé au rendu des CV (templates), pas à l'interface.
+ */
+export const FONT    = "Inter, 'SF Pro Text', system-ui, -apple-system, sans-serif";
+export const DISPLAY = "'Manrope', Inter, system-ui, -apple-system, sans-serif";
+export const SERIF   = "'Playfair Display', Georgia, serif";
 
 /** Couleurs — référencent les vars CSS de thème (clair/sombre). */
 export const C = {
@@ -30,17 +36,22 @@ export const C = {
   boss: 'var(--altio-boss)', bossSoft: 'var(--altio-boss-soft)',
   hard: 'var(--altio-blue)', soft: 'var(--altio-boss)', softBg: 'var(--altio-boss-soft)',
   star: 'var(--altio-star)',
+  // Accent de marque (jaune) + catégorie teal — charte
+  yellow: 'var(--altio-yellow)', yellow2: 'var(--altio-yellow-2)',
+  teal: 'var(--altio-teal)', tealSoft: 'var(--altio-teal-soft)',
+  faint: 'var(--altio-faint)',
 };
 
-/** Ombres nommées (theme-aware). */
+/** Ombres nommées (theme-aware) — charte : sh-1 / sh-2 / sh-3. */
 export const SH = {
-  card: 'var(--altio-shadow-card)',
-  cta:  'var(--altio-shadow-cta)',
-  pop:  'var(--altio-shadow-pop)',
+  subtle: 'var(--altio-shadow-1)',
+  card:   'var(--altio-shadow-card)',
+  cta:    'var(--altio-shadow-cta)',
+  pop:    'var(--altio-shadow-pop)',
 };
 
-/** Rayons (border-radius). */
-export const R = { sm: 9, md: 13, lg: 17, pill: 99 };
+/** Rayons (border-radius) — échelle de la charte. */
+export const R = { xs: 8, sm: 10, md: 14, lg: 22, xl: 28, pill: 999 };
 
 /**
  * Couleur translucide à partir d'un token (ou hex), via color-mix.

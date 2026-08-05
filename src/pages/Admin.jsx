@@ -17,27 +17,28 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useRole } from '@/hooks/useRole';
 
-// ── Design tokens ──────────────────────────────────────────────────────────
+// ── Design tokens — charte Altio (var(--altio-*)), pas de hex en dur ────────
 const C = {
-  bg:        '#F7F8FA',
-  card:      '#FFFFFF',
-  ink:       '#0B1020',
-  ink2:      '#3A4156',
-  mute:      '#9AA0AE',
-  rule:      '#ECEDF1',
-  primary:   '#1539B7',
-  primarySoft:'#EEF2FF',
-  green:     '#15803D',
-  greenSoft: '#F0FDF4',
-  amber:     '#92400E',
-  amberSoft: '#FFFBEB',
-  purple:    '#7C3AED',
-  purpleSoft:'#F5F3FF',
-  red:       '#B91C1C',
-  redSoft:   '#FEF2F2',
+  bg:         'var(--altio-bg)',
+  card:       'var(--altio-card)',
+  ink:        'var(--altio-ink)',
+  ink2:       'var(--altio-ink2)',
+  mute:       'var(--altio-mute)',
+  rule:       'var(--altio-line)',
+  primary:    'var(--altio-blue)',
+  primarySoft:'var(--altio-blue-soft)',
+  green:      'var(--altio-green)',
+  greenSoft:  'var(--altio-green-soft)',
+  amber:      'var(--altio-amber)',
+  amberSoft:  'var(--altio-amber-soft)',
+  purple:     'var(--altio-boss)',
+  purpleSoft: 'var(--altio-boss-soft)',
+  red:        'var(--altio-red)',
+  redSoft:    'var(--altio-red-soft)',
 };
 
-const FONT = "'Manrope', system-ui, sans-serif";
+const FONT = "Inter, 'SF Pro Text', system-ui, -apple-system, sans-serif";
+const DISPLAY = "'Manrope', Inter, system-ui, sans-serif";
 
 // ── MRR estimé selon tier ──────────────────────────────────────────────────
 const TIER_PRICE = { free: 0, personal: 9, business: 29 };
@@ -51,7 +52,7 @@ const TIER_COLORS = {
 };
 
 const ROLE_COLORS = {
-  owner: { bg: '#FEF3C7', fg: '#92400E' },
+  owner: { bg: C.amberSoft, fg: C.amber },
   admin: { bg: C.purpleSoft, fg: C.purple },
   user:  { bg: C.rule, fg: C.mute },
 };
@@ -105,13 +106,13 @@ function OrgSection({ orgs, loading, onCreate, onPatch }) {
 
   const cell = { padding: '12px 14px', color: C.ink };
   const th = { padding: '10px 14px', fontSize: 10.5, fontWeight: 700, color: C.mute, textTransform: 'uppercase', letterSpacing: '0.06em', borderBottom: '1px solid ' + C.rule, whiteSpace: 'nowrap' };
-  const input = { padding: '8px 10px', border: '1px solid ' + C.rule, borderRadius: 8, fontSize: 12.5, fontFamily: FONT, color: C.ink, background: '#fff', outline: 'none' };
+  const input = { padding: '8px 10px', border: '1px solid ' + C.rule, borderRadius: 8, fontSize: 12.5, fontFamily: FONT, color: C.ink, background: C.card, outline: 'none' };
 
   return (
     <section style={{ background: C.card, borderRadius: 14, marginBottom: 28, border: '1px solid ' + C.rule, overflow: 'hidden' }}>
       <div style={{ padding: '16px 20px', borderBottom: '1px solid ' + C.rule, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
         <div>
-          <h2 style={{ fontSize: 15, fontWeight: 700, color: C.ink, margin: 0 }}>
+          <h2 style={{ fontSize: 15, fontWeight: 700, color: C.ink, margin: 0, fontFamily: DISPLAY }}>
             Organisations <span style={{ fontSize: 12, fontWeight: 600, color: C.mute }}>({orgs.length})</span>
           </h2>
           <p style={{ fontSize: 11.5, color: C.mute, margin: '3px 0 0' }}>
@@ -190,7 +191,7 @@ function OrgSection({ orgs, loading, onCreate, onPatch }) {
                         const seats = Number(e.target.value);
                         if (seats !== o.seats) onPatch(o.id, { seats });
                       }}
-                      style={{ width: 62, padding: '4px 6px', border: '1px solid ' + C.rule, borderRadius: 6, fontSize: 12, fontFamily: FONT, color: C.ink, background: '#fff' }}
+                      style={{ width: 62, padding: '4px 6px', border: '1px solid ' + C.rule, borderRadius: 6, fontSize: 12, fontFamily: FONT, color: C.ink, background: C.card }}
                     />
                     {full && <span style={{ color: C.red, fontSize: 11, fontWeight: 700, marginLeft: 6 }}>complet</span>}
                   </td>
@@ -201,7 +202,7 @@ function OrgSection({ orgs, loading, onCreate, onPatch }) {
                     <select
                       value={o.status}
                       onChange={(e) => onPatch(o.id, { status: e.target.value })}
-                      style={{ padding: '5px 8px', border: '1px solid ' + C.rule, borderRadius: 6, fontSize: 11.5, fontFamily: FONT, background: '#fff', color: o.status === 'active' ? C.green : C.red, fontWeight: 600 }}
+                      style={{ padding: '5px 8px', border: '1px solid ' + C.rule, borderRadius: 6, fontSize: 11.5, fontFamily: FONT, background: C.card, color: o.status === 'active' ? C.green : C.red, fontWeight: 600 }}
                     >
                       <option value="active">active</option>
                       <option value="suspended">suspended</option>
@@ -359,7 +360,7 @@ export default function Admin() {
         {/* ── Header ── */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
           <div>
-            <h1 style={{ fontSize: 28, fontWeight: 800, color: C.ink, margin: 0, letterSpacing: '-0.5px' }}>
+            <h1 style={{ fontSize: 28, fontWeight: 800, color: C.ink, margin: 0, letterSpacing: '-0.5px', fontFamily: DISPLAY }}>
               🛡️ Admin Dashboard
             </h1>
             <p style={{ fontSize: 13, color: C.mute, margin: '4px 0 0' }}>
@@ -419,7 +420,7 @@ export default function Admin() {
         {/* ── Tableau users ── */}
         <section style={{ background: C.card, borderRadius: 14, padding: 0, marginBottom: 28, border: '1px solid ' + C.rule, overflow: 'hidden' }}>
           <div style={{ padding: '16px 20px', borderBottom: '1px solid ' + C.rule, display:'flex', justifyContent:'space-between', alignItems:'center', gap: 12, flexWrap:'wrap' }}>
-            <h2 style={{ fontSize: 15, fontWeight: 700, color: C.ink, margin: 0 }}>
+            <h2 style={{ fontSize: 15, fontWeight: 700, color: C.ink, margin: 0, fontFamily: DISPLAY }}>
               Utilisateurs <span style={{ fontSize: 12, fontWeight: 600, color: C.mute }}>({filtered.length})</span>
             </h2>
             <input
@@ -470,7 +471,7 @@ export default function Admin() {
                         }}
                         style={{
                           padding: '5px 8px', border: '1px solid ' + C.rule, borderRadius: 6,
-                          fontSize: 11.5, fontFamily: FONT, color: C.ink, background: '#fff',
+                          fontSize: 11.5, fontFamily: FONT, color: C.ink, background: C.card,
                           cursor: u.role === 'owner' ? 'not-allowed' : 'pointer',
                           opacity: u.role === 'owner' ? 0.5 : 1,
                         }}
@@ -490,7 +491,7 @@ export default function Admin() {
         {/* ── Tableau events récents ── */}
         <section style={{ background: C.card, borderRadius: 14, border: '1px solid ' + C.rule, overflow: 'hidden' }}>
           <div style={{ padding: '16px 20px', borderBottom: '1px solid ' + C.rule }}>
-            <h2 style={{ fontSize: 15, fontWeight: 700, color: C.ink, margin: 0 }}>
+            <h2 style={{ fontSize: 15, fontWeight: 700, color: C.ink, margin: 0, fontFamily: DISPLAY }}>
               50 derniers appels Claude
             </h2>
             <p style={{ fontSize: 11.5, color: C.mute, margin: '3px 0 0' }}>

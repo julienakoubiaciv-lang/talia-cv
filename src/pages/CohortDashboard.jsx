@@ -21,7 +21,7 @@ import {
   listApplications, addApplication, updateApplication, deleteApplication, fetchApplicationStats,
 } from '@/lib/applications';
 import { pillarsFromProgress, moduleBreakdown, badgesFromProgress, hasProgress } from '@/lib/studentProgress';
-import { fetchCvStats } from '@/lib/cohortServer';
+import { fetchCvStats, fetchOrgBranding, saveOrgBranding } from '@/lib/cohortServer';
 
 /** Ce que le conseiller doit faire quand la relance ne part pas. */
 const NUDGE_ERRORS = {
@@ -46,6 +46,7 @@ export default function CohortDashboard() {
 
   const [fiche, setFiche] = useState(null);   // élève ouvert
   const [invite, setInvite] = useState(false); // modal invitation
+  const [branding, setBranding] = useState(false); // modal marque
   const [toast, setToast] = useState('');
   const [promo, setPromo] = useState('all');  // filtre promo : 'all' | id | 'none'
   const [appStats, setAppStats] = useState({});  // candidatures par élève
@@ -110,6 +111,7 @@ export default function CohortDashboard() {
             <span style={S.eyebrow}>{orgName || 'Espace encadrant'}</span>
             <h1 style={S.h1}>{isAdmin ? 'Tous les élèves' : 'Mes élèves'}</h1>
           </div>
+          {isAdmin && <button style={S.ghostBtn} onClick={() => setBranding(true)}>🎨 Ma marque</button>}
           <button style={S.ghostBtn} onClick={exportCSV} disabled={!students.length}>⬇ Export</button>
           <button style={S.inviteBtn} onClick={() => setInvite(true)}>➕ Inviter</button>
         </div>
@@ -223,6 +225,9 @@ export default function CohortDashboard() {
           onRelance={() => { relancer(fiche); }}
           onOutcome={async (o) => { await setOutcome(fiche, o); setFiche({ ...fiche, outcome: o }); }}
         />
+      )}
+      {branding && (
+        <BrandingModal orgId={orgId} orgName={orgName} onClose={() => setBranding(false)} onSaved={() => flash('Marque enregistrée 🎨')} />
       )}
       {invite && (
         <InviteModal
@@ -469,6 +474,76 @@ function ApplicationsSection({ student, orgId, onChange }) {
   );
 }
 
+/**
+ * Marque de l'organisation — logo, couleur, adresse de réponse.
+ * Un coach indépendant facture sous son nom : ses relances doivent partir
+ * sous sa marque, pas sous celle d'Altio.
+ */
+function BrandingModal({ orgId, orgName, onClose, onSaved }) {
+  const [logoUrl, setLogoUrl] = useState('');
+  const [color, setColor] = useState('#0033A0');
+  const [replyTo, setReplyTo] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let alive = true;
+    fetchOrgBranding(orgId).then((b) => {
+      if (!alive || !b) return;
+      setLogoUrl(b.logo_url || '');
+      setColor(b.brand_color || '#0033A0');
+      setReplyTo(b.reply_to || '');
+    });
+    return () => { alive = false; };
+  }, [orgId]);
+
+  const save = async () => {
+    setBusy(true); setError('');
+    const ok = await saveOrgBranding({ orgId, logoUrl, brandColor: color, replyTo });
+    setBusy(false);
+    if (ok) { onSaved(); onClose(); }
+    else setError("La marque n'a pas pu être enregistrée. Vérifie l'adresse email et la couleur.");
+  };
+
+  return (
+    <div style={S.overlay} onClick={onClose}>
+      <div style={S.modal} onClick={(e) => e.stopPropagation()}>
+        <div style={S.modalHead}>
+          <div style={{ flex: 1 }}>
+            <div style={S.modalTitle}>Ma marque</div>
+            <div style={S.modalSub}>Ce que voient tes accompagnés dans tes emails de relance.</div>
+          </div>
+          <button style={S.close} onClick={onClose}>×</button>
+        </div>
+
+        <div style={S.sectionLabel}>Logo (URL)</div>
+        <input style={S.select} value={logoUrl} placeholder="https://…/mon-logo.png"
+          onChange={(e) => setLogoUrl(e.target.value)} />
+        <p style={S.hint}>Laisse vide pour afficher le nom « {orgName || 'ton espace'} » en toutes lettres.</p>
+
+        <div style={S.sectionLabel}>Couleur</div>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <input type="color" value={color} onChange={(e) => setColor(e.target.value)}
+            aria-label="Couleur de marque"
+            style={{ width: 46, height: 38, border: `1px solid ${C.line}`, borderRadius: 10, background: C.card, cursor: 'pointer', padding: 3 }} />
+          <input style={{ ...S.select, flex: 1 }} value={color} onChange={(e) => setColor(e.target.value)} maxLength={7} />
+        </div>
+
+        <div style={S.sectionLabel}>Répondre à</div>
+        <input style={S.select} value={replyTo} placeholder="sophie@mon-cabinet.fr" type="email"
+          onChange={(e) => setReplyTo(e.target.value)} />
+        <p style={S.hint}>L'adresse à laquelle tes accompagnés répondent. Par défaut, la tienne.</p>
+
+        {error && <div role="alert" style={{ ...S.error, marginTop: 12 }}>{error}</div>}
+
+        <button style={{ ...S.modalCta, opacity: busy ? 0.6 : 1 }} onClick={save} disabled={busy}>
+          {busy ? 'Enregistrement…' : 'Enregistrer'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── Inviter des élèves (lien) ─────────────────────────────────────────────────
 function InviteModal({ viewer, conseillers, cohorts, isAdmin, makeInvite, addCohort, onClose }) {
   const [mgr, setMgr] = useState(isAdmin ? (conseillers[0]?.id || '') : (viewer?.id || ''));
@@ -648,6 +723,7 @@ const S = {
   linkInput: { flex: 1, minWidth: 0, background: C.bg, color: C.ink2, border: `1.5px solid ${C.line}`, borderRadius: 12, padding: '11px 12px', fontSize: 12.5, fontFamily: FONT },
   copyBtn: { flexShrink: 0, background: C.blue, color: '#fff', border: 'none', borderRadius: 12, padding: '11px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: FONT },
   hint: { fontSize: 12, color: C.mute, lineHeight: 1.5, marginTop: 10 },
+  error: { background: alpha(C.red, 10), border: `1px solid ${alpha(C.red, 30)}`, color: C.red, borderRadius: 10, padding: '10px 12px', fontSize: 13, fontWeight: 600 },
 
   toast: { position: 'fixed', left: '50%', bottom: 28, transform: 'translateX(-50%)', background: C.ink, color: '#fff', padding: '12px 18px', borderRadius: 12, fontSize: 13.5, fontWeight: 700, boxShadow: '0 10px 30px rgba(0,0,0,.3)', zIndex: 60 },
 };

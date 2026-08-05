@@ -36,18 +36,21 @@ function json(body: unknown, status = 200) {
 const esc = (s: string) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-function buildEmail(studentName: string, coachName: string, orgName: string, message: string, appUrl: string) {
+function buildEmail(
+  studentName: string, coachName: string, orgName: string, message: string, appUrl: string,
+  brand: { color: string; logoUrl: string | null },
+) {
   const intro = message.trim()
     || `${coachName} t'encourage à reprendre ton parcours : quelques minutes suffisent pour avancer sur ton CV ou t'entraîner à l'entretien.`;
   return `<!doctype html>
 <html lang="fr"><body style="margin:0;background:#F5F6F9;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;color:#14171F;">
   <div style="max-width:520px;margin:0 auto;padding:32px 24px;">
-    <p style="font-size:12px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#1539B7;margin:0 0 14px;">
-      ${esc(orgName || 'Altio')}
-    </p>
+    ${brand.logoUrl
+      ? `<img src="${esc(brand.logoUrl)}" alt="${esc(orgName)}" style="max-height:44px;max-width:180px;display:block;margin:0 0 16px;" />`
+      : `<p style="font-size:12px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:${esc(brand.color)};margin:0 0 14px;">${esc(orgName || 'Altio')}</p>`}
     <h1 style="font-size:22px;line-height:1.25;margin:0 0 14px;">Bonjour ${esc(studentName)},</h1>
     <p style="font-size:15px;line-height:1.6;color:#3A4156;margin:0 0 22px;">${esc(intro)}</p>
-    <a href="${esc(appUrl)}" style="display:inline-block;background:#1539B7;color:#fff;text-decoration:none;font-size:15px;font-weight:700;padding:13px 24px;border-radius:12px;">
+    <a href="${esc(appUrl)}" style="display:inline-block;background:${esc(brand.color)};color:#fff;text-decoration:none;font-size:15px;font-weight:700;padding:13px 24px;border-radius:12px;">
       Reprendre mon parcours
     </a>
     <p style="font-size:13px;line-height:1.6;color:#9AA0AE;margin:26px 0 0;">
@@ -99,7 +102,7 @@ Deno.serve(async (req) => {
     const [{ data: student }, { data: coach }, { data: org }] = await Promise.all([
       supabaseAdmin.from('profiles').select('email, display_name').eq('id', student_id).maybeSingle(),
       supabaseAdmin.from('profiles').select('email, display_name').eq('id', user.id).maybeSingle(),
-      supabaseAdmin.from('organizations').select('name').eq('id', org_id).maybeSingle(),
+      supabaseAdmin.from('organizations').select('name, logo_url, brand_color, reply_to').eq('id', org_id).maybeSingle(),
     ]);
     if (!student?.email) return json({ error: 'student_has_no_email' }, 422);
 
@@ -111,6 +114,12 @@ Deno.serve(async (req) => {
     const studentName = student.display_name || student.email.split('@')[0];
     const coachName = coach?.display_name || 'Ton conseiller';
     const orgName = org?.name ?? '';
+    // La relance part sous la marque de l'organisation : un coach indépendant
+    // facture sous son nom et ne peut pas écrire à ses clients sous une autre.
+    const brand = {
+      color: /^#[0-9A-Fa-f]{6}$/.test(org?.brand_color ?? '') ? org.brand_color : '#0033A0',
+      logoUrl: org?.logo_url || null,
+    };
 
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -118,9 +127,9 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         from,
         to: [student.email],
-        reply_to: coach?.email || undefined,
+        reply_to: org?.reply_to || coach?.email || undefined,
         subject: `${studentName}, on continue ton parcours ?`,
-        html: buildEmail(studentName, coachName, orgName, message, appUrl),
+        html: buildEmail(studentName, coachName, orgName, message, appUrl, brand),
       }),
     });
 

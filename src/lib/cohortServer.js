@@ -107,6 +107,41 @@ export async function fetchCvStats(studentIds = []) {
   return out;
 }
 
+/**
+ * Marque de l'organisation (logo, couleur, adresse de réponse).
+ * @returns {Promise<{logo_url:string|null, brand_color:string|null, reply_to:string|null, name:string}|null>}
+ */
+export async function fetchOrgBranding(orgId) {
+  if (isDemoMode()) {
+    try { return JSON.parse(localStorage.getItem('altio_demo_branding') || 'null'); } catch { return null; }
+  }
+  if (!supabaseReady || !supabase || !isAuthenticated() || !orgId) return null;
+  const { data, error } = await supabase.from('organizations')
+    .select('name, logo_url, brand_color, reply_to').eq('id', orgId).maybeSingle();
+  if (error) { console.warn('[cohortServer] branding:', error.message); return null; }
+  return data;
+}
+
+/**
+ * Enregistre la marque. Passe par une RPC qui ne touche QUE ces colonnes :
+ * une policy UPDATE ouverte sur organizations laisserait un coach modifier
+ * son tier, ses sièges ou son statut.
+ * @returns {Promise<boolean>}
+ */
+export async function saveOrgBranding({ orgId, logoUrl = '', brandColor = '', replyTo = '' } = {}) {
+  if (isDemoMode()) {
+    try { localStorage.setItem('altio_demo_branding', JSON.stringify({ logo_url: logoUrl, brand_color: brandColor, reply_to: replyTo })); } catch { /* ignore */ }
+    return true;
+  }
+  if (!supabaseReady || !supabase || !isAuthenticated() || !orgId) return false;
+  const { data, error } = await supabase.rpc('update_org_branding', {
+    p_org_id: orgId, p_logo_url: logoUrl || null,
+    p_brand_color: brandColor || null, p_reply_to: replyTo || null,
+  });
+  if (error) { console.warn('[cohortServer] saveBranding:', error.message); return false; }
+  return data === true;
+}
+
 /** Construit un CSV de la cohorte (pur, testable). */
 export function rosterToCSV(students = [], nameOf = (id) => id, cohortNameOf = () => '') {
   const head = ['Nom', 'Email', 'Promo', 'Conseiller', 'Statut', 'Employabilité (%)', 'XP', 'Série (j)', 'Dernière activité'];

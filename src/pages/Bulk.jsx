@@ -9,6 +9,7 @@ import { saveHistory } from '@/lib/historySync';
 import { getProfiles, buildProfileContext } from '@/lib/profileData';
 import { useAuth } from '@/hooks/useAuth.jsx';
 import { useEntitlements } from '@/hooks/useEntitlements';
+import { useOrgCohorts } from '@/hooks/useOrgCohorts';
 import { PlanGate } from '@/components/PlanGate';
 import { callClaude, QuotaError } from '@/lib/claudeClient';
 import { useUpgradeModal } from '@/components/UpgradeModal.jsx';
@@ -209,7 +210,7 @@ function ReviewCard({ job, colorSet, onOpen, onRegenre, onRetry }) {
 }
 
 // ─── GroupCard (build mode) ───────────────────────────────────────────────────
-function GroupCard({ group, colorSet, isRunning, onUpdate, onRemove, onAddFiles, onRemoveJob, onUpdateJob, profiles }) {
+function GroupCard({ group, colorSet, isRunning, onUpdate, onRemove, onAddFiles, onRemoveJob, onUpdateJob, profiles, cohorts }) {
   const fileInputRef = useRef(null);
   const formation    = FORMATIONS.find(f => f.v === group.formationVal);
   const dates        = formation ? (DATES[formation.n]||[]) : [];
@@ -303,6 +304,25 @@ function GroupCard({ group, colorSet, isRunning, onUpdate, onRemove, onAddFiles,
               </div>
             </div>
           </div>
+
+          {/* Promo : rattache l'atelier à un groupe suivi côté encadrement */}
+          {cohorts.length > 0 && (
+            <div style={{ marginBottom: 14 }}>
+              <SelectField
+                label="Promo"
+                value={group.cohortId || ''}
+                onChange={(v) => {
+                  const promo = cohorts.find((c) => c.id === v);
+                  // Le nom de la promo devient le nom du groupe : les CV générés
+                  // en atelier restent identifiables dans l'historique.
+                  onUpdate(group.uid, { cohortId: v, ...(promo ? { label: promo.name } : {}) });
+                }}
+              >
+                <option value="">Sans promo</option>
+                {cohorts.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </SelectField>
+            </div>
+          )}
 
           {/* Sélecteur de profil personnalité */}
           {profiles.length > 0 && (
@@ -428,12 +448,13 @@ export default function Bulk() {
 
   // Migration V0 : Anthropic via Edge Function. L'utilisateur doit être connecté.
   const { user } = useAuth();
+  const cohorts = useOrgCohorts();
   const { open: openUpgrade } = useUpgradeModal();
   const [sessionMode, setSessionMode] = useState('build'); // 'build' | 'review'
   const [bulkId]                  = useState(() => 'bulk-' + Date.now());
   const [profiles] = useState(() => getProfiles());
   const [groups, setGroups]       = useState([{
-    uid: uid(), label:'Groupe 1', formationVal:'', dateVal:'', genre:'',
+    uid: uid(), label:'Groupe 1', formationVal:'', dateVal:'', genre:'', cohortId:'',
     jobs:[], collapsed:false, profileId:'',
   }]);
   const [isRunning, setIsRunning] = useState(false);
@@ -460,7 +481,7 @@ export default function Bulk() {
 
   // ── Group operations ──
   const addGroup = () => {
-    setGroups(prev => [...prev, { uid:uid(), label:`Groupe ${prev.length+1}`, formationVal:'', dateVal:'', genre:'', jobs:[], collapsed:false, profileId:'' }]);
+    setGroups(prev => [...prev, { uid:uid(), label:`Groupe ${prev.length+1}`, formationVal:'', dateVal:'', genre:'', cohortId:'', jobs:[], collapsed:false, profileId:'' }]);
   };
   const updateGroup = useCallback((gUid, patch) => {
     setGroups(prev => prev.map(g => g.uid===gUid ? { ...g, ...patch } : g));
@@ -776,6 +797,7 @@ export default function Bulk() {
               onRemoveJob={removeJob}
               onUpdateJob={updateJob}
               profiles={profiles}
+              cohorts={cohorts}
             />
           ))}
 

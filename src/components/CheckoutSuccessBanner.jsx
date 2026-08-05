@@ -10,15 +10,15 @@
 import React from 'react';
 
 const C = {
-  green:     '#15803D',
-  greenBg:   '#F0FDF4',
+  green:     'var(--altio-green)',
+  greenBg:   'var(--altio-green-soft)',
   greenBord: '#BBF7D0',
-  purple:    '#7C3AED',
-  purpleBg:  '#F5F3FF',
+  purple:    'var(--altio-boss)',
+  purpleBg:  'var(--altio-boss-soft)',
   purpleBord:'#C4B5FD',
   orange:    '#C2410C',
-  orangeBg:  '#FFF7ED',
-  orangeBord:'#FED7AA',
+  orangeBg:  'var(--altio-amber-soft)',
+  orangeBord:'var(--altio-amber-soft)',
 };
 
 const TIER_LABELS = {

@@ -156,7 +156,7 @@ function ConfirmModal({ name, onConfirm, onCancel }) {
   return (
     <div onClick={onCancel} style={{ position: 'fixed', inset: 0, background: 'rgba(11,16,32,0.45)', backdropFilter: 'blur(3px)', zIndex: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div onClick={e => e.stopPropagation()} style={{ background: C.card, borderRadius: 20, padding: '32px', maxWidth: 400, width: '90%', boxShadow: '0 40px 100px rgba(11,16,32,.28), 0 0 0 1px rgba(0,0,0,.04)', fontFamily: FONT }}>
-        <div style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(239,68,68,.10)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ef4444', marginBottom: 20 }}>
+        <div style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(239,68,68,.10)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--altio-red)', marginBottom: 20 }}>
           <IconTrash s={20} />
         </div>
         <div style={{ fontSize: 18, fontWeight: 700, color: C.ink, marginBottom: 8, letterSpacing: '-0.3px' }}>Supprimer ce CV ?</div>
@@ -165,7 +165,7 @@ function ConfirmModal({ name, onConfirm, onCancel }) {
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
           <button onClick={onCancel} style={{ flex: 1, padding: '11px', border: `1px solid ${C.rule}`, borderRadius: 10, background: C.card, fontSize: 13.5, fontWeight: 600, color: C.ink2, cursor: 'pointer' }}>Annuler</button>
-          <button onClick={onConfirm} style={{ flex: 1, padding: '11px', border: 'none', borderRadius: 10, background: '#ef4444', fontSize: 13.5, fontWeight: 700, color: '#fff', cursor: 'pointer' }}>Supprimer</button>
+          <button onClick={onConfirm} style={{ flex: 1, padding: '11px', border: 'none', borderRadius: 10, background: 'var(--altio-red)', fontSize: 13.5, fontWeight: 700, color: '#fff', cursor: 'pointer' }}>Supprimer</button>
         </div>
       </div>
     </div>
@@ -523,15 +523,15 @@ function OnboardingTour({ onClose, onAction }) {
 
 /* ─── Main ───────────────────────────────────────────────────────────────── */
 const HOME_MODULES = [
-  { route: '/parcours',         emoji: '🧗', accent: '#1539B7', title: "Ton chemin vers l'emploi",  desc: "Suis ta progression : CV, métier, entretien. Gagne de l'XP et des badges.", cta: 'Mon parcours' },
+  { route: '/parcours',         emoji: '🧗', accent: 'var(--altio-blue)', title: "Ton chemin vers l'emploi",  desc: "Suis ta progression : CV, métier, entretien. Gagne de l'XP et des badges.", cta: 'Mon parcours' },
   { route: '/entretien',        emoji: '🎤', accent: '#0CA678', title: "Simulateur d'entretien",     desc: "Mises en situation réelles, feedback immédiat. Entraîne-toi avant le jour J.", cta: "S'entraîner" },
   { route: '/metiers',          emoji: '🧭', accent: '#1098AD', title: 'Décrypte les métiers',       desc: 'Les compétences clés attendues pour chaque poste, en mode jeu.', cta: 'Explorer' },
-  { route: '/diagnostic',       emoji: '🧪', accent: '#7048E8', title: "Mon bilan d'employabilité",  desc: "Ton score global, tes forces et ce qu'il reste à travailler.", cta: 'Mon bilan' },
-  { route: '/analyse',          emoji: '🔍', accent: '#1F4FE0', title: 'Analyse CV ↔ offre',         desc: 'Score de correspondance, mots-clés manquants et compatibilité ATS.', cta: 'Analyser' },
+  { route: '/diagnostic',       emoji: '🧪', accent: 'var(--altio-boss)', title: "Mon bilan d'employabilité",  desc: "Ton score global, tes forces et ce qu'il reste à travailler.", cta: 'Mon bilan' },
+  { route: '/analyse',          emoji: '🔍', accent: 'var(--altio-blue-hover)', title: 'Analyse CV ↔ offre',         desc: 'Score de correspondance, mots-clés manquants et compatibilité ATS.', cta: 'Analyser' },
   { route: '/codes',            emoji: '🏢', accent: '#E8590C', title: "Les codes de l'entreprise",  desc: 'Savoir-être en poste : la meilleure réaction face à des situations réelles.', cta: "S'entraîner" },
   { route: '/lettre',           emoji: '✉️', accent: '#C2255C', title: 'Kit de candidature IA',      desc: 'Lettre de motivation, mail de relance ou de remerciement, depuis ton CV.', cta: 'Rédiger' },
   { route: '/entretien-oral',   emoji: '🗣️', accent: '#0CA678', title: "Entretien à l'oral IA",      desc: 'Réponds à voix haute : le coach évalue le fond, la structure et la clarté.', cta: "S'entraîner" },
-  { route: '/test-recrutement', emoji: '🧩', accent: '#7048E8', title: 'Test de recrutement IA',     desc: "Aptitudes, métier et mises en situation, adaptés à ton CV et à l'annonce.", cta: 'Passer le test' },
+  { route: '/test-recrutement', emoji: '🧩', accent: 'var(--altio-boss)', title: 'Test de recrutement IA',     desc: "Aptitudes, métier et mises en situation, adaptés à ton CV et à l'annonce.", cta: 'Passer le test' },
 ];
 
 const NAV_ITEMS = [
@@ -1015,18 +1015,18 @@ export default function Home() {
 
         {/* Bannière CRM lié */}
         {!embedded && isCRMLinked && crmLink && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 18px', background: '#F0FDF4', border: '1px solid #86EFAC', borderRadius: 12, marginBottom: 28, animation: 'fadeIn .4s ease' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 18px', background: 'var(--altio-green-soft)', border: '1px solid #86EFAC', borderRadius: 12, marginBottom: 28, animation: 'fadeIn .4s ease' }}>
             <span style={{ fontSize: 20 }}>🔗</span>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#15803D' }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--altio-green)' }}>
                 Connecté au CRM Altio
               </div>
-              <div style={{ fontSize: 11.5, color: '#16A34A', marginTop: 1 }}>
+              <div style={{ fontSize: 11.5, color: 'var(--altio-green)', marginTop: 1 }}>
                 Les CV générés sont automatiquement envoyés vers votre espace CRM.
               </div>
             </div>
             <button onClick={unlinkCRM}
-              style={{ padding: '6px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600, background: 'transparent', color: '#16A34A', border: '1px solid #86EFAC', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: FONT }}
+              style={{ padding: '6px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600, background: 'transparent', color: 'var(--altio-green)', border: '1px solid #86EFAC', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: FONT }}
               onMouseEnter={e => e.currentTarget.style.background = '#DCFCE7'}
               onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
               Délier
@@ -1240,9 +1240,9 @@ export default function Home() {
               {/* Bulk card */}
               {!isStudent && (
               <div onClick={() => navigate('/bulk')} style={{ border: `1.5px dashed ${C.rule}`, borderRadius: 16, padding: '32px 24px', display: 'flex', alignItems: 'center', gap: 16, cursor: 'pointer', background: C.bg, transition: 'border-color .2s, background .2s', minHeight: 110, animation: 'cardIn 0.65s cubic-bezier(.16,.84,.24,1) 0.05s both' }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = '#7c3aed'; e.currentTarget.style.background = '#f5f3ff'; }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--altio-boss)'; e.currentTarget.style.background = 'var(--altio-boss-soft)'; }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = C.rule; e.currentTarget.style.background = C.bg; }}>
-                <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#f5f3ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#7c3aed', flexShrink: 0 }}>
+                <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--altio-boss-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--altio-boss)', flexShrink: 0 }}>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/>
                     <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>

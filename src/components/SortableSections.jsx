@@ -101,10 +101,10 @@ export function SortableSections({
           onClick={() => competencesInMain ? removeSection('competences') : addSection('competences')}
           style={{
             width: '100%', marginTop: 4, padding: '8px 12px',
-            border: `1.5px dashed ${competencesInMain ? '#dc2626' : t.border}`,
+            border: `1.5px dashed ${competencesInMain ? 'var(--altio-red)' : t.border}`,
             borderRadius: 7, background: competencesInMain ? 'rgba(220,38,38,.06)' : 'none',
             fontSize: 12, fontWeight: 600,
-            color: competencesInMain ? '#dc2626' : t.textMuted,
+            color: competencesInMain ? 'var(--altio-red)' : t.textMuted,
             cursor: 'pointer', transition: 'all .15s',
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
           }}
@@ -171,7 +171,7 @@ export function SortableSections({
             padding: '8px 10px', marginTop: 4,
             background: 'rgba(124,58,237,.07)',
             border: '1px solid rgba(124,58,237,.2)',
-            borderRadius: 7, fontSize: 11, color: '#7c3aed', lineHeight: 1.5,
+            borderRadius: 7, fontSize: 11, color: 'var(--altio-boss)', lineHeight: 1.5,
           }}>
             🛠️ Les compétences sont dans le contenu principal — elles n'apparaissent pas dans la sidebar.
           </div>
@@ -186,7 +186,7 @@ export function SortableSections({
             fontSize: 11, color: t.textMuted, cursor: 'pointer',
             transition: 'all .15s',
           }}
-          onMouseEnter={e => { e.target.style.borderColor = '#7c3aed'; e.target.style.color = '#7c3aed'; }}
+          onMouseEnter={e => { e.target.style.borderColor = 'var(--altio-boss)'; e.target.style.color = 'var(--altio-boss)'; }}
           onMouseLeave={e => { e.target.style.borderColor = t.border; e.target.style.color = t.textMuted; }}
         >
           ↺ Ordre sidebar par défaut

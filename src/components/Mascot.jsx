@@ -230,7 +230,7 @@ function renderMouth(mood) {
 const bubble = {
   position: 'relative', background: '#fff', border: '1.5px solid #E6EAF1',
   borderRadius: 14, padding: '8px 14px', fontSize: 13.5, fontWeight: 700,
-  color: '#0B1638', maxWidth: 240, textAlign: 'center', fontFamily: "'Manrope', sans-serif",
+  color: 'var(--altio-ink)', maxWidth: 240, textAlign: 'center', fontFamily: "'Manrope', sans-serif",
   boxShadow: '0 6px 18px rgba(11,22,56,.08)',
 };
 const bubbleTail = {

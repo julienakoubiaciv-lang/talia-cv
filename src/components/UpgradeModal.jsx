@@ -16,18 +16,18 @@ import { track } from '@/lib/monitoring';
 
 // ─── Tokens visuels ────────────────────────────────────────────────────────
 const C = {
-  ink:        '#0B1020',
-  ink2:       '#3A4156',
-  mute:       '#9AA0AE',
-  rule:       '#ECEDF1',
-  primary:    '#1539B7',
-  primaryDk:  '#1F4FE0',
-  primarySoft:'#EEF2FF',
-  purple:     '#7C3AED',
-  purpleSoft: '#F5F3FF',
-  green:      '#15803D',
-  greenSoft:  '#F0FDF4',
-  amber:      '#92400E',
+  ink:        'var(--altio-ink)',
+  ink2:       'var(--altio-ink2)',
+  mute:       'var(--altio-mute)',
+  rule:       'var(--altio-line)',
+  primary:    'var(--altio-blue)',
+  primaryDk:  'var(--altio-blue-hover)',
+  primarySoft:'var(--altio-blue-soft)',
+  purple:     'var(--altio-boss)',
+  purpleSoft: 'var(--altio-boss-soft)',
+  green:      'var(--altio-green)',
+  greenSoft:  'var(--altio-green-soft)',
+  amber:      'var(--altio-amber)',
 };
 
 const FONT = "'Manrope', system-ui, sans-serif";

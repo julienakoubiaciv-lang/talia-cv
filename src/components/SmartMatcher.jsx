@@ -167,12 +167,12 @@ export function SmartMatcher({ cvData }) {
                     padding: '5px 11px', borderRadius: 8, fontSize: 11,
                     fontWeight: 600, cursor: aiLoading ? 'not-allowed' : 'pointer',
                     border: '1px solid #8b5cf644',
-                    background: aiLoading ? '#f3f4f6' : '#f5f3ff',
-                    color: aiLoading ? t.textMuted : '#7c3aed',
+                    background: aiLoading ? '#f3f4f6' : 'var(--altio-boss-soft)',
+                    color: aiLoading ? t.textMuted : 'var(--altio-boss)',
                     transition: 'all .15s', fontFamily: 'inherit',
                   }}
-                  onMouseEnter={e => { if (!aiLoading) e.currentTarget.style.background = '#ede9fe'; }}
-                  onMouseLeave={e => { if (!aiLoading) e.currentTarget.style.background = '#f5f3ff'; }}
+                  onMouseEnter={e => { if (!aiLoading) e.currentTarget.style.background = 'var(--altio-boss-soft)'; }}
+                  onMouseLeave={e => { if (!aiLoading) e.currentTarget.style.background = 'var(--altio-boss-soft)'; }}
                 >
                   {aiLoading
                     ? <><Spinner /> Analyse en cours…</>
@@ -257,8 +257,8 @@ export function SmartMatcher({ cvData }) {
                           style={{
                             padding: '2px 7px', borderRadius: 10, fontSize: 10.5,
                             fontWeight: 500, cursor: isSemantic ? 'help' : 'default',
-                            background: isSemantic ? '#ede9fe' : t.matchPresent,
-                            color:      isSemantic ? '#7c3aed' : t.success,
+                            background: isSemantic ? 'var(--altio-boss-soft)' : t.matchPresent,
+                            color:      isSemantic ? 'var(--altio-boss)' : t.success,
                             border:     isSemantic ? '1px solid #c4b5fd44' : 'none',
                           }}
                         >
@@ -301,7 +301,7 @@ export function SmartMatcher({ cvData }) {
               {isAiMode && aiResult?.explanation && (
                 <div style={{
                   marginTop: 10, padding: '8px 10px',
-                  background: '#f5f3ff', borderRadius: 8,
+                  background: 'var(--altio-boss-soft)', borderRadius: 8,
                   border: '1px solid #c4b5fd44',
                   fontSize: 11, color: '#6d28d9', lineHeight: 1.5,
                 }}>
@@ -330,7 +330,7 @@ function Spinner() {
   return (
     <span style={{
       display: 'inline-block', width: 10, height: 10,
-      border: '1.5px solid #c4b5fd', borderTopColor: '#7c3aed',
+      border: '1.5px solid #c4b5fd', borderTopColor: 'var(--altio-boss)',
       borderRadius: '50%', animation: 'spin 0.7s linear infinite',
       flexShrink: 0,
     }} />

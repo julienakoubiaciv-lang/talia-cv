@@ -11,19 +11,19 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabaseReady } from '@/lib/supabase';
 
 const C = {
-  blue:    '#1539B7',
-  blueHov: '#1F4FE0',
-  blueSoft:'#EEF2FF',
-  ink:     '#0B1020',
-  ink2:    '#3A4156',
-  mute:    '#9AA0AE',
-  rule:    '#ECEDF1',
-  surface: '#F7F8FA',
-  bg:      '#FFFFFF',
-  red:     '#DC2626',
-  redSoft: '#FEF2F2',
-  green:   '#16A34A',
-  greenSoft: '#F0FDF4',
+  blue:    'var(--altio-blue)',
+  blueHov: 'var(--altio-blue-hover)',
+  blueSoft:'var(--altio-blue-soft)',
+  ink:     'var(--altio-ink)',
+  ink2:    'var(--altio-ink2)',
+  mute:    'var(--altio-mute)',
+  rule:    'var(--altio-line)',
+  surface: 'var(--altio-card2)',
+  bg:      'var(--altio-card)',
+  red:     'var(--altio-red)',
+  redSoft: 'var(--altio-red-soft)',
+  green:   'var(--altio-green)',
+  greenSoft: 'var(--altio-green-soft)',
 };
 const FONT = "'Manrope', system-ui, sans-serif";
 

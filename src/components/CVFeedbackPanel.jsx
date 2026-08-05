@@ -20,16 +20,16 @@ import { QuotaError } from '@/lib/claudeClient';
 import { track, captureError } from '@/lib/monitoring';
 
 const PRIORITY_STYLE = {
-  haute:   { bg: '#FEE2E2', fg: '#B91C1C', label: 'Priorité haute' },
+  haute:   { bg: 'var(--altio-red-soft)', fg: 'var(--altio-red)', label: 'Priorité haute' },
   moyenne: { bg: '#FEF3C7', fg: '#B45309', label: 'Priorité moyenne' },
   basse:   { bg: '#E0F2FE', fg: '#0369A1', label: 'Priorité basse' },
 };
 
 function scoreColor(s) {
-  if (s >= 80) return '#16A34A';
+  if (s >= 80) return 'var(--altio-green)';
   if (s >= 65) return '#84CC16';
   if (s >= 50) return '#EAB308';
-  return '#DC2626';
+  return 'var(--altio-red)';
 }
 
 export default function CVFeedbackPanel({ cvData, offerText = '' }) {
@@ -194,12 +194,12 @@ const S = {
   icon: { fontSize: 22 },
   title: { fontWeight: 700, fontSize: 15, color: '#0B1B33' },
   subtitle: { fontSize: 12, color: '#6B7280' },
-  proBadge: { marginLeft: 'auto', fontSize: 10, fontWeight: 800, letterSpacing: 0.5, color: '#1539B7', background: '#EEF2FF', padding: '3px 8px', borderRadius: 6 },
-  linkBtn: { background: 'none', border: 'none', color: '#1539B7', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', padding: 0, marginBottom: 10, textAlign: 'left' },
+  proBadge: { marginLeft: 'auto', fontSize: 10, fontWeight: 800, letterSpacing: 0.5, color: 'var(--altio-blue)', background: 'var(--altio-blue-soft)', padding: '3px 8px', borderRadius: 6 },
+  linkBtn: { background: 'none', border: 'none', color: 'var(--altio-blue)', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', padding: 0, marginBottom: 10, textAlign: 'left' },
   textarea: { width: '100%', border: '1px solid #E5E7EB', borderRadius: 10, padding: 10, fontSize: 13, fontFamily: 'inherit', resize: 'vertical', marginBottom: 10, boxSizing: 'border-box' },
-  cta: { width: '100%', background: '#1539B7', color: '#fff', border: 'none', borderRadius: 10, padding: '11px 14px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' },
+  cta: { width: '100%', background: 'var(--altio-blue)', color: '#fff', border: 'none', borderRadius: 10, padding: '11px 14px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' },
   teaser: { fontSize: 12, color: '#6B7280', lineHeight: 1.5, marginTop: 10, marginBottom: 0 },
-  error: { fontSize: 13, color: '#DC2626', marginTop: 10 },
+  error: { fontSize: 13, color: 'var(--altio-red)', marginTop: 10 },
   result: { marginTop: 4 },
   scoreRow: { display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14 },
   scoreCircle: { width: 56, height: 56, borderRadius: '50%', border: '3px solid', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 800, flexShrink: 0 },

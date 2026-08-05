@@ -7,15 +7,15 @@ import {
 
 /* ─── Design tokens ─────────────────────────────────────────────────────── */
 const C = {
-  blue:    '#1539B7',
-  blueHov: '#1F4FE0',
-  blueSoft:'#EEF2FF',
-  ink:     '#0B1020',
-  ink2:    '#3A4156',
-  mute:    '#9AA0AE',
-  rule:    '#ECEDF1',
-  surface: '#F7F8FA',
-  bg:      '#FFFFFF',
+  blue:    'var(--altio-blue)',
+  blueHov: 'var(--altio-blue-hover)',
+  blueSoft:'var(--altio-blue-soft)',
+  ink:     'var(--altio-ink)',
+  ink2:    'var(--altio-ink2)',
+  mute:    'var(--altio-mute)',
+  rule:    'var(--altio-line)',
+  surface: 'var(--altio-card2)',
+  bg:      'var(--altio-card)',
 };
 const FONT = "'Manrope', system-ui, sans-serif";
 
@@ -415,11 +415,11 @@ function Step4({ data, onChange }) {
             {data.ton.interdits.map(v => (
               <span key={v} style={{
                 padding: '4px 10px', borderRadius: 16, fontSize: 12, fontWeight: 500,
-                background: '#FEE2E2', color: '#B91C1C', display: 'flex', alignItems: 'center', gap: 6,
+                background: 'var(--altio-red-soft)', color: 'var(--altio-red)', display: 'flex', alignItems: 'center', gap: 6,
               }}>
                 🚫 {v}
                 <button type="button" onClick={() => removeInterdit(v)}
-                  style={{ background: 'none', border: 'none', color: '#B91C1C', cursor: 'pointer', padding: 0, fontSize: 12 }}>×</button>
+                  style={{ background: 'none', border: 'none', color: 'var(--altio-red)', cursor: 'pointer', padding: 0, fontSize: 12 }}>×</button>
               </span>
             ))}
           </div>
@@ -529,7 +529,7 @@ export default function ProfileWizard() {
                 placeholder="Ex : Dev Startup, Consultant ESN, Freelance…"
                 maxLength={40}
               />
-              {error && <p style={{ margin: '4px 0 0', fontSize: 12, color: '#dc2626' }}>{error}</p>}
+              {error && <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--altio-red)' }}>{error}</p>}
             </div>
           </div>
         )}

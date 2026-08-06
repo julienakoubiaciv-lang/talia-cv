@@ -13,33 +13,37 @@ import '@/styles/charte.css';
 
 // ── Données de la charte (hex canoniques, thème clair) ───────────────────────
 const TEXT_TOKENS = [
-  { name: 'ink', hex: '#0B1638', use: 'Titres, texte fort' },
-  { name: 'ink2', hex: '#3A4156', use: 'Texte courant' },
-  { name: 'mute', hex: '#8390A6', use: 'Légendes, méta' },
+  { name: 'ink', hex: '#0A1740', use: 'Titres, texte fort' },
+  { name: 'ink2', hex: '#2A3559', use: 'Texte courant' },
+  { name: 'mute', hex: '#6B7390', use: 'Légendes, labels' },
+  { name: 'faint', hex: '#9AA1B9', use: 'Texte atténué' },
 ];
 const SURFACE_TOKENS = [
-  { name: 'bg', hex: '#F4F6FA', use: "Fond d'écran", ring: true },
-  { name: 'line', hex: '#E6EAF1', use: 'Bordures, filets', ring: true },
-  { name: 'card', hex: '#FFFFFF', use: 'Cartes', ring: true },
+  { name: 'bg', hex: '#EEF1F7', use: "Fond d'écran", ring: true },
+  { name: 'bg2', hex: '#E4E9F2', use: 'Fond secondaire (survol)', ring: true },
+  { name: 'card', hex: '#FFFFFF', use: 'Cartes, panneaux', ring: true },
+  { name: 'card2', hex: '#F8FAFC', use: 'Surface alternative', ring: true },
 ];
 const BLUE_TOKENS = [
-  { name: 'blue', hex: '#1539B7', use: 'Primaire — CTA, accents' },
-  { name: 'blueSoft', hex: '#EEF2FF', use: 'Fond doux du bleu', ring: true },
-  { name: 'blueHover', hex: '#1F4FE0', use: 'Survol' },
+  { name: 'blue (navy)', hex: '#0033A0', use: 'Primaire — CTA, liens, états actifs' },
+  { name: 'blueSoft', hex: '#E8EEFB', use: 'Fond de pastille navy', ring: true },
+  { name: 'blueHover', hex: '#002280', use: 'Survol du primaire' },
+  { name: 'yellow', hex: '#FACC15', use: 'Accent — logo, actions IA' },
 ];
 const SEMANTIC = [
-  { name: 'green', hex: '#0CA678', soft: '#E6F8F1', label: 'Succès', emoji: '✅' },
-  { name: 'red', hex: '#E03131', soft: '#FFF0F0', label: 'Erreur', emoji: '⛔' },
-  { name: 'amber', hex: '#E8A500', soft: '#FBF3DE', label: 'Alerte', emoji: '⚠️' },
-  { name: 'boss', hex: '#7048E8', soft: '#F3EEFF', label: 'Boss / soft-skills', emoji: '🧠' },
+  { name: 'green', hex: '#1F9D6A', soft: '#E2F5EC', label: 'Succès / validé', emoji: '✅' },
+  { name: 'red', hex: '#D83A52', soft: '#FBE8EB', label: 'Erreur / rompu', emoji: '⛔' },
+  { name: 'amber', hex: '#D98A13', soft: '#FCF0D8', label: 'En attente', emoji: '⚠️' },
+  { name: 'boss', hex: '#7B5CD6', soft: '#EDE8FA', label: 'Catégorie / soft-skills', emoji: '🧠' },
+  { name: 'teal', hex: '#0F9B9B', soft: '#DEF2F1', label: 'Catégorie', emoji: '🌊' },
 ];
 const MODULES = [
-  { name: 'Recrutement', emoji: '🎯', hex: '#1539B7' },
-  { name: 'Entretien', emoji: '🎤', hex: '#0CA678' },
-  { name: 'Soft-skills', emoji: '🧠', hex: '#7048E8' },
-  { name: 'CV', emoji: '📄', hex: '#E8590C' },
-  { name: 'Réseau', emoji: '🤝', hex: '#1098AD' },
-  { name: 'Motivation', emoji: '🔥', hex: '#C2255C' },
+  { name: 'Recrutement', emoji: '🎯', hex: '#0033A0' },
+  { name: 'Entretien', emoji: '🎤', hex: '#1F9D6A' },
+  { name: 'Soft-skills', emoji: '🧠', hex: '#7B5CD6' },
+  { name: 'CV', emoji: '📄', hex: '#D98A13' },
+  { name: 'Réseau', emoji: '🤝', hex: '#0F9B9B' },
+  { name: 'Motivation', emoji: '🔥', hex: '#D83A52' },
 ];
 const CV_PALETTES = [
   ['Navy', '#1A3A5C'], ['Bleu roi', '#1A3A8C'], ['Midnight', '#18243C'], ['Bleu moyen', '#1E88E5'],
@@ -55,19 +59,24 @@ const TYPE_SCALE = [
   { tag: 'Label', px: 11.5, weight: 800, tracking: '0.6px', lh: 1.4, sample: 'SECTION · ÉPREUVE', upper: true },
 ];
 const FONTS = [
-  { name: 'Manrope', role: 'Interface / app gamifiée', weights: '500 · 700 · 800', stack: "'Manrope', system-ui, sans-serif", big: 'Gagne de l’XP' },
-  { name: 'DM Sans', role: 'CV & landing', weights: '300 – 700', stack: "'DM Sans', system-ui, sans-serif", big: 'Ton CV, au propre' },
+  { name: 'Manrope', role: 'Titres & display (--font-display)', weights: '500 · 700 · 800', stack: "'Manrope', Inter, system-ui, sans-serif", big: 'Gagne de l’XP' },
+  { name: 'Inter', role: 'Corps de texte de l’app (--font)', weights: '400 – 700', stack: "Inter, 'SF Pro Text', system-ui, sans-serif", big: 'Lisible partout' },
+  { name: 'DM Sans', role: 'Rendu des CV', weights: '300 – 700', stack: "'DM Sans', system-ui, sans-serif", big: 'Ton CV, au propre' },
   { name: 'Playfair Display', role: 'Titres éditoriaux CV', weights: '600 · 700', stack: "'Playfair Display', Georgia, serif", big: 'Élégance éditoriale' },
 ];
 const RADII = [
-  { name: 'sm', px: 9, use: 'Petits éléments' },
-  { name: 'md', px: 13, use: 'Champs & boutons' },
-  { name: 'lg', px: 17, use: 'Cartes' },
-  { name: 'pill', px: 99, use: 'Pills & chips' },
+  { name: 'xs', px: 8, use: 'Petits éléments' },
+  { name: 'sm', px: 10, use: 'Champs & boutons' },
+  { name: 'md', px: 14, use: 'Standard' },
+  { name: 'lg', px: 22, use: 'Cartes' },
+  { name: 'xl', px: 28, use: 'Grandes surfaces' },
+  { name: 'pill', px: 999, use: 'Pills & chips' },
 ];
 const SHADOWS = [
-  { name: 'Douce', css: '0 4px 20px rgba(11,22,56,.06)', use: 'Cartes, surfaces' },
-  { name: 'CTA', css: '0 8px 24px rgba(21,57,183,.28)', use: 'Bouton primaire' },
+  { name: 'sh-1', css: '0 1px 2px rgba(10,23,64,.04), 0 1px 1px rgba(10,23,64,.03)', use: 'Filet, élévation minimale' },
+  { name: 'sh-2', css: '0 4px 16px rgba(10,23,64,.08), 0 2px 4px rgba(10,23,64,.04)', use: 'Cartes, surfaces' },
+  { name: 'sh-3', css: '0 16px 48px rgba(10,23,64,.14), 0 4px 8px rgba(10,23,64,.06)', use: 'Modales, popovers' },
+  { name: 'CTA', css: '0 8px 24px rgba(0,51,160,.28)', use: 'Bouton primaire' },
 ];
 
 const TABS = [
@@ -251,7 +260,7 @@ export default function Charte() {
 
         <footer className="pagefoot">
           <span>Altio CV — Charte vivante</span>
-          <span>Manrope · DM Sans · Playfair Display</span>
+          <span>Manrope · Inter · DM Sans · Playfair Display</span>
         </footer>
       </div></div></div>
     </div>
@@ -361,15 +370,15 @@ function TabCouleurs() {
         <div className="cvpalettes">
           {CV_PALETTES.map(([name, hex]) => (
             <button key={name} className="cvpal" onClick={() => copyText(hex)}>
-              <span className="cvpal__chip" style={{ background: hex }}><span className="cvpal__accent" style={{ background: '#FFCC00' }} /></span>
+              <span className="cvpal__chip" style={{ background: hex }}><span className="cvpal__accent" style={{ background: '#FACC15' }} /></span>
               <span className="cvpal__name">{name}</span>
               <span className="cvpal__hex">{hex}</span>
             </button>
           ))}
         </div>
         <div className="cvaccent">
-          <span className="cvaccent__sw" style={{ background: '#FFCC00' }} />
-          <div><b>Accent titres CV</b><code>#FFCC00</code></div>
+          <span className="cvaccent__sw" style={{ background: '#FACC15' }} />
+          <div><b>Accent titres CV</b><code>#FACC15</code></div>
           <span className="cvaccent__note">Doré signature, réservé aux intitulés de sections des CV.</span>
         </div>
       </Section>
@@ -383,7 +392,7 @@ function TabTypo() {
   return (
     <>
       <Section kicker="Polices" title="Trois familles"
-        desc="Manrope pour l'app, DM Sans pour les CV, Playfair pour les titres éditoriaux.">
+        desc="Manrope pour les titres, Inter pour le corps de l'app, DM Sans et Playfair pour le rendu des CV.">
         <div className="fontgrid">
           {FONTS.map((f) => (
             <div key={f.name} className="fontcard">
@@ -410,7 +419,7 @@ function TabTypo() {
 
       <Section kicker="Bac à sable" title="Essaie un titre">
         <div className="scalecard" style={{ padding: 28 }}>
-          <div style={{ fontFamily: "'Manrope', sans-serif", fontSize: 'clamp(28px,5vw,52px)', fontWeight: weight, letterSpacing: '-1.5px', lineHeight: 1.1, marginBottom: 22 }}>{sample || 'Ton texte ici…'}</div>
+          <div style={{ fontFamily: "'Manrope', Inter, sans-serif", fontSize: 'clamp(28px,5vw,52px)', fontWeight: weight, letterSpacing: '-1.5px', lineHeight: 1.1, marginBottom: 22 }}>{sample || 'Ton texte ici…'}</div>
           <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'center' }}>
             <input value={sample} onChange={(e) => setSample(e.target.value)} placeholder="Écris un titre…"
               style={{ flex: 1, minWidth: 200, fontFamily: 'inherit', fontSize: 15, fontWeight: 600, color: 'var(--ink)', background: 'var(--card-2)', border: '1.5px solid var(--line)', borderRadius: 13, padding: '12px 16px', outline: 'none' }} />

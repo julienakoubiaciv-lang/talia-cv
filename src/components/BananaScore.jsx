@@ -8,7 +8,7 @@ const SCORE_COLORS = [
   { min: 20, max: 40,  color: '#00c8f0', glow: 'rgba(0,200,240,0.55)',   label: 'En route',   code: 'cool'  },
   { min: 40, max: 60,  color: '#00e8c8', glow: 'rgba(0,232,200,0.55)',   label: 'Solide',     code: 'mid'   },
   { min: 60, max: 80,  color: '#FFCC00', glow: 'rgba(255,204,0,0.6)',    label: 'Excellent',  code: 'warm'  },
-  { min: 80, max: 101, color: '#ffffff', glow: 'rgba(255,255,255,0.75)', label: '✦ Supernova', code: 'nova'  },
+  { min: 80, max: 101, color: 'var(--altio-card)', glow: 'rgba(255,255,255,0.75)', label: '✦ Supernova', code: 'nova'  },
 ];
 
 function getScoreColor(pct) {
@@ -48,7 +48,7 @@ function Star({ filled, color, glow, size = 28, animated = false }) {
       <defs>
         <linearGradient id={id} x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor={filled ? color : 'transparent'} />
-          <stop offset="100%" stopColor={filled ? (color === '#ffffff' ? '#FFCC00' : color) : 'transparent'} />
+          <stop offset="100%" stopColor={filled ? (color === 'var(--altio-card)' ? '#FFCC00' : color) : 'transparent'} />
         </linearGradient>
       </defs>
       {/* Halo de fond pour étoiles remplies */}
@@ -267,7 +267,7 @@ export function BananaScore({ cvData, croppedPhoto }) {
                   display: 'flex', alignItems: 'center', gap: 9,
                   padding: '8px 10px', borderRadius: 9, marginBottom: 5,
                   cursor: 'pointer',
-                  background: done ? '#1F8A5B' : '#1539B7',
+                  background: done ? '#1F8A5B' : 'var(--altio-blue)',
                   border: 'none',
                   transition: 'background .2s',
                   userSelect: 'none',
@@ -297,7 +297,7 @@ export function BananaScore({ cvData, croppedPhoto }) {
                 </span>
                 {/* Points badge */}
                 <span style={{
-                  fontSize: 9, fontWeight: 800, color: done ? '#fff' : '#0B1020',
+                  fontSize: 9, fontWeight: 800, color: done ? '#fff' : 'var(--altio-ink)',
                   background: done ? 'rgba(255,255,255,0.2)' : '#F5B400',
                   borderRadius: 4, padding: '1px 5px', flexShrink: 0,
                   whiteSpace: 'nowrap',
@@ -316,7 +316,7 @@ export function BananaScore({ cvData, croppedPhoto }) {
           border: '1px solid rgba(255,255,255,0.2)',
           borderRadius: 8,
           fontSize: 11, fontWeight: 700,
-          color: '#ffffff',
+          color: 'var(--altio-card)',
           textShadow: '0 0 12px rgba(255,255,255,0.6)',
           letterSpacing: '.04em',
         }}>

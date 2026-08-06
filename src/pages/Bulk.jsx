@@ -9,28 +9,29 @@ import { saveHistory } from '@/lib/historySync';
 import { getProfiles, buildProfileContext } from '@/lib/profileData';
 import { useAuth } from '@/hooks/useAuth.jsx';
 import { useEntitlements } from '@/hooks/useEntitlements';
+import { useOrgCohorts } from '@/hooks/useOrgCohorts';
 import { PlanGate } from '@/components/PlanGate';
 import { callClaude, QuotaError } from '@/lib/claudeClient';
 import { useUpgradeModal } from '@/components/UpgradeModal.jsx';
 
-// ─── Colors ──────────────────────────────────────────────────────────────────
+// ─── Colors — charte Altio (var(--altio-*)), pas de hex en dur ───────────────
 const C = {
-  bluePrimary:'#1539B7', blueHover:'#1F4FE0', blueSoft:'#EEF2FF',
-  ink:'#0B1020', ink2:'#3A4156', mute:'#9AA0AE', rule:'#ECEDF1',
-  bg:'#FFFFFF', surface:'#F7F8FA', star:'#F5B400',
-  green:'#22c55e', greenSoft:'#f0fdf4', greenBorder:'#6ee7b7',
-  red:'#dc2626', redSoft:'#fff1f2', redBorder:'#fca5a5',
-  orange:'#f59e0b', orangeSoft:'#fffbeb', orangeBorder:'#fde68a',
+  bluePrimary:'var(--altio-blue)', blueHover:'var(--altio-blue-hover)', blueSoft:'var(--altio-blue-soft)',
+  ink:'var(--altio-ink)', ink2:'var(--altio-ink2)', mute:'var(--altio-mute)', rule:'var(--altio-line)',
+  bg:'var(--altio-card)', surface:'var(--altio-card2)', star:'var(--altio-star)',
+  green:'var(--altio-green)', greenSoft:'var(--altio-green-soft)', greenBorder:'var(--altio-green)',
+  red:'var(--altio-red)', redSoft:'var(--altio-red-soft)', redBorder:'var(--altio-red)',
+  orange:'var(--altio-amber)', orangeSoft:'var(--altio-amber-soft)', orangeBorder:'var(--altio-amber)',
 };
 
-const GROUP_COLORS = [
-  { accent:'#1539B7', soft:'#EEF2FF', border:'#1539B733' },
-  { accent:'#7c3aed', soft:'#f5f3ff', border:'#7c3aed33' },
-  { accent:'#059669', soft:'#ecfdf5', border:'#05966933' },
-  { accent:'#d97706', soft:'#fffbeb', border:'#d9770633' },
-  { accent:'#db2777', soft:'#fdf2f8', border:'#db277733' },
-  { accent:'#0891b2', soft:'#ecfeff', border:'#0891b233' },
-];
+// Couleurs de catégorie de la charte, pour distinguer les groupes d'un atelier.
+const mix = (token, pct) => `color-mix(in srgb, ${token} ${pct}%, transparent)`;
+const GROUP_COLORS = ['--altio-blue', '--altio-boss', '--altio-green', '--altio-amber', '--altio-red', '--altio-teal']
+  .map((t) => ({ accent:`var(${t})`, soft:mix(`var(${t})`, 10), border:mix(`var(${t})`, 34) }));
+
+// Charte : Inter pour le corps de l'interface, Manrope pour les titres.
+const FONT = "Inter, 'SF Pro Text', system-ui, -apple-system, sans-serif";
+const DISPLAY = "'Manrope', Inter, system-ui, sans-serif";
 
 let _uid = 0;
 const uid = () => `${Date.now()}-${++_uid}`;
@@ -47,13 +48,13 @@ function useToast() {
   return { toasts, show, remove };
 }
 function Toast({ toasts, remove }) {
-  const colors = { success:{border:C.greenBorder,bg:C.greenSoft}, error:{border:C.redBorder,bg:C.redSoft}, info:{border:C.rule,bg:'#f0f4ff'} };
+  const colors = { success:{border:C.greenBorder,bg:C.greenSoft}, error:{border:C.redBorder,bg:C.redSoft}, info:{border:C.rule,bg:C.blueSoft} };
   return (
     <div style={{ position:'fixed', bottom:24, right:24, zIndex:9999, display:'flex', flexDirection:'column', gap:8 }}>
       {toasts.map(t => {
         const col = colors[t.type] || colors.info;
         return (
-          <div key={t.id} style={{ display:'flex', alignItems:'center', gap:10, background:col.bg, border:'1px solid '+col.border, borderRadius:10, padding:'10px 14px', boxShadow:'0 4px 20px rgba(0,0,0,.10)', maxWidth:360, fontFamily:'Manrope,sans-serif' }}>
+          <div key={t.id} style={{ display:'flex', alignItems:'center', gap:10, background:col.bg, border:'1px solid '+col.border, borderRadius:10, padding:'10px 14px', boxShadow:'0 4px 20px rgba(0,0,0,.10)', maxWidth:360, fontFamily:FONT }}>
             <span style={{ flex:1, fontSize:13, color:C.ink }}>{t.msg}</span>
             <button onClick={() => remove(t.id)} style={{ background:'none', border:'none', cursor:'pointer', fontSize:16, color:C.mute }}>×</button>
           </div>
@@ -93,14 +94,14 @@ function buildMock({ formation, formationVal, poste, genre, dateVal }, fileName)
 function StatusBadge({ status }) {
   const cfg = {
     pending:    { label:'En attente',  bg:C.surface,  color:C.mute,        border:C.rule },
-    processing: { label:'En cours…',   bg:C.blueSoft, color:C.bluePrimary, border:C.bluePrimary+'55' },
+    processing: { label:'En cours…',   bg:C.blueSoft, color:C.bluePrimary, border:mix(C.bluePrimary, 34) },
     done:       { label:'Généré ✓',    bg:C.greenSoft,color:C.green,       border:C.greenBorder },
     error:      { label:'Erreur',      bg:C.redSoft,  color:C.red,         border:C.redBorder },
   };
   const s = cfg[status]||cfg.pending;
   return (
-    <span style={{ display:'inline-flex', alignItems:'center', gap:5, padding:'3px 10px', borderRadius:99, fontSize:11, fontWeight:600, background:s.bg, color:s.color, border:'1px solid '+s.border, fontFamily:'Manrope,sans-serif', flexShrink:0 }}>
-      {status==='processing' && <span style={{ width:8, height:8, border:'1.5px solid '+C.bluePrimary+'44', borderTopColor:C.bluePrimary, borderRadius:'50%', display:'inline-block', animation:'spin .7s linear infinite' }} />}
+    <span style={{ display:'inline-flex', alignItems:'center', gap:5, padding:'3px 10px', borderRadius:99, fontSize:11, fontWeight:600, background:s.bg, color:s.color, border:'1px solid '+s.border, fontFamily:FONT, flexShrink:0 }}>
+      {status==='processing' && <span style={{ width:8, height:8, border:'1.5px solid '+mix(C.bluePrimary, 27), borderTopColor:C.bluePrimary, borderRadius:'50%', display:'inline-block', animation:'spin .7s linear infinite' }} />}
       {s.label}
     </span>
   );
@@ -109,11 +110,11 @@ function StatusBadge({ status }) {
 // ─── FileIcon ─────────────────────────────────────────────────────────────────
 function FileIcon({ type }) {
   return type === 'image'
-    ? <div style={{ width:34,height:40,borderRadius:6,background:'#e0f2fe',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0 }}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0284c7" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+    ? <div style={{ width:34,height:40,borderRadius:6,background:mix(C.bluePrimary, 12),display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0 }}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--altio-blue)" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
       </div>
-    : <div style={{ width:34,height:40,borderRadius:6,background:'#fee2e2',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0 }}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    : <div style={{ width:34,height:40,borderRadius:6,background:C.redSoft,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0 }}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--altio-red)" strokeWidth="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
       </div>;
 }
 
@@ -124,7 +125,7 @@ function SelectField({ label, value, onChange, disabled, children }) {
       <div style={{ fontSize:10, fontWeight:700, color:C.mute, textTransform:'uppercase', letterSpacing:'.08em', marginBottom:4 }}>{label}</div>
       <select value={value} onChange={e => onChange(e.target.value)} disabled={disabled} style={{
         width:'100%', padding:'8px 28px 8px 10px', border:'1px solid '+C.rule, borderRadius:8,
-        fontSize:12, color:disabled?C.mute:C.ink, background:C.bg, fontFamily:'Manrope,sans-serif',
+        fontSize:12, color:disabled?C.mute:C.ink, background:C.bg, fontFamily:FONT,
         outline:'none', appearance:'none', opacity:disabled?.5:1,
         backgroundImage:`url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%239AA0AE' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E")`,
         backgroundRepeat:'no-repeat', backgroundPosition:'right 10px center', cursor:disabled?'default':'pointer',
@@ -150,7 +151,7 @@ function ReviewCard({ job, colorSet, onOpen, onRegenre, onRetry }) {
             <div style={{ fontSize:10, color:C.red, marginTop:1 }}>{job.error}</div>
           </div>
         </div>
-        <button onClick={onRetry} style={{ width:'100%', padding:'7px', background:C.redSoft, color:C.red, border:'1px solid '+C.redBorder, borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'Manrope,sans-serif' }}>
+        <button onClick={onRetry} style={{ width:'100%', padding:'7px', background:C.redSoft, color:C.red, border:'1px solid '+C.redBorder, borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:FONT }}>
           ↺ Réessayer ce CV
         </button>
       </div>
@@ -190,7 +191,7 @@ function ReviewCard({ job, colorSet, onOpen, onRegenre, onRetry }) {
             const active = job.genre===val;
             return (
               <button key={val} onClick={() => !active && onRegenre(val)}
-                style={{ width:28, height:28, borderRadius:7, border:'1px solid '+(active?colorSet.accent:C.rule), background:active?colorSet.soft:C.bg, color:active?colorSet.accent:C.mute, fontSize:13, cursor:active?'default':'pointer', transition:'all .15s', fontFamily:'Manrope,sans-serif' }}>
+                style={{ width:28, height:28, borderRadius:7, border:'1px solid '+(active?colorSet.accent:C.rule), background:active?colorSet.soft:C.bg, color:active?colorSet.accent:C.mute, fontSize:13, cursor:active?'default':'pointer', transition:'all .15s', fontFamily:FONT }}>
                 {label}
               </button>
             );
@@ -200,7 +201,7 @@ function ReviewCard({ job, colorSet, onOpen, onRegenre, onRetry }) {
 
       {/* Action unique */}
       <button onClick={onOpen}
-        style={{ width:'100%', padding:'8px', background:wasOpened ? C.surface : colorSet.accent, color:wasOpened ? C.ink2 : '#fff', border:wasOpened ? '1px solid '+C.rule : 'none', borderRadius:9, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'Manrope,sans-serif', display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
+        style={{ width:'100%', padding:'8px', background:wasOpened ? C.surface : colorSet.accent, color:wasOpened ? C.ink2 : '#fff', border:wasOpened ? '1px solid '+C.rule : 'none', borderRadius:9, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:FONT, display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
         {wasOpened ? 'Rouvrir l\'éditeur' : 'Ouvrir dans l\'éditeur'}
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
       </button>
@@ -209,7 +210,7 @@ function ReviewCard({ job, colorSet, onOpen, onRegenre, onRetry }) {
 }
 
 // ─── GroupCard (build mode) ───────────────────────────────────────────────────
-function GroupCard({ group, colorSet, isRunning, onUpdate, onRemove, onAddFiles, onRemoveJob, onUpdateJob, profiles }) {
+function GroupCard({ group, colorSet, isRunning, onUpdate, onRemove, onAddFiles, onRemoveJob, onUpdateJob, profiles, cohorts }) {
   const fileInputRef = useRef(null);
   const formation    = FORMATIONS.find(f => f.v === group.formationVal);
   const dates        = formation ? (DATES[formation.n]||[]) : [];
@@ -240,7 +241,7 @@ function GroupCard({ group, colorSet, isRunning, onUpdate, onRemove, onAddFiles,
           ? <input autoFocus value={nameDraft} onChange={e => setNameDraft(e.target.value)}
               onBlur={() => { setEditingName(false); onUpdate(group.uid, { label: nameDraft||group.label }); }}
               onKeyDown={e => { if (e.key==='Enter'||e.key==='Escape') { setEditingName(false); onUpdate(group.uid, { label: nameDraft||group.label }); } }}
-              style={{ flex:1, fontSize:14, fontWeight:700, color:C.ink, border:'1px solid '+colorSet.accent, borderRadius:6, padding:'2px 8px', fontFamily:'Manrope,sans-serif', outline:'none', background:'transparent' }}
+              style={{ flex:1, fontSize:14, fontWeight:700, color:C.ink, border:'1px solid '+colorSet.accent, borderRadius:6, padding:'2px 8px', fontFamily:FONT, outline:'none', background:'transparent' }}
             />
           : <div onClick={() => { setEditingName(true); setNameDraft(group.label); }} title="Cliquer pour renommer"
               style={{ flex:1, fontSize:14, fontWeight:700, color:C.ink, cursor:'text', display:'flex', alignItems:'center', gap:6 }}>
@@ -298,11 +299,30 @@ function GroupCard({ group, colorSet, isRunning, onUpdate, onRemove, onAddFiles,
                 {[{ val:'F', label:'♀ F' },{ val:'M', label:'♂ M' }].map(({ val, label }) => {
                   const on = group.genre===val;
                   return <button key={val} onClick={() => onUpdate(group.uid, { genre: group.genre===val?'':val })}
-                    style={{ padding:'6px 12px', borderRadius:8, border:'1px solid '+(on?colorSet.accent:C.rule), background:on?colorSet.soft:C.bg, color:on?colorSet.accent:C.mute, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'Manrope,sans-serif', transition:'all .15s' }}>{label}</button>;
+                    style={{ padding:'6px 12px', borderRadius:8, border:'1px solid '+(on?colorSet.accent:C.rule), background:on?colorSet.soft:C.bg, color:on?colorSet.accent:C.mute, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:FONT, transition:'all .15s' }}>{label}</button>;
                 })}
               </div>
             </div>
           </div>
+
+          {/* Promo : rattache l'atelier à un groupe suivi côté encadrement */}
+          {cohorts.length > 0 && (
+            <div style={{ marginBottom: 14 }}>
+              <SelectField
+                label="Promo"
+                value={group.cohortId || ''}
+                onChange={(v) => {
+                  const promo = cohorts.find((c) => c.id === v);
+                  // Le nom de la promo devient le nom du groupe : les CV générés
+                  // en atelier restent identifiables dans l'historique.
+                  onUpdate(group.uid, { cohortId: v, ...(promo ? { label: promo.name } : {}) });
+                }}
+              >
+                <option value="">Sans promo</option>
+                {cohorts.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </SelectField>
+            </div>
+          )}
 
           {/* Sélecteur de profil personnalité */}
           {profiles.length > 0 && (
@@ -316,7 +336,7 @@ function GroupCard({ group, colorSet, isRunning, onUpdate, onRemove, onAddFiles,
                     border:'1px solid '+(group.profileId===''?colorSet.accent:C.rule),
                     background:group.profileId===''?colorSet.soft:C.bg,
                     color:group.profileId===''?colorSet.accent:C.mute,
-                    fontFamily:'Manrope,sans-serif', transition:'all .15s',
+                    fontFamily:FONT, transition:'all .15s',
                   }}>
                   Aucun
                 </button>
@@ -330,7 +350,7 @@ function GroupCard({ group, colorSet, isRunning, onUpdate, onRemove, onAddFiles,
                         border:'1px solid '+(active?colorSet.accent:C.rule),
                         background:active?colorSet.soft:C.bg,
                         color:active?colorSet.accent:C.ink2,
-                        fontFamily:'Manrope,sans-serif', transition:'all .15s',
+                        fontFamily:FONT, transition:'all .15s',
                         display:'flex', alignItems:'center', gap:4,
                       }}>
                       <span>{p.emoji || '🧠'}</span>{p.nom}
@@ -387,7 +407,7 @@ function GroupCard({ group, colorSet, isRunning, onUpdate, onRemove, onAddFiles,
                             const on = job.genre===val;
                             return (
                               <button key={val} onClick={() => onUpdateJob(group.uid, job.uid, { genre: job.genre===val?'':val })}
-                                style={{ width:20, height:20, borderRadius:4, border:'1px solid '+(on?colorSet.accent:C.rule), background:on?colorSet.soft:C.bg, color:on?colorSet.accent:C.mute, fontSize:11, cursor:'pointer', transition:'all .1s', fontFamily:'Manrope,sans-serif', lineHeight:1, padding:0 }}>
+                                style={{ width:20, height:20, borderRadius:4, border:'1px solid '+(on?colorSet.accent:C.rule), background:on?colorSet.soft:C.bg, color:on?colorSet.accent:C.mute, fontSize:11, cursor:'pointer', transition:'all .1s', fontFamily:FONT, lineHeight:1, padding:0 }}>
                                 {label}
                               </button>
                             );
@@ -410,7 +430,7 @@ function GroupCard({ group, colorSet, isRunning, onUpdate, onRemove, onAddFiles,
           </div>
 
           {!group.formationVal && group.jobs.length > 0 && (
-            <div style={{ marginTop:10, padding:'8px 12px', background:C.orangeSoft, border:'1px solid '+C.orangeBorder, borderRadius:8, fontSize:11, color:'#92400e' }}>
+            <div style={{ marginTop:10, padding:'8px 12px', background:C.orangeSoft, border:'1px solid '+C.orangeBorder, borderRadius:8, fontSize:11, color:C.orange }}>
               ⚠ Sélectionne une formation pour pouvoir générer ce groupe.
             </div>
           )}
@@ -428,12 +448,13 @@ export default function Bulk() {
 
   // Migration V0 : Anthropic via Edge Function. L'utilisateur doit être connecté.
   const { user } = useAuth();
+  const cohorts = useOrgCohorts();
   const { open: openUpgrade } = useUpgradeModal();
   const [sessionMode, setSessionMode] = useState('build'); // 'build' | 'review'
   const [bulkId]                  = useState(() => 'bulk-' + Date.now());
   const [profiles] = useState(() => getProfiles());
   const [groups, setGroups]       = useState([{
-    uid: uid(), label:'Groupe 1', formationVal:'', dateVal:'', genre:'',
+    uid: uid(), label:'Groupe 1', formationVal:'', dateVal:'', genre:'', cohortId:'',
     jobs:[], collapsed:false, profileId:'',
   }]);
   const [isRunning, setIsRunning] = useState(false);
@@ -460,7 +481,7 @@ export default function Bulk() {
 
   // ── Group operations ──
   const addGroup = () => {
-    setGroups(prev => [...prev, { uid:uid(), label:`Groupe ${prev.length+1}`, formationVal:'', dateVal:'', genre:'', jobs:[], collapsed:false, profileId:'' }]);
+    setGroups(prev => [...prev, { uid:uid(), label:`Groupe ${prev.length+1}`, formationVal:'', dateVal:'', genre:'', cohortId:'', jobs:[], collapsed:false, profileId:'' }]);
   };
   const updateGroup = useCallback((gUid, patch) => {
     setGroups(prev => prev.map(g => g.uid===gUid ? { ...g, ...patch } : g));
@@ -701,7 +722,7 @@ export default function Bulk() {
       lockedNote="Réservé aux comptes professionnels."
       onBack={() => navigate('/')}
     >
-    <div style={{ minHeight:'100vh', background:C.surface, fontFamily:'Manrope,sans-serif' }}>
+    <div style={{ minHeight:'100vh', background:C.surface, fontFamily:FONT }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap');
         *{box-sizing:border-box;margin:0;padding:0;}
@@ -724,7 +745,7 @@ export default function Bulk() {
 
         <div style={{ flex:1, display:'flex', justifyContent:'center', alignItems:'center', gap:10 }}>
           <button onClick={() => navigate('/')}
-            style={{ background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center', gap:5, fontSize:13, color:C.mute, fontFamily:'Manrope,sans-serif', fontWeight:500, padding:'4px 6px', borderRadius:6, transition:'color .15s' }}
+            style={{ background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center', gap:5, fontSize:13, color:C.mute, fontFamily:FONT, fontWeight:500, padding:'4px 6px', borderRadius:6, transition:'color .15s' }}
             onMouseEnter={e => e.currentTarget.style.color=C.ink} onMouseLeave={e => e.currentTarget.style.color=C.mute}>
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 3L5 7L9 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
             Mes CV
@@ -776,11 +797,12 @@ export default function Bulk() {
               onRemoveJob={removeJob}
               onUpdateJob={updateJob}
               profiles={profiles}
+              cohorts={cohorts}
             />
           ))}
 
           <button onClick={addGroup} disabled={isRunning}
-            style={{ width:'100%', padding:'13px 20px', background:'none', border:'1.5px dashed '+C.rule, borderRadius:14, fontSize:13, fontWeight:600, color:C.mute, cursor:isRunning?'not-allowed':'pointer', fontFamily:'Manrope,sans-serif', display:'flex', alignItems:'center', justifyContent:'center', gap:8, transition:'all .15s' }}
+            style={{ width:'100%', padding:'13px 20px', background:'none', border:'1.5px dashed '+C.rule, borderRadius:14, fontSize:13, fontWeight:600, color:C.mute, cursor:isRunning?'not-allowed':'pointer', fontFamily:FONT, display:'flex', alignItems:'center', justifyContent:'center', gap:8, transition:'all .15s' }}
             onMouseEnter={e => { if(!isRunning){ e.currentTarget.style.borderColor=C.ink; e.currentTarget.style.color=C.ink; }}}
             onMouseLeave={e => { e.currentTarget.style.borderColor=C.rule; e.currentTarget.style.color=C.mute; }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -799,15 +821,15 @@ export default function Bulk() {
 
               {totalDone > 0 && !isRunning && (
                 <button onClick={() => setSessionMode('review')}
-                  style={{ padding:'12px 20px', background:C.surface, color:C.ink, border:'1px solid '+C.rule, borderRadius:12, fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'Manrope,sans-serif' }}>
+                  style={{ padding:'12px 20px', background:C.surface, color:C.ink, border:'1px solid '+C.rule, borderRadius:12, fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:FONT }}>
                   Voir les {totalDone} CV générés →
                 </button>
               )}
 
               {!isRunning ? (
                 <button onClick={runAll} disabled={!readyToGen}
-                  style={{ padding:'12px 28px', background:readyToGen?C.ink:C.mute, color:'#fff', border:'none', borderRadius:12, fontSize:14, fontWeight:700, cursor:readyToGen?'pointer':'not-allowed', fontFamily:'Manrope,sans-serif', display:'flex', alignItems:'center', gap:10, opacity:readyToGen?1:.5 }}
-                  onMouseEnter={e => { if(readyToGen) e.currentTarget.style.background='#1a1a2e'; }}
+                  style={{ padding:'12px 28px', background:readyToGen?C.ink:C.mute, color:'#fff', border:'none', borderRadius:12, fontSize:14, fontWeight:700, cursor:readyToGen?'pointer':'not-allowed', fontFamily:FONT, display:'flex', alignItems:'center', gap:10, opacity:readyToGen?1:.5 }}
+                  onMouseEnter={e => { if(readyToGen) e.currentTarget.style.background='var(--altio-blue-hover)'; }}
                   onMouseLeave={e => { if(readyToGen) e.currentTarget.style.background=C.ink; }}>
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
@@ -816,14 +838,14 @@ export default function Bulk() {
                 </button>
               ) : (
                 <button onClick={stopRun}
-                  style={{ padding:'12px 24px', background:'#ef4444', color:'#fff', border:'none', borderRadius:12, fontSize:14, fontWeight:700, cursor:'pointer', fontFamily:'Manrope,sans-serif', display:'flex', alignItems:'center', gap:10 }}>
+                  style={{ padding:'12px 24px', background:C.red, color:'#fff', border:'none', borderRadius:12, fontSize:14, fontWeight:700, cursor:'pointer', fontFamily:FONT, display:'flex', alignItems:'center', gap:10 }}>
                   <div style={{ width:14, height:14, border:'2px solid rgba(255,255,255,.3)', borderTopColor:'#fff', borderRadius:'50%', animation:'spin .7s linear infinite' }} />
                   Arrêter
                 </button>
               )}
 
               {!user && (
-                <div style={{ fontSize:11, color:'#92400e', background:C.orangeSoft, border:'1px solid '+C.orangeBorder, padding:'6px 12px', borderRadius:8 }}>
+                <div style={{ fontSize:11, color:C.orange, background:C.orangeSoft, border:'1px solid '+C.orangeBorder, padding:'6px 12px', borderRadius:8 }}>
                   Mode démo — connecte-toi pour générer en IA
                 </div>
               )}
@@ -849,7 +871,7 @@ export default function Bulk() {
             </div>
             <div style={{ display:'flex', gap:10, flexWrap:'wrap', flexShrink:0 }}>
               <button onClick={() => setSessionMode('build')}
-                style={{ padding:'10px 16px', background:C.surface, color:C.ink2, border:'1px solid '+C.rule, borderRadius:10, fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'Manrope,sans-serif', display:'flex', alignItems:'center', gap:6 }}>
+                style={{ padding:'10px 16px', background:C.surface, color:C.ink2, border:'1px solid '+C.rule, borderRadius:10, fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:FONT, display:'flex', alignItems:'center', gap:6 }}>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 Ajouter d'autres CV
               </button>
@@ -859,12 +881,12 @@ export default function Bulk() {
           {/* Stat chips */}
           <div style={{ display:'flex', gap:10, marginBottom:28, flexWrap:'wrap' }}>
             {totalDone>0 && (
-              <div style={{ display:'flex', alignItems:'center', gap:6, padding:'6px 14px', background:C.blueSoft, border:'1px solid '+C.bluePrimary+'33', borderRadius:99, fontSize:12, fontWeight:700, color:C.bluePrimary }}>
+              <div style={{ display:'flex', alignItems:'center', gap:6, padding:'6px 14px', background:C.blueSoft, border:'1px solid '+mix(C.bluePrimary, 20), borderRadius:99, fontSize:12, fontWeight:700, color:C.bluePrimary }}>
                 {totalDone} CV prêt{totalDone>1?'s':''}
               </div>
             )}
             {allJobs.filter(j=>j.histId).length > 0 && (
-              <div style={{ display:'flex', alignItems:'center', gap:6, padding:'6px 14px', background:C.greenSoft, border:'1px solid '+C.greenBorder, borderRadius:99, fontSize:12, fontWeight:700, color:'#166534' }}>
+              <div style={{ display:'flex', alignItems:'center', gap:6, padding:'6px 14px', background:C.greenSoft, border:'1px solid '+C.greenBorder, borderRadius:99, fontSize:12, fontWeight:700, color:C.green }}>
                 ✓ {allJobs.filter(j=>j.histId).length} ouvert{allJobs.filter(j=>j.histId).length>1?'s':''}
               </div>
             )}
@@ -921,14 +943,14 @@ export default function Bulk() {
           {totalDone > 0 && allJobs.filter(j=>j.histId).length === totalDone && (
             <div style={{ textAlign:'center', padding:'40px 32px', background:C.greenSoft, borderRadius:20, border:'1px solid '+C.greenBorder, animation:'fadeInUp .3s ease' }}>
               <div style={{ fontSize:40, marginBottom:10 }}>🎉</div>
-              <div style={{ fontSize:20, fontWeight:800, color:'#166534', marginBottom:8, letterSpacing:'-0.5px' }}>
+              <div style={{ fontSize:20, fontWeight:800, color:C.green, marginBottom:8, letterSpacing:'-0.5px' }}>
                 Tous les CV ont été ouverts !
               </div>
-              <div style={{ fontSize:13, color:'#4ade80', marginBottom:24 }}>
+              <div style={{ fontSize:13, color:C.green, marginBottom:24 }}>
                 Retrouve-les dans tes CV depuis l'accueil.
               </div>
               <button onClick={() => navigate('/')}
-                style={{ padding:'12px 28px', background:'#166534', color:'#fff', border:'none', borderRadius:12, fontSize:14, fontWeight:700, cursor:'pointer', fontFamily:'Manrope,sans-serif' }}>
+                style={{ padding:'12px 28px', background:C.green, color:'#fff', border:'none', borderRadius:12, fontSize:14, fontWeight:700, cursor:'pointer', fontFamily:FONT }}>
                 Voir tous mes CV →
               </button>
             </div>

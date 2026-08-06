@@ -1,70 +1,173 @@
 /* ============================================================
-   Altio CV — Tokens de thème (charte vivante)
+   Altio — Tokens de thème (charte graphique officielle)
    Pilotés par l'attribut html[data-theme="light"|"dark"] (useTheme).
-   Le mode clair = « Thème A · Vibrant clair », le mode sombre =
-   « Thème B · Arcade sombre » de la charte. Tous les composants qui
-   consomment gameTheme `C` (= var(--altio-*)) basculent d'un coup.
+   Mode clair = charte de référence, mode sombre = « Midnight Navy ».
+   Tous les composants qui consomment gameTheme `C` (= var(--altio-*))
+   basculent d'un coup.
+
+   Les alias aux noms de la charte (--navy, --yellow, --text, --r-lg…) sont
+   exposés en fin de fichier : une seule source de vérité, deux vocabulaires.
    ============================================================ */
 
 :root,
 html[data-theme="light"] {
-  --altio-ink:  #0B1638;
-  --altio-ink2: #3A4156;
-  --altio-mute: #8390A6;
+  /* Texte — charte : --text / --text-2 / --text-3 / --muted */
+  --altio-ink:   #0A1740;
+  --altio-ink2:  #2A3559;
+  --altio-mute:  #6B7390;
+  --altio-faint: #9AA1B9;
 
-  --altio-bg:    #F4F6FA;
-  --altio-line:  #E6EAF1;
-  --altio-line2: #EEF1F8;
+  /* Fonds & surfaces */
+  --altio-bg:    #EEF1F7;
+  --altio-bg2:   #E4E9F2;
   --altio-card:  #FFFFFF;
-  --altio-card2: #F8FAFE;
-  --altio-track: #E3E8F2;
+  --altio-card2: #F8FAFC;
+  --altio-line:  rgba(15, 32, 80, 0.10);
+  --altio-line2: rgba(15, 32, 80, 0.08);
+  --altio-track: #E4E9F2;
 
-  --altio-blue:       #1539B7;
-  --altio-blue-soft:  #EEF2FF;
-  --altio-blue-hover: #1F4FE0;
+  /* Bleu de marque (navy) */
+  --altio-blue:       #0033A0;
+  --altio-blue-soft:  #E8EEFB;
+  --altio-blue-hover: #002280;
+  --altio-blue-vivid: #1D4ED8;
+  --altio-navy-900:   #0A1740;
+  --altio-navy-800:   #0F2050;
 
-  --altio-green:      #0CA678;
-  --altio-green-soft: #E6F8F1;
-  --altio-red:        #E03131;
-  --altio-red-soft:   #FFF0F0;
-  --altio-amber:      #E8A500;
-  --altio-amber-soft: #FBF3DE;
-  --altio-boss:       #7048E8;
-  --altio-boss-soft:  #F3EEFF;
-  --altio-star:       #F5B400;
+  /* Accent jaune */
+  --altio-yellow:   #FACC15;
+  --altio-yellow-2: #F59E0B;
+  --altio-star:     #FACC15;
 
-  --altio-shadow-card: 0 4px 20px rgba(11,22,56,.06);
-  --altio-shadow-cta:  0 8px 24px rgba(21,57,183,.28);
-  --altio-shadow-pop:  0 18px 50px -20px rgba(11,22,56,.28);
+  /* Couleurs sémantiques */
+  --altio-green:      #1F9D6A;
+  --altio-green-soft: #E2F5EC;
+  --altio-red:        #D83A52;
+  --altio-red-soft:   #FBE8EB;
+  --altio-amber:      #D98A13;
+  --altio-amber-soft: #FCF0D8;
+  --altio-boss:       #7B5CD6;
+  --altio-boss-soft:  #EDE8FA;
+  --altio-teal:       #0F9B9B;
+  --altio-teal-soft:  #DEF2F1;
+
+  /* Ombres — charte : --sh-1 / --sh-2 / --sh-3 */
+  --altio-shadow-1:    0 1px 2px rgba(10, 23, 64, 0.04), 0 1px 1px rgba(10, 23, 64, 0.03);
+  --altio-shadow-card: 0 4px 16px rgba(10, 23, 64, 0.08), 0 2px 4px rgba(10, 23, 64, 0.04);
+  --altio-shadow-pop:  0 16px 48px rgba(10, 23, 64, 0.14), 0 4px 8px rgba(10, 23, 64, 0.06);
+  --altio-shadow-cta:  0 8px 24px rgba(0, 51, 160, 0.28);
+
+  /* Glassmorphism */
+  --altio-glass-bg:     rgba(255, 255, 255, 0.62);
+  --altio-glass-border: rgba(255, 255, 255, 0.85);
 }
 
 html[data-theme="dark"] {
-  --altio-ink:  #EAF0FF;
-  --altio-ink2: #AEB9DC;
-  --altio-mute: #7A86AE;
+  /* Midnight Navy */
+  --altio-ink:   #E8ECF5;
+  --altio-ink2:  #B4BDD6;
+  --altio-mute:  #8590AD;
+  --altio-faint: #6C7694;
 
-  --altio-bg:    #070B1B;
-  --altio-line:  rgba(255,255,255,.10);
-  --altio-line2: rgba(255,255,255,.06);
-  --altio-card:  #121A38;
-  --altio-card2: #0E1530;
-  --altio-track: rgba(255,255,255,.08);
+  --altio-bg:    #11192F;
+  --altio-bg2:   #16203B;
+  --altio-card:  #1A2444;
+  --altio-card2: #151E3A;
+  --altio-line:  rgba(255, 255, 255, 0.10);
+  --altio-line2: rgba(255, 255, 255, 0.06);
+  --altio-track: rgba(255, 255, 255, 0.09);
 
-  --altio-blue:       #5C82FF;
-  --altio-blue-soft:  rgba(92,130,255,.16);
-  --altio-blue-hover: #7A98FF;
+  --altio-blue:       #4F7CFF;
+  --altio-blue-soft:  rgba(79, 124, 255, 0.16);
+  --altio-blue-hover: #6E93FF;
+  --altio-blue-vivid: #6E93FF;
+  --altio-navy-900:   #0A1740;
+  --altio-navy-800:   #0F2050;
 
-  --altio-green:      #23D89A;
-  --altio-green-soft: rgba(35,216,154,.14);
-  --altio-red:        #FF5C70;
-  --altio-red-soft:   rgba(255,92,112,.15);
-  --altio-amber:      #FFC23D;
-  --altio-amber-soft: rgba(255,194,61,.14);
-  --altio-boss:       #A487FF;
-  --altio-boss-soft:  rgba(164,135,255,.18);
-  --altio-star:       #FFC742;
+  --altio-yellow:   #FACC15;
+  --altio-yellow-2: #F5B024;
+  --altio-star:     #FACC15;
 
-  --altio-shadow-card: 0 10px 34px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.05);
-  --altio-shadow-cta:  0 10px 30px rgba(92,130,255,.5);
-  --altio-shadow-pop:  0 24px 60px -16px rgba(0,0,0,.7), 0 0 0 1px rgba(255,255,255,.05);
+  --altio-green:      #35C08A;
+  --altio-green-soft: rgba(53, 192, 138, 0.16);
+  --altio-red:        #F0637A;
+  --altio-red-soft:   rgba(240, 99, 122, 0.16);
+  --altio-amber:      #EFA83C;
+  --altio-amber-soft: rgba(239, 168, 60, 0.16);
+  --altio-boss:       #9B82E8;
+  --altio-boss-soft:  rgba(155, 130, 232, 0.18);
+  --altio-teal:       #2CB8B8;
+  --altio-teal-soft:  rgba(44, 184, 184, 0.16);
+
+  --altio-shadow-1:    0 1px 2px rgba(0, 0, 0, 0.30);
+  --altio-shadow-card: 0 10px 34px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  --altio-shadow-pop:  0 24px 60px -16px rgba(0, 0, 0, 0.70), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  --altio-shadow-cta:  0 10px 30px rgba(79, 124, 255, 0.45);
+
+  --altio-glass-bg:     rgba(26, 36, 68, 0.62);
+  --altio-glass-border: rgba(255, 255, 255, 0.12);
+}
+
+/* ── Alias aux noms de la charte ─────────────────────────────────────────── */
+:root {
+  --navy:     var(--altio-blue);
+  --navy-d:   var(--altio-blue-hover);
+  --navy-900: var(--altio-navy-900);
+  --navy-800: var(--altio-navy-800);
+  --navy-100: var(--altio-blue-soft);
+  --navy-l:   var(--altio-blue-soft);
+  --blue-700: var(--altio-blue-vivid);
+
+  --yellow:      var(--altio-yellow);
+  --yellow-2:    var(--altio-yellow-2);
+  --green:       var(--altio-green);
+  --green-soft:  var(--altio-green-soft);
+  --amber:       var(--altio-amber);
+  --amber-soft:  var(--altio-amber-soft);
+  --red:         var(--altio-red);
+  --red-soft:    var(--altio-red-soft);
+  --violet:      var(--altio-boss);
+  --violet-soft: var(--altio-boss-soft);
+  --teal:        var(--altio-teal);
+  --teal-soft:   var(--altio-teal-soft);
+
+  --bg:        var(--altio-bg);
+  --bg-2:      var(--altio-bg2);
+  --surface:   var(--altio-card);
+  --surface-2: var(--altio-card2);
+  --text:      var(--altio-ink);
+  --text-2:    var(--altio-ink2);
+  --text-3:    var(--altio-mute);
+  --muted:     var(--altio-faint);
+  --border:    var(--altio-line);
+  --line:      var(--altio-line2);
+
+  --sh-1: var(--altio-shadow-1);
+  --sh-2: var(--altio-shadow-card);
+  --sh-3: var(--altio-shadow-pop);
+
+  --glass-bg:     var(--altio-glass-bg);
+  --glass-border: var(--altio-glass-border);
+
+  /* Rayons */
+  --r-xs:   8px;
+  --r-sm:  10px;
+  --r:     14px;
+  --r-lg:  22px;
+  --r-xl:  28px;
+  --r-pill: 999px;
+
+  /* Typographie */
+  --font-display: 'Manrope', Inter, system-ui, -apple-system, sans-serif;
+  --font: Inter, 'SF Pro Text', system-ui, -apple-system, sans-serif;
+
+  /* Layout */
+  --sidebar-w:   228px;
+  --sidebar-w-c:  76px;
+  --topbar-h:     64px;
+
+  /* Easing */
+  --ease:        cubic-bezier(.22, .61, .36, 1);
+  --ease-out:    cubic-bezier(.16, 1, .3, 1);
+  --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
 }

@@ -7,12 +7,12 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 
 const C = {
-  ink:   '#0B1020',
-  ink2:  '#3A4156',
-  mute:  '#9AA0AE',
-  rule:  '#ECEDF1',
-  blue:  '#1539B7',
-  bg:    '#FFFFFF',
+  ink:   'var(--altio-ink)',
+  ink2:  'var(--altio-ink2)',
+  mute:  'var(--altio-mute)',
+  rule:  'var(--altio-line)',
+  blue:  'var(--altio-blue)',
+  bg:    'var(--altio-card)',
 };
 const FONT = "'Manrope', system-ui, sans-serif";
 

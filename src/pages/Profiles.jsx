@@ -6,23 +6,23 @@ import { PlanBanner } from '@/components/PlanGate';
 
 /* ─── Design tokens ─────────────────────────────────────────────────────── */
 const C = {
-  blue:    '#1539B7',
-  blueHov: '#1F4FE0',
-  blueSoft:'#EEF2FF',
-  ink:     '#0B1020',
-  ink2:    '#3A4156',
-  mute:    '#9AA0AE',
-  rule:    '#ECEDF1',
-  surface: '#F7F8FA',
-  bg:      '#FFFFFF',
+  blue:    'var(--altio-blue)',
+  blueHov: 'var(--altio-blue-hover)',
+  blueSoft:'var(--altio-blue-soft)',
+  ink:     'var(--altio-ink)',
+  ink2:    'var(--altio-ink2)',
+  mute:    'var(--altio-mute)',
+  rule:    'var(--altio-line)',
+  surface: 'var(--altio-card2)',
+  bg:      'var(--altio-card)',
 };
 const FONT = "'Manrope', system-ui, sans-serif";
 
 const TON_LABELS = {
   authentique:   { label: 'Authentique', color: '#0891B2', bg: '#ECFEFF' },
-  professionnel: { label: 'Professionnel', color: '#7C3AED', bg: '#F5F3FF' },
-  percutant:     { label: 'Percutant', color: '#EA580C', bg: '#FFF7ED' },
-  creatif:       { label: 'Créatif', color: '#16A34A', bg: '#F0FDF4' },
+  professionnel: { label: 'Professionnel', color: 'var(--altio-boss)', bg: 'var(--altio-boss-soft)' },
+  percutant:     { label: 'Percutant', color: '#EA580C', bg: 'var(--altio-amber-soft)' },
+  creatif:       { label: 'Créatif', color: 'var(--altio-green)', bg: 'var(--altio-green-soft)' },
 };
 const CONTEXTE_LABELS = {
   'premier-emploi': '🌱 Premier emploi',
@@ -78,7 +78,7 @@ function ProfileCard({ profile, onEdit, onDelete }) {
         {profile.cible?.secteur && (
           <span style={{
             padding: '3px 10px', borderRadius: 12, fontSize: 11, fontWeight: 600,
-            background: '#F0FDF4', color: '#16A34A',
+            background: 'var(--altio-green-soft)', color: 'var(--altio-green)',
           }}>🎯 {profile.cible.secteur.replace('-', ' ')}</span>
         )}
         {profile.personnalite?.mots?.slice(0, 3).map(m => (
@@ -109,21 +109,21 @@ function ProfileCard({ profile, onEdit, onDelete }) {
           }}>✏️ Modifier</button>
           <button onClick={() => setConfirmDelete(true)} style={{
             padding: '8px 14px', borderRadius: 8, fontSize: 12,
-            background: '#FEF2F2', color: '#DC2626', border: 'none', cursor: 'pointer', fontFamily: FONT,
+            background: 'var(--altio-red-soft)', color: 'var(--altio-red)', border: 'none', cursor: 'pointer', fontFamily: FONT,
           }}>🗑</button>
         </div>
       ) : (
         <div style={{
-          background: '#FEF2F2', borderRadius: 10, padding: '12px 14px',
+          background: 'var(--altio-red-soft)', borderRadius: 10, padding: '12px 14px',
           display: 'flex', flexDirection: 'column', gap: 8,
         }}>
-          <p style={{ margin: 0, fontSize: 12, fontWeight: 600, color: '#DC2626' }}>
+          <p style={{ margin: 0, fontSize: 12, fontWeight: 600, color: 'var(--altio-red)' }}>
             Supprimer ce profil ?
           </p>
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={onDelete} style={{
               flex: 1, padding: '7px 0', borderRadius: 7, fontSize: 12, fontWeight: 700,
-              background: '#DC2626', color: '#fff', border: 'none', cursor: 'pointer', fontFamily: FONT,
+              background: 'var(--altio-red)', color: '#fff', border: 'none', cursor: 'pointer', fontFamily: FONT,
             }}>Supprimer</button>
             <button onClick={() => setConfirmDelete(false)} style={{
               flex: 1, padding: '7px 0', borderRadius: 7, fontSize: 12,
@@ -193,7 +193,7 @@ export default function Profiles() {
           title={!canProfile(profiles.length) ? `Limite de ${plan.maxProfiles} profil(s) atteinte` : ''}
           style={{
             padding: '8px 18px', borderRadius: 8, fontSize: 13, fontWeight: 700,
-            background: canProfile(profiles.length) ? C.blue : '#9AA0AE',
+            background: canProfile(profiles.length) ? C.blue : 'var(--altio-mute)',
             color: '#fff', border: 'none',
             cursor: canProfile(profiles.length) ? 'pointer' : 'not-allowed',
             fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 6,

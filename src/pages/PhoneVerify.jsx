@@ -9,15 +9,15 @@ import React, { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 
 const C = {
-  blue:    '#1539B7',
-  ink:     '#0B1020',
-  ink2:    '#3A4156',
-  mute:    '#9AA0AE',
-  rule:    '#ECEDF1',
-  surface: '#F7F8FA',
-  bg:      '#FFFFFF',
-  red:     '#DC2626',
-  redSoft: '#FEF2F2',
+  blue:    'var(--altio-blue)',
+  ink:     'var(--altio-ink)',
+  ink2:    'var(--altio-ink2)',
+  mute:    'var(--altio-mute)',
+  rule:    'var(--altio-line)',
+  surface: 'var(--altio-card2)',
+  bg:      'var(--altio-card)',
+  red:     'var(--altio-red)',
+  redSoft: 'var(--altio-red-soft)',
 };
 const FONT = "'Manrope', system-ui, sans-serif";
 

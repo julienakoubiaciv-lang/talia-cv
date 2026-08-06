@@ -17,27 +17,28 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useRole } from '@/hooks/useRole';
 
-// ── Design tokens ──────────────────────────────────────────────────────────
+// ── Design tokens — charte Altio (var(--altio-*)), pas de hex en dur ────────
 const C = {
-  bg:        '#F7F8FA',
-  card:      '#FFFFFF',
-  ink:       '#0B1020',
-  ink2:      '#3A4156',
-  mute:      '#9AA0AE',
-  rule:      '#ECEDF1',
-  primary:   '#1539B7',
-  primarySoft:'#EEF2FF',
-  green:     '#15803D',
-  greenSoft: '#F0FDF4',
-  amber:     '#92400E',
-  amberSoft: '#FFFBEB',
-  purple:    '#7C3AED',
-  purpleSoft:'#F5F3FF',
-  red:       '#B91C1C',
-  redSoft:   '#FEF2F2',
+  bg:         'var(--altio-bg)',
+  card:       'var(--altio-card)',
+  ink:        'var(--altio-ink)',
+  ink2:       'var(--altio-ink2)',
+  mute:       'var(--altio-mute)',
+  rule:       'var(--altio-line)',
+  primary:    'var(--altio-blue)',
+  primarySoft:'var(--altio-blue-soft)',
+  green:      'var(--altio-green)',
+  greenSoft:  'var(--altio-green-soft)',
+  amber:      'var(--altio-amber)',
+  amberSoft:  'var(--altio-amber-soft)',
+  purple:     'var(--altio-boss)',
+  purpleSoft: 'var(--altio-boss-soft)',
+  red:        'var(--altio-red)',
+  redSoft:    'var(--altio-red-soft)',
 };
 
-const FONT = "'Manrope', system-ui, sans-serif";
+const FONT = "Inter, 'SF Pro Text', system-ui, -apple-system, sans-serif";
+const DISPLAY = "'Manrope', Inter, system-ui, sans-serif";
 
 // ── MRR estimé selon tier ──────────────────────────────────────────────────
 const TIER_PRICE = { free: 0, personal: 9, business: 29 };
@@ -46,10 +47,12 @@ const TIER_COLORS = {
   free:     { bg: C.rule,       fg: C.mute   },
   personal: { bg: C.primarySoft, fg: C.primary },
   business: { bg: C.purpleSoft,  fg: C.purple  },
+  school:   { bg: C.greenSoft,   fg: C.green   },
+  cowork:   { bg: C.amberSoft,   fg: C.amber   },
 };
 
 const ROLE_COLORS = {
-  owner: { bg: '#FEF3C7', fg: '#92400E' },
+  owner: { bg: C.amberSoft, fg: C.amber },
   admin: { bg: C.purpleSoft, fg: C.purple },
   user:  { bg: C.rule, fg: C.mute },
 };
@@ -73,6 +76,145 @@ function Pill({ children, scheme = 'mute', title }) {
         textTransform: 'capitalize', letterSpacing: '0.02em',
       }}
     >{children}</span>
+  );
+}
+
+const ORG_TYPES = [
+  { v: 'school', label: 'École' },
+  { v: 'company', label: 'Entreprise' },
+  { v: 'cowork', label: 'Cowork' },
+];
+const ORG_TIERS = ['school', 'cowork', 'business', 'personal'];
+
+/**
+ * Gestion des organisations clientes — créer une école, ajuster ses sièges,
+ * la suspendre. Sans ça, chaque opération passait par du SQL manuel.
+ */
+function OrgSection({ orgs, loading, onCreate, onPatch }) {
+  const [draft, setDraft] = useState(null); // null = formulaire fermé
+  const [busy, setBusy] = useState(false);
+
+  const blank = { name: '', type: 'school', tier: 'school', seats: 30 };
+
+  const submit = async () => {
+    if (!draft?.name.trim()) return;
+    setBusy(true);
+    await onCreate({ ...draft, name: draft.name.trim(), seats: Number(draft.seats) || 0 });
+    setBusy(false);
+    setDraft(null);
+  };
+
+  const cell = { padding: '12px 14px', color: C.ink };
+  const th = { padding: '10px 14px', fontSize: 10.5, fontWeight: 700, color: C.mute, textTransform: 'uppercase', letterSpacing: '0.06em', borderBottom: '1px solid ' + C.rule, whiteSpace: 'nowrap' };
+  const input = { padding: '8px 10px', border: '1px solid ' + C.rule, borderRadius: 8, fontSize: 12.5, fontFamily: FONT, color: C.ink, background: C.card, outline: 'none' };
+
+  return (
+    <section style={{ background: C.card, borderRadius: 14, marginBottom: 28, border: '1px solid ' + C.rule, overflow: 'hidden' }}>
+      <div style={{ padding: '16px 20px', borderBottom: '1px solid ' + C.rule, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+        <div>
+          <h2 style={{ fontSize: 15, fontWeight: 700, color: C.ink, margin: 0, fontFamily: DISPLAY }}>
+            Organisations <span style={{ fontSize: 12, fontWeight: 600, color: C.mute }}>({orgs.length})</span>
+          </h2>
+          <p style={{ fontSize: 11.5, color: C.mute, margin: '3px 0 0' }}>
+            Écoles et entreprises clientes — sièges consommés, promos, placements
+          </p>
+        </div>
+        <button
+          onClick={() => setDraft(draft ? null : blank)}
+          style={{ padding: '9px 16px', background: draft ? C.card : C.primary, color: draft ? C.ink : '#fff', border: '1px solid ' + (draft ? C.rule : C.primary), borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}
+        >
+          {draft ? 'Annuler' : '+ Nouvelle organisation'}
+        </button>
+      </div>
+
+      {draft && (
+        <div style={{ padding: '14px 20px', borderBottom: '1px solid ' + C.rule, background: C.bg, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+          <label style={{ flex: '2 1 200px', display: 'grid', gap: 4 }}>
+            <span style={{ fontSize: 10.5, fontWeight: 700, color: C.mute, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Nom</span>
+            <input style={input} value={draft.name} autoFocus placeholder="École Altio Lyon"
+              onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+              onKeyDown={(e) => { if (e.key === 'Enter') submit(); }} />
+          </label>
+          <label style={{ flex: '1 1 120px', display: 'grid', gap: 4 }}>
+            <span style={{ fontSize: 10.5, fontWeight: 700, color: C.mute, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Type</span>
+            <select style={input} value={draft.type} onChange={(e) => setDraft({ ...draft, type: e.target.value })}>
+              {ORG_TYPES.map((t) => <option key={t.v} value={t.v}>{t.label}</option>)}
+            </select>
+          </label>
+          <label style={{ flex: '1 1 120px', display: 'grid', gap: 4 }}>
+            <span style={{ fontSize: 10.5, fontWeight: 700, color: C.mute, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Forfait</span>
+            <select style={input} value={draft.tier} onChange={(e) => setDraft({ ...draft, tier: e.target.value })}>
+              {ORG_TIERS.map((t) => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </label>
+          <label style={{ flex: '0 1 100px', display: 'grid', gap: 4 }}>
+            <span style={{ fontSize: 10.5, fontWeight: 700, color: C.mute, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Sièges</span>
+            <input style={input} type="number" min="0" value={draft.seats}
+              onChange={(e) => setDraft({ ...draft, seats: e.target.value })} />
+          </label>
+          <button onClick={submit} disabled={busy || !draft.name.trim()}
+            style={{ padding: '9px 18px', background: C.primary, color: '#fff', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: FONT, opacity: busy || !draft.name.trim() ? 0.5 : 1 }}>
+            {busy ? 'Création…' : 'Créer'}
+          </button>
+        </div>
+      )}
+
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
+          <thead>
+            <tr style={{ background: C.bg, textAlign: 'left' }}>
+              {['Organisation', 'Type', 'Forfait', 'Sièges', 'Encadrants', 'Promos', 'Placés', 'Statut'].map((h) => (
+                <th key={h} style={th}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {loading && <tr><td colSpan={8} style={{ padding: 28, textAlign: 'center', color: C.mute }}>Chargement…</td></tr>}
+            {!loading && orgs.length === 0 && (
+              <tr><td colSpan={8} style={{ padding: 28, textAlign: 'center', color: C.mute }}>Aucune organisation — crée la première école cliente.</td></tr>
+            )}
+            {!loading && orgs.map((o) => {
+              const full = o.seats > 0 && o.seats_used >= o.seats;
+              return (
+                <tr key={o.id} style={{ borderBottom: '1px solid ' + C.rule }}>
+                  <td style={{ ...cell, fontWeight: 600 }}>{o.name}</td>
+                  <td style={cell}>{ORG_TYPES.find((t) => t.v === o.type)?.label || o.type}</td>
+                  <td style={cell}><Pill scheme={o.tier}>{o.tier}</Pill></td>
+                  <td style={{ ...cell, whiteSpace: 'nowrap' }}>
+                    <span style={{ color: full ? C.red : C.ink, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
+                      {fmtNum(o.seats_used)}
+                    </span>
+                    <span style={{ color: C.mute }}> / </span>
+                    <input
+                      type="number" min="0" defaultValue={o.seats}
+                      onBlur={(e) => {
+                        const seats = Number(e.target.value);
+                        if (seats !== o.seats) onPatch(o.id, { seats });
+                      }}
+                      style={{ width: 62, padding: '4px 6px', border: '1px solid ' + C.rule, borderRadius: 6, fontSize: 12, fontFamily: FONT, color: C.ink, background: C.card }}
+                    />
+                    {full && <span style={{ color: C.red, fontSize: 11, fontWeight: 700, marginLeft: 6 }}>complet</span>}
+                  </td>
+                  <td style={{ ...cell, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{fmtNum(o.staff_count)}</td>
+                  <td style={{ ...cell, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{fmtNum(o.cohort_count)}</td>
+                  <td style={{ ...cell, textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: C.green, fontWeight: 600 }}>{fmtNum(o.placed_count)}</td>
+                  <td style={cell}>
+                    <select
+                      value={o.status}
+                      onChange={(e) => onPatch(o.id, { status: e.target.value })}
+                      style={{ padding: '5px 8px', border: '1px solid ' + C.rule, borderRadius: 6, fontSize: 11.5, fontFamily: FONT, background: C.card, color: o.status === 'active' ? C.green : C.red, fontWeight: 600 }}
+                    >
+                      <option value="active">active</option>
+                      <option value="suspended">suspended</option>
+                    </select>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </section>
   );
 }
 
@@ -100,6 +242,7 @@ export default function Admin() {
 
   const [users, setUsers]   = useState([]);
   const [events, setEvents] = useState([]);
+  const [orgs, setOrgs]     = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError]   = useState('');
   const [filter, setFilter] = useState(''); // search by email
@@ -116,7 +259,7 @@ export default function Admin() {
     setLoading(true);
     setError('');
     try {
-      const [usersRes, eventsRes] = await Promise.all([
+      const [usersRes, eventsRes, orgsRes] = await Promise.all([
         supabase.from('admin_user_stats')
           .select('*')
           .order('signed_up_at', { ascending: false })
@@ -125,11 +268,16 @@ export default function Admin() {
           .select('id, user_id, action, model, input_tokens, cached_tokens, output_tokens, cost_usd, created_at')
           .order('created_at', { ascending: false })
           .limit(50),
+        supabase.from('admin_org_stats')
+          .select('*')
+          .order('created_at', { ascending: false }),
       ]);
       if (usersRes.error)  throw new Error('users: '  + usersRes.error.message);
       if (eventsRes.error) throw new Error('events: ' + eventsRes.error.message);
+      if (orgsRes.error)   throw new Error('orgs: '   + orgsRes.error.message);
       setUsers(usersRes.data  || []);
       setEvents(eventsRes.data || []);
+      setOrgs(orgsRes.data || []);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -159,6 +307,21 @@ export default function Admin() {
     } finally {
       setActingUser(null);
     }
+  }, [fetchAll]);
+
+  // ── Organisations : création + édition sièges/statut ──────────────────────
+  const createOrg = useCallback(async ({ name, type, tier, seats }) => {
+    if (!supabase) return;
+    const { error } = await supabase.from('organizations').insert({ name, type, tier, seats });
+    if (error) { alert('Erreur création : ' + error.message); return; }
+    await fetchAll();
+  }, [fetchAll]);
+
+  const patchOrg = useCallback(async (orgId, patch) => {
+    if (!supabase) return;
+    const { error } = await supabase.from('organizations').update(patch).eq('id', orgId);
+    if (error) { alert('Erreur mise à jour : ' + error.message); return; }
+    await fetchAll();
   }, [fetchAll]);
 
   // ── Stats globales calculées ──────────────────────────────────────────────
@@ -197,7 +360,7 @@ export default function Admin() {
         {/* ── Header ── */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
           <div>
-            <h1 style={{ fontSize: 28, fontWeight: 800, color: C.ink, margin: 0, letterSpacing: '-0.5px' }}>
+            <h1 style={{ fontSize: 28, fontWeight: 800, color: C.ink, margin: 0, letterSpacing: '-0.5px', fontFamily: DISPLAY }}>
               🛡️ Admin Dashboard
             </h1>
             <p style={{ fontSize: 13, color: C.mute, margin: '4px 0 0' }}>
@@ -251,10 +414,13 @@ export default function Admin() {
           <StatCard label="Coût 50 derniers events" value={fmtUSD(monthCost)} color={C.amber} />
         </div>
 
+        {/* ── Organisations (écoles / entreprises) ── */}
+        <OrgSection orgs={orgs} loading={loading} onCreate={createOrg} onPatch={patchOrg} />
+
         {/* ── Tableau users ── */}
         <section style={{ background: C.card, borderRadius: 14, padding: 0, marginBottom: 28, border: '1px solid ' + C.rule, overflow: 'hidden' }}>
           <div style={{ padding: '16px 20px', borderBottom: '1px solid ' + C.rule, display:'flex', justifyContent:'space-between', alignItems:'center', gap: 12, flexWrap:'wrap' }}>
-            <h2 style={{ fontSize: 15, fontWeight: 700, color: C.ink, margin: 0 }}>
+            <h2 style={{ fontSize: 15, fontWeight: 700, color: C.ink, margin: 0, fontFamily: DISPLAY }}>
               Utilisateurs <span style={{ fontSize: 12, fontWeight: 600, color: C.mute }}>({filtered.length})</span>
             </h2>
             <input
@@ -305,7 +471,7 @@ export default function Admin() {
                         }}
                         style={{
                           padding: '5px 8px', border: '1px solid ' + C.rule, borderRadius: 6,
-                          fontSize: 11.5, fontFamily: FONT, color: C.ink, background: '#fff',
+                          fontSize: 11.5, fontFamily: FONT, color: C.ink, background: C.card,
                           cursor: u.role === 'owner' ? 'not-allowed' : 'pointer',
                           opacity: u.role === 'owner' ? 0.5 : 1,
                         }}
@@ -325,7 +491,7 @@ export default function Admin() {
         {/* ── Tableau events récents ── */}
         <section style={{ background: C.card, borderRadius: 14, border: '1px solid ' + C.rule, overflow: 'hidden' }}>
           <div style={{ padding: '16px 20px', borderBottom: '1px solid ' + C.rule }}>
-            <h2 style={{ fontSize: 15, fontWeight: 700, color: C.ink, margin: 0 }}>
+            <h2 style={{ fontSize: 15, fontWeight: 700, color: C.ink, margin: 0, fontFamily: DISPLAY }}>
               50 derniers appels Claude
             </h2>
             <p style={{ fontSize: 11.5, color: C.mute, margin: '3px 0 0' }}>

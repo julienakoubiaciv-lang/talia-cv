@@ -152,7 +152,7 @@ export default function SettingsPanel() {
               <button
                 onClick={() => setLayout('atelier')}
                 style={{
-                  background: layout === 'atelier' ? '#EEF2FF' : '#fff',
+                  background: layout === 'atelier' ? 'var(--altio-blue-soft)' : '#fff',
                   border: `1.5px solid ${layout === 'atelier' ? NAVY : RULE}`,
                   borderRadius: 10, padding: 10, cursor: 'pointer',
                   textAlign: 'left', fontFamily: 'inherit',
@@ -169,10 +169,10 @@ export default function SettingsPanel() {
                 {/* Mini preview Atelier (3 colonnes) */}
                 <div style={{
                   display: 'grid', gridTemplateColumns: '30% 40% 30%',
-                  gap: 2, marginBottom: 8, height: 36, background: '#F4F6FA', borderRadius: 4, padding: 3,
+                  gap: 2, marginBottom: 8, height: 36, background: 'var(--altio-bg)', borderRadius: 4, padding: 3,
                 }}>
                   <div style={{ background: '#fff', borderRadius: 2 }} />
-                  <div style={{ background: '#E6EAF1', borderRadius: 2 }} />
+                  <div style={{ background: 'var(--altio-line)', borderRadius: 2 }} />
                   <div style={{ background: '#fff', borderRadius: 2 }} />
                 </div>
                 <div style={{ fontSize: 12, fontWeight: 700, color: INK, marginBottom: 2 }}>Nouveau · Atelier</div>
@@ -183,7 +183,7 @@ export default function SettingsPanel() {
               <button
                 onClick={() => setLayout('classique')}
                 style={{
-                  background: layout === 'classique' ? '#EEF2FF' : '#fff',
+                  background: layout === 'classique' ? 'var(--altio-blue-soft)' : '#fff',
                   border: `1.5px solid ${layout === 'classique' ? NAVY : RULE}`,
                   borderRadius: 10, padding: 10, cursor: 'pointer',
                   textAlign: 'left', fontFamily: 'inherit',
@@ -200,10 +200,10 @@ export default function SettingsPanel() {
                 {/* Mini preview Classique (2 colonnes) */}
                 <div style={{
                   display: 'grid', gridTemplateColumns: '45% 55%',
-                  gap: 2, marginBottom: 8, height: 36, background: '#F4F6FA', borderRadius: 4, padding: 3,
+                  gap: 2, marginBottom: 8, height: 36, background: 'var(--altio-bg)', borderRadius: 4, padding: 3,
                 }}>
                   <div style={{ background: '#fff', borderRadius: 2 }} />
-                  <div style={{ background: '#E6EAF1', borderRadius: 2 }} />
+                  <div style={{ background: 'var(--altio-line)', borderRadius: 2 }} />
                 </div>
                 <div style={{ fontSize: 12, fontWeight: 700, color: INK, marginBottom: 2 }}>Classique</div>
                 <div style={{ fontSize: 10.5, color: MUTE, lineHeight: 1.4 }}>
@@ -217,17 +217,17 @@ export default function SettingsPanel() {
 
             {/* Indicateur clé serveur */}
             {import.meta.env.VITE_API_HOSTED === 'true' ? (
-              <div style={{ display:'flex', alignItems:'center', gap:8, background:'#f0fdf4', border:'1px solid #bbf7d0', borderRadius:10, padding:'9px 12px', marginBottom:14 }}>
-                <span style={{ width:8, height:8, borderRadius:'50%', background:'#22c55e', flexShrink:0 }} />
+              <div style={{ display:'flex', alignItems:'center', gap:8, background:'var(--altio-green-soft)', border:'1px solid #bbf7d0', borderRadius:10, padding:'9px 12px', marginBottom:14 }}>
+                <span style={{ width:8, height:8, borderRadius:'50%', background:'var(--altio-green)', flexShrink:0 }} />
                 <span style={{ fontSize:12, color:'#15803d', lineHeight:1.4 }}>
                   <strong>Clé serveur active</strong> — la génération fonctionne sans clé perso.
                   Ta clé ci-dessous est optionnelle (priorité sur la clé serveur si renseignée).
                 </span>
               </div>
             ) : (
-              <div style={{ display:'flex', alignItems:'center', gap:8, background:'#fff7ed', border:'1px solid #fed7aa', borderRadius:10, padding:'9px 12px', marginBottom:14 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:8, background:'var(--altio-amber-soft)', border:'1px solid #fed7aa', borderRadius:10, padding:'9px 12px', marginBottom:14 }}>
                 <span style={{ fontSize:13 }}>⚠️</span>
-                <span style={{ fontSize:12, color:'#92400e', lineHeight:1.4 }}>
+                <span style={{ fontSize:12, color:'var(--altio-amber)', lineHeight:1.4 }}>
                   Aucune clé serveur détectée. Renseigne ta clé perso pour activer la génération IA.
                 </span>
               </div>
@@ -240,9 +240,9 @@ export default function SettingsPanel() {
             {/* ── CRÉATION DU PIN (1ère fois) ── */}
             {mode === 'createPin' && (
               <>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 10, padding: '10px 12px', marginBottom: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--altio-amber-soft)', border: '1px solid #fed7aa', borderRadius: 10, padding: '10px 12px', marginBottom: 16 }}>
                   <KeyRound size={16} color={ORANGE} />
-                  <span style={{ fontSize: 12, color: '#92400e' }}>Première configuration : crée un code PIN (4 à 6 chiffres).</span>
+                  <span style={{ fontSize: 12, color: 'var(--altio-amber)' }}>Première configuration : crée un code PIN (4 à 6 chiffres).</span>
                 </div>
                 <label style={labelStyle}>Nouveau PIN</label>
                 <input type="password" inputMode="numeric" value={pin} maxLength={6}
@@ -252,7 +252,7 @@ export default function SettingsPanel() {
                 <input type="password" inputMode="numeric" value={pinConfirm} maxLength={6}
                   onChange={e => setPinConfirm(e.target.value.replace(/\D/g, ''))}
                   placeholder="••••" style={{ ...inputStyle, letterSpacing: 4 }} />
-                {error && <div style={{ color: '#dc2626', fontSize: 12, marginTop: 10 }}>{error}</div>}
+                {error && <div style={{ color: 'var(--altio-red)', fontSize: 12, marginTop: 10 }}>{error}</div>}
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 18 }}>
                   <button style={btnGhost} onClick={close}>Annuler</button>
                   <button style={btnPrimary} onClick={handleCreatePin}>Créer le PIN</button>
@@ -269,7 +269,7 @@ export default function SettingsPanel() {
                   <span style={{ flex: 1, fontSize: 14, color: hasKey ? INK : MUTE, fontFamily: 'monospace', letterSpacing: 2 }}>
                     {hasKey ? '••••••••••••' : 'Aucune clé configurée'}
                   </span>
-                  {hasKey && <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#22c55e' }} title="Clé présente" />}
+                  {hasKey && <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--altio-green)' }} title="Clé présente" />}
                 </div>
                 {okMsg && <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#16a34a', fontSize: 12, marginBottom: 12 }}><Check size={14} />{okMsg}</div>}
                 <button style={{ ...btnPrimary, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }} onClick={() => { setError(''); setMode('enterPin'); }}>
@@ -286,7 +286,7 @@ export default function SettingsPanel() {
                   onChange={e => setPin(e.target.value.replace(/\D/g, ''))}
                   onKeyDown={e => { if (e.key === 'Enter') handleEnterPin(); }}
                   placeholder="••••" style={{ ...inputStyle, letterSpacing: 4 }} autoFocus />
-                {error && <div style={{ color: '#dc2626', fontSize: 12, marginTop: 10 }}>{error}</div>}
+                {error && <div style={{ color: 'var(--altio-red)', fontSize: 12, marginTop: 10 }}>{error}</div>}
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 18 }}>
                   <button style={btnGhost} onClick={() => { setMode('status'); setError(''); setPin(''); }}>Retour</button>
                   <button style={btnPrimary} onClick={handleEnterPin}>Déverrouiller</button>

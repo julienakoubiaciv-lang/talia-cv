@@ -12,13 +12,13 @@
 import React from 'react';
 
 const C = {
-  ink:     '#0B1020',
-  ink2:    '#3A4156',
-  mute:    '#9AA0AE',
-  rule:    '#ECEDF1',
-  blue:    '#1539B7',
-  blueSoft:'#EEF2FF',
-  surface: '#F7F8FA',
+  ink:     'var(--altio-ink)',
+  ink2:    'var(--altio-ink2)',
+  mute:    'var(--altio-mute)',
+  rule:    'var(--altio-line)',
+  blue:    'var(--altio-blue)',
+  blueSoft:'var(--altio-blue-soft)',
+  surface: 'var(--altio-card2)',
 };
 const FONT = "'Manrope', system-ui, sans-serif";
 
@@ -131,9 +131,9 @@ export function PlanBanner({
   variant = 'warning',   // 'warning' | 'info' | 'limit'
 }) {
   const colors = {
-    warning: { bg: '#FFFBEB', border: '#FCD34D', text: '#92400E', icon: '⚠️' },
+    warning: { bg: 'var(--altio-amber-soft)', border: '#FCD34D', text: 'var(--altio-amber)', icon: '⚠️' },
     info:    { bg: C.blueSoft, border: `${C.blue}44`, text: C.blue, icon: 'ℹ️' },
-    limit:   { bg: '#FEF2F2', border: '#FCA5A5', text: '#991B1B', icon: '🔒' },
+    limit:   { bg: 'var(--altio-red-soft)', border: '#FCA5A5', text: '#991B1B', icon: '🔒' },
   };
   const col = colors[variant] || colors.warning;
 

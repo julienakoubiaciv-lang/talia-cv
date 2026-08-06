@@ -8,14 +8,14 @@ import React from 'react';
 import { getSectorOptions } from '@/lib/cvSectors';
 
 const C = {
-  bluePrimary: '#1539B7',
-  blueSoft:    '#EEF2FF',
-  ink:         '#0B1020',
-  ink2:        '#3A4156',
-  mute:        '#9AA0AE',
-  rule:        '#ECEDF1',
-  bg:          '#FFFFFF',
-  surface:     '#F7F8FA',
+  bluePrimary: 'var(--altio-blue)',
+  blueSoft:    'var(--altio-blue-soft)',
+  ink:         'var(--altio-ink)',
+  ink2:        'var(--altio-ink2)',
+  mute:        'var(--altio-mute)',
+  rule:        'var(--altio-line)',
+  bg:          'var(--altio-card)',
+  surface:     'var(--altio-card2)',
 };
 
 export function SectorPicker({ value, onChange }) {

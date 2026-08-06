@@ -66,6 +66,9 @@ const PLANS = [
     missing: [],
     cta: 'Choisir Cowork',
     priceId: PRICE_IDS.cowork,
+    // Un coach peut ouvrir son espace sans payer : c'est la porte d'entrée du
+    // produit, l'abonnement ne sert qu'à dépasser les 5 places offertes.
+    freeStart: { label: 'Ou démarrer gratuitement (5 places)', to: '/coach' },
   },
   {
     id: 'school', label: 'École', emoji: '🎓', priceM: null, accent: C.green,
@@ -109,6 +112,8 @@ export default function Pricing() {
     if (p.contactSales) { window.location.href = 'mailto:hello@altio-wave.com?subject=Altio CV — Offre École'; return; }
     if (!user) { navigate('/auth?tab=inscription&redirect=/pricing'); return; }
     if (!supabaseReady || !supabase || !p.priceId) {
+      // Le coach n'attend pas : il ouvre son espace gratuit tout de suite.
+      if (p.freeStart) { navigate(p.freeStart.to); return; }
       setError('Le paiement en ligne arrive bientôt. Laisse-nous ton email à hello@altio-wave.com pour être prévenu.');
       return;
     }
@@ -210,6 +215,14 @@ export default function Pricing() {
                   }}>
                   {loading === p.id ? 'Redirection…' : isCurrent ? '✓ Plan actuel' : p.cta}
                 </button>
+
+                {p.freeStart && !isCurrent && (
+                  <button
+                    onClick={() => navigate(p.freeStart.to)}
+                    style={{ ...S.freeStart, color: hl ? 'rgba(255,255,255,.85)' : C.ink2 }}>
+                    {p.freeStart.label}
+                  </button>
+                )}
               </div>
             );
           })}
@@ -261,6 +274,7 @@ const S = {
   featRow: { display: 'flex', alignItems: 'flex-start', gap: 9 },
 
   cta: { width: '100%', border: 'none', borderRadius: 12, padding: '12px', fontSize: 13.5, fontWeight: 800, fontFamily: FONT },
+  freeStart: { width: '100%', marginTop: 8, background: 'none', border: 'none', padding: '4px', fontSize: 12.5, fontWeight: 700, fontFamily: FONT, cursor: 'pointer', textDecoration: 'underline' },
 
   foot: { textAlign: 'center', fontSize: 12.5, color: C.mute, marginTop: 30, lineHeight: 1.7 },
 };

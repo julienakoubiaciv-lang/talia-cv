@@ -8,9 +8,9 @@
 import React from 'react';
 
 const C = {
-  bg: '#F7F8FA', ink: '#0B1020', mute: '#9AA0AE',
-  rule: '#ECEDF1', red: '#EF4444', redSoft: '#FEF2F2',
-  bluePrimary: '#1539B7', blueSoft: '#EEF2FF',
+  bg: 'var(--altio-card2)', ink: 'var(--altio-ink)', mute: 'var(--altio-mute)',
+  rule: 'var(--altio-line)', red: 'var(--altio-red)', redSoft: 'var(--altio-red-soft)',
+  bluePrimary: 'var(--altio-blue)', blueSoft: 'var(--altio-blue-soft)',
 };
 
 export default class ErrorBoundary extends React.Component {
@@ -88,7 +88,7 @@ export default class ErrorBoundary extends React.Component {
             <pre style={{
               marginTop: 10, padding: '12px 14px', background: C.redSoft,
               border: `1px solid #FCA5A5`, borderRadius: 10,
-              fontSize: 11, color: '#B91C1C', overflow: 'auto',
+              fontSize: 11, color: 'var(--altio-red)', overflow: 'auto',
               whiteSpace: 'pre-wrap', wordBreak: 'break-word', lineHeight: 1.6,
               maxHeight: 140, fontFamily: 'monospace',
             }}>

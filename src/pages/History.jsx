@@ -27,9 +27,9 @@ function TemplateTag({ id }) {
   };
   const label = map[id] || (id ? id.charAt(0).toUpperCase() + id.slice(1) : '—');
   const colors = {
-    classic:  { bg: '#EEF2FF', color: '#1539B7' },
-    minimal:  { bg: '#F0FDF4', color: '#15803D' },
-    compact:  { bg: '#FFF7ED', color: '#C2410C' },
+    classic:  { bg: 'var(--altio-blue-soft)', color: 'var(--altio-blue)' },
+    minimal:  { bg: 'var(--altio-green-soft)', color: 'var(--altio-green)' },
+    compact:  { bg: 'var(--altio-amber-soft)', color: '#C2410C' },
     impact:   { bg: '#FDF4FF', color: '#9333EA' },
   };
   const c = colors[id] || { bg: '#F3F4F6', color: '#6B7280' };
@@ -99,9 +99,9 @@ export default function History() {
   });
 
   const C = {
-    bg: '#F7F8FA', surface: '#fff', ink: '#0B1020', ink2: '#3A4156',
-    mute: '#9AA0AE', rule: '#ECEDF1', bluePrimary: '#1539B7',
-    blueSoft: '#EEF2FF', star: '#F5B400', red: '#EF4444',
+    bg: 'var(--altio-card2)', surface: '#fff', ink: 'var(--altio-ink)', ink2: 'var(--altio-ink2)',
+    mute: 'var(--altio-mute)', rule: 'var(--altio-line)', bluePrimary: 'var(--altio-blue)',
+    blueSoft: 'var(--altio-blue-soft)', star: '#F5B400', red: 'var(--altio-red)',
   };
 
   return (
@@ -185,7 +185,7 @@ export default function History() {
               </span>
             )}
             {!syncing && supabaseReady && (
-              <span style={{ fontSize: 11, color: '#16A34A' }}>☁ Synchronisé</span>
+              <span style={{ fontSize: 11, color: 'var(--altio-green)' }}>☁ Synchronisé</span>
             )}
           </p>
         </div>
@@ -249,7 +249,7 @@ export default function History() {
                     display: 'grid', gridTemplateColumns: '2fr 1.2fr 1fr auto',
                     alignItems: 'center', padding: '14px 20px',
                     borderBottom: isLast ? 'none' : `1px solid ${C.rule}`,
-                    background: cv.favorite ? '#FFFBEB' : '#fff',
+                    background: cv.favorite ? 'var(--altio-amber-soft)' : '#fff',
                     transition: 'background .15s',
                     animation: `fadeInUp .25s ease ${i * 0.03}s both`,
                   }}
@@ -290,7 +290,7 @@ export default function History() {
                     {cv.profileName && (
                       <span style={{
                         flexShrink: 0, fontSize: 10, fontWeight: 600,
-                        background: '#EEF2FF', color: '#1539B7',
+                        background: 'var(--altio-blue-soft)', color: 'var(--altio-blue)',
                         borderRadius: 99, padding: '1px 7px',
                       }}>🧠 {cv.profileName}</span>
                     )}
@@ -336,7 +336,7 @@ export default function History() {
             style={{ background: '#fff', borderRadius: 16, padding: '28px 32px', maxWidth: 360, width: '90%', boxShadow: '0 20px 60px rgba(0,0,0,.2)', animation: 'fadeInUp .2s ease' }}
             onClick={e => e.stopPropagation()}
           >
-            <div style={{ width: 44, height: 44, borderRadius: 12, background: '#FEE2E2', color: C.red, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--altio-red-soft)', color: C.red, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
             </div>
             <div style={{ fontSize: 16, fontWeight: 700, color: C.ink, marginBottom: 8 }}>Supprimer ce CV ?</div>

@@ -921,8 +921,8 @@ const S = {
   resultBtns: { display: 'grid', gap: 10, maxWidth: 420, margin: '0 auto 26px', justifyItems: 'center' },
 
 
-  upsell: { position: 'relative', background: '#0B1638', color: '#fff', borderRadius: 16, padding: '22px 20px', maxWidth: 460, margin: '0 auto', textAlign: 'left' },
-  upsellBadge: { position: 'absolute', top: 16, right: 16, fontSize: 10, fontWeight: 800, letterSpacing: 0.5, background: '#EEF2FF', color: C.blue, padding: '3px 9px', borderRadius: 6 },
+  upsell: { position: 'relative', background: 'var(--altio-ink)', color: '#fff', borderRadius: 16, padding: '22px 20px', maxWidth: 460, margin: '0 auto', textAlign: 'left' },
+  upsellBadge: { position: 'absolute', top: 16, right: 16, fontSize: 10, fontWeight: 800, letterSpacing: 0.5, background: 'var(--altio-blue-soft)', color: C.blue, padding: '3px 9px', borderRadius: 6 },
   upsellTitle: { fontSize: 16, fontWeight: 800, marginBottom: 6 },
   upsellText: { fontSize: 13, color: '#B9C2DA', lineHeight: 1.55, marginBottom: 16 },
   upsellBtn: { width: '100%', background: C.card, color: C.ink, border: 'none', borderRadius: 11, padding: '12px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: FONT },

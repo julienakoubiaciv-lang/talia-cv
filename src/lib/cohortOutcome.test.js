@@ -7,7 +7,20 @@ describe('outcomeFromCandidate', () => {
     expect(outcomeFromCandidate(c, { jury_decision: 'Admis' })).toBe('graduated');
   });
 
-  it('reconnaît un placement depuis le libellé du CRM', () => {
+  it("mappe les 12 valeurs de l'enum candidate_status du CRM", () => {
+    const attendu = {
+      prospect: 'prospect', contacted: 'prospect', dossier_recu: 'prospect', qualified: 'prospect',
+      interview_planned: 'job_searching', interview_done: 'job_searching', offer_sent: 'job_searching',
+      contract_signed: 'placed', placed: 'placed',
+      in_training: 'in_training',
+      abandoned: 'dropped_out', disqualified: 'dropped_out',
+    };
+    for (const [pipeline, out] of Object.entries(attendu)) {
+      expect(outcomeFromCandidate({ pipeline_status: pipeline })).toBe(out);
+    }
+  });
+
+  it('reconnaît un placement depuis le texte libre, en secours', () => {
     expect(outcomeFromCandidate({ statut_entreprise: 'Contrat signé' })).toBe('placed');
   });
 
@@ -23,12 +36,8 @@ describe('outcomeFromCandidate', () => {
     expect(outcomeFromCandidate({ statut_admission: 'Refusé' })).toBe('dropped_out');
   });
 
-  it('un élève en formation sans statut entreprise est en recherche', () => {
-    expect(outcomeFromCandidate({ pipeline_status: 'in_training' })).toBe('job_searching');
-  });
-
-  it('un prospect reste un prospect', () => {
-    expect(outcomeFromCandidate({ pipeline_status: 'prospect' })).toBe('prospect');
+  it('un statut de pipeline inconnu retombe sur le défaut', () => {
+    expect(outcomeFromCandidate({ pipeline_status: 'valeur_future' })).toBe(DEFAULT_OUTCOME);
   });
 
   it('fiche vide ou absente → défaut, sans planter', () => {
@@ -37,8 +46,12 @@ describe('outcomeFromCandidate', () => {
     }
   });
 
-  it("n'invente pas un placement à partir d'un statut inconnu", () => {
+  it("n'invente pas un placement à partir d'un texte libre inconnu", () => {
     expect(outcomeFromCandidate({ pipeline_status: 'in_training', statut_entreprise: 'En discussion' })).toBe('in_training');
+  });
+
+  it('le texte libre peut signaler une sortie que le pipeline ignore encore', () => {
+    expect(outcomeFromCandidate({ pipeline_status: 'in_training', statut_entreprise: 'Rupture' })).toBe('dropped_out');
   });
 });
 

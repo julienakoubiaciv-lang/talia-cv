@@ -1,14 +1,15 @@
 /**
  * cohortOutcome — Statut de parcours d'un élève (formation → diplomation).
  *
- * ⚠️ Le statut n'a PAS de colonne dédiée : il est dérivé de ce que le CRM
- * renseigne déjà. Trois sources, de la plus décisive à la plus générale :
- *   1. cohort_members.jury_decision  → diplômé / ajourné
- *   2. candidates.statut_entreprise  → placement (« Contrat signé »…)
- *   3. candidates.pipeline_status    → phase (prospect / in_training)
+ * Le statut n'a pas de colonne dédiée : il est dérivé de ce que le CRM
+ * renseigne déjà, dans cet ordre de priorité :
+ *   1. cohort_members.jury_decision   → diplômé (décision de jury)
+ *   2. candidates.pipeline_status     → enum `candidate_status`, la source
+ *                                       canonique du CRM
+ *   3. candidates.statut_entreprise   → texte libre, en secours seulement
  *
  * On ne crée pas de quatrième vocabulaire : les automatisations du CRM
- * réagissent aux libellés existants, en inventer casserait leurs déclencheurs.
+ * réagissent aux valeurs existantes, en inventer casserait leurs déclencheurs.
  */
 import { C } from './gameTheme';
 
@@ -23,14 +24,34 @@ export const OUTCOMES = [
 
 export const DEFAULT_OUTCOME = 'prospect';
 
-/** Libellés du CRM valant placement, insensibles à la casse et aux accents. */
+/**
+ * Enum `candidate_status` du CRM → statut affiché.
+ * Les 12 valeurs sont couvertes : une valeur non mappée retomberait sur le
+ * défaut sans qu'on s'en aperçoive.
+ */
+const FROM_PIPELINE = {
+  prospect:          'prospect',
+  contacted:         'prospect',
+  dossier_recu:      'prospect',
+  qualified:         'prospect',
+  interview_planned: 'job_searching',
+  interview_done:    'job_searching',
+  offer_sent:        'job_searching',
+  contract_signed:   'placed',
+  placed:            'placed',
+  in_training:       'in_training',
+  abandoned:         'dropped_out',
+  disqualified:      'dropped_out',
+};
+
+/** Comparaison tolérante à la casse et aux accents, pour le texte libre. */
 const norm = (s) => String(s || '')
   .normalize('NFD').replace(/[̀-ͯ]/g, '')
   .trim().toLowerCase();
 
-const PLACED_LABELS   = ['contrat signe', 'signe', 'place', 'en poste'];
-const DROPPED_LABELS  = ['abandon', 'refuse', 'doublon', 'rupture', 'sorti'];
-const GRADUATED_JURY  = ['admis', 'diplome', 'valide'];
+const PLACED_LABELS  = ['contrat signe', 'signe', 'place', 'en poste'];
+const DROPPED_LABELS = ['abandon', 'refuse', 'doublon', 'rupture', 'sorti'];
+const GRADUATED_JURY = ['admis', 'diplome', 'valide'];
 
 /**
  * Statut d'un élève, dérivé de sa fiche candidat et de son inscription en promo.
@@ -41,6 +62,10 @@ export function outcomeFromCandidate(candidate, member) {
   const jury = norm(member?.jury_decision);
   if (jury && GRADUATED_JURY.some((v) => jury.includes(v))) return 'graduated';
 
+  const mapped = FROM_PIPELINE[String(candidate?.pipeline_status || '').trim()];
+
+  // `statut_entreprise` est du texte libre : il ne sert qu'à préciser un
+  // placement ou une sortie que le pipeline n'a pas encore enregistrés.
   const entreprise = norm(candidate?.statut_entreprise);
   if (entreprise) {
     if (PLACED_LABELS.some((v) => entreprise.includes(v)))  return 'placed';
@@ -50,12 +75,7 @@ export function outcomeFromCandidate(candidate, member) {
   const admission = norm(candidate?.statut_admission);
   if (admission && DROPPED_LABELS.some((v) => admission.includes(v))) return 'dropped_out';
 
-  const pipeline = norm(candidate?.pipeline_status);
-  if (pipeline === 'in_training') {
-    // En formation sans placement renseigné : l'élève est en recherche.
-    return entreprise ? 'in_training' : 'job_searching';
-  }
-  return DEFAULT_OUTCOME;
+  return mapped || DEFAULT_OUTCOME;
 }
 
 export function outcomeMeta(id) {

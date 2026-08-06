@@ -36,7 +36,6 @@ const Diagnostic    = lazy(() => import('./pages/Diagnostic.jsx'));
 const RecruitTest   = lazy(() => import('./pages/RecruitTest.jsx'));
 const Charte        = lazy(() => import('./pages/Charte.jsx'));
 const CohortDashboard = lazy(() => import('./pages/CohortDashboard.jsx'));
-const CoachSignup   = lazy(() => import('./pages/CoachSignup.jsx'));
 const OralInterview = lazy(() => import('./pages/OralInterview.jsx'));
 const PhoneVerify   = lazy(() => import('./pages/PhoneVerify.jsx'));
 const Confidentialite = lazy(() => import('./pages/Legal.jsx').then(m => ({ default: m.Confidentialite })));
@@ -104,7 +103,6 @@ function GatedRoutes() {
         <Route path="/test-recrutement"   element={<RecruitTest />} />
         <Route path="/charte"             element={<Charte />} />
         <Route path="/encadrement"        element={<CohortDashboard />} />
-        <Route path="/coach"              element={<CoachSignup />} />
         <Route path="/entretien-oral"     element={<OralInterview />} />
         <Route path="/confidentialite"    element={<Confidentialite />} />
         <Route path="/mentions-legales"   element={<MentionsLegales />} />

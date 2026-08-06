@@ -265,9 +265,10 @@ function FicheModal({ student, conseiller, cohortName, orgId, onClose, onRelance
 
   useEffect(() => {
     let alive = true;
-    fetchCvStats([student.id]).then((r) => { if (alive) setCvStats(r[student.id] || null); });
+    if (!student.userId) { setCvStats(null); return () => { alive = false; }; }
+    fetchCvStats([student.userId]).then((r) => { if (alive) setCvStats(r[student.userId] || null); });
     return () => { alive = false; };
-  }, [student.id]);
+  }, [student.userId]);
 
   // Bilan calculé sur la progression réelle de l'accompagné, via le même
   // algorithme que celui qu'il voit lui-même sur /diagnostic.
@@ -295,16 +296,17 @@ function FicheModal({ student, conseiller, cohortName, orgId, onClose, onRelance
           {OUTCOMES.map((o) => {
             const on = (student.outcome || DEFAULT_OUTCOME) === o.id;
             return (
-              <button key={o.id} onClick={() => onOutcome(o.id)}
+              <span key={o.id}
                 style={{
-                  ...S.outcomeOpt,
-                  ...(on ? { background: alpha(o.color, 14), border: `1.5px solid ${o.color}`, color: o.color } : {}),
+                  ...S.outcomeOpt, cursor: 'default',
+                  ...(on ? { background: alpha(o.color, 14), border: `1.5px solid ${o.color}`, color: o.color } : { opacity: 0.5 }),
                 }}>
                 {o.label}
-              </button>
+              </span>
             );
           })}
         </div>
+        <p style={S.outcomeNote}>Statut issu de la fiche candidat — il se modifie dans le CRM.</p>
 
         <div style={S.ficheStats}>
           <span style={S.fStat}>⚡ {student.xp} XP</span>
@@ -482,7 +484,6 @@ function ApplicationsSection({ student, orgId, onChange }) {
 function BrandingModal({ orgId, orgName, onClose, onSaved }) {
   const [logoUrl, setLogoUrl] = useState('');
   const [color, setColor] = useState('#0033A0');
-  const [replyTo, setReplyTo] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
@@ -491,18 +492,17 @@ function BrandingModal({ orgId, orgName, onClose, onSaved }) {
     fetchOrgBranding(orgId).then((b) => {
       if (!alive || !b) return;
       setLogoUrl(b.logo_url || '');
-      setColor(b.brand_color || '#0033A0');
-      setReplyTo(b.reply_to || '');
+      setColor(b.primary_color || '#0033A0');
     });
     return () => { alive = false; };
   }, [orgId]);
 
   const save = async () => {
     setBusy(true); setError('');
-    const ok = await saveOrgBranding({ orgId, logoUrl, brandColor: color, replyTo });
+    const ok = await saveOrgBranding({ orgId, logoUrl, brandColor: color });
     setBusy(false);
     if (ok) { onSaved(); onClose(); }
-    else setError("La marque n'a pas pu être enregistrée. Vérifie l'adresse email et la couleur.");
+    else setError("La marque n'a pas pu être enregistrée. Seule la direction peut la modifier.");
   };
 
   return (
@@ -511,7 +511,7 @@ function BrandingModal({ orgId, orgName, onClose, onSaved }) {
         <div style={S.modalHead}>
           <div style={{ flex: 1 }}>
             <div style={S.modalTitle}>Ma marque</div>
-            <div style={S.modalSub}>Ce que voient tes accompagnés dans tes emails de relance.</div>
+            <div style={S.modalSub}>Le logo et la couleur de ton organisation.</div>
           </div>
           <button style={S.close} onClick={onClose}>×</button>
         </div>
@@ -528,11 +528,6 @@ function BrandingModal({ orgId, orgName, onClose, onSaved }) {
             style={{ width: 46, height: 38, border: `1px solid ${C.line}`, borderRadius: 10, background: C.card, cursor: 'pointer', padding: 3 }} />
           <input style={{ ...S.select, flex: 1 }} value={color} onChange={(e) => setColor(e.target.value)} maxLength={7} />
         </div>
-
-        <div style={S.sectionLabel}>Répondre à</div>
-        <input style={S.select} value={replyTo} placeholder="sophie@mon-cabinet.fr" type="email"
-          onChange={(e) => setReplyTo(e.target.value)} />
-        <p style={S.hint}>L'adresse à laquelle tes accompagnés répondent. Par défaut, la tienne.</p>
 
         {error && <div role="alert" style={{ ...S.error, marginTop: 12 }}>{error}</div>}
 
@@ -659,6 +654,7 @@ const S = {
   riskFlag: { fontSize: 11, fontWeight: 800, color: C.red, background: alpha(C.red, 12), padding: '2px 7px', borderRadius: 99 },
   outcomeBadge: { fontSize: 10.5, fontWeight: 800, letterSpacing: 0.2, padding: '2px 8px', borderRadius: 99, textTransform: 'uppercase' },
   outcomePicker: { display: 'flex', flexWrap: 'wrap', gap: 7 },
+  outcomeNote: { fontSize: 12, color: C.mute, margin: '8px 0 0' },
   outcomeOpt: { background: C.bg, color: C.ink2, border: `1.5px solid ${C.line}`, borderRadius: 99, padding: '6px 12px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: FONT },
   newPromoRow: { display: 'flex', gap: 8, marginTop: 8 },
 

@@ -43,6 +43,6 @@ describe('rosterToCSV', () => {
 
   it('statut absent → libellé par défaut', () => {
     const row = rosterToCSV([{ name: 'X', email: 'x@y.fr', manager: 'karim' }], nameOf).split('\r\n')[1];
-    expect(row).toContain('En formation');
+    expect(row).toContain('Prospect');
   });
 });

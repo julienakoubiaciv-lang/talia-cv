@@ -1,11 +1,10 @@
 /**
- * cohortServer — Actions encadrant côté serveur (réel) + repli démo.
+ * cohortServer — Actions encadrant côté serveur (base OCTO) + repli démo.
  *
- * - createInvite : insère un lien d'invitation (org_invites) côté serveur.
- * - nudgeStudent : enregistre une relance (student_nudges) ; un job/Edge enverra
- *   l'email/notif réel.
+ * Rappel du modèle OCTO : l'élève est une ligne de `candidates`, l'encadrant
+ * une ligne de `profiles`, les promos `cohorts` / `cohort_members`.
  *
- * En mode démo (sans backend), on retombe sur la couche simulée (demoOrg).
+ * En mode démo (sans backend), tout retombe sur la couche simulée.
  */
 import { supabase, supabaseReady } from './supabase';
 import { isAuthenticated, getCurrentUserId } from './currentUser';
@@ -14,102 +13,111 @@ import { createDemoInvite } from './demoOrg';
 import { setStudentOutcome as setDemoOutcome, getRoster } from './demoCohort';
 import { outcomeLabel } from './cohortOutcome';
 
-const randToken = () =>
-  'INV-' + Math.random().toString(36).slice(2, 8).toUpperCase() + Date.now().toString(36).toUpperCase();
-
 /**
- * Crée un lien d'invitation. Démo → lien simulé. Réel → ligne org_invites.
+ * Lien d'invitation — démo uniquement.
+ *
+ * ⚠️ OCTO n'a pas de lien d'inscription libre : `candidate_invitations` exige
+ * un `candidate_id`, c'est-à-dire une fiche candidat DÉJÀ créée. Le parcours
+ * réel est l'inverse du nôtre — l'école crée la fiche, puis invite l'élève à
+ * rejoindre son portail. Générer un lien « rejoins mon groupe » depuis le
+ * générateur n'a donc pas d'équivalent : l'élève doit exister d'abord.
  * @returns {Promise<{token:string}|null>}
  */
-export async function createInvite({ orgId, managerId, managerName, cohortId = null, orgName = '' } = {}) {
+export async function createInvite({ managerId, managerName, orgName = '' } = {}) {
   if (isDemoMode()) {
     return { token: createDemoInvite({ managerId, managerName, orgName }) };
   }
-  if (!supabaseReady || !supabase || !isAuthenticated()) return null;
-  const token = randToken();
-  const { error } = await supabase.from('org_invites').insert({
-    token, org_id: orgId, manager_id: managerId || getCurrentUserId(), cohort_id: cohortId,
-    max_uses: 1000,
-  });
-  if (error) { console.warn('[cohortServer] createInvite:', error.message); return null; }
-  return { token };
+  return null;
 }
 
 /**
- * Relance un élève par email via l'Edge Function send-nudge (qui vérifie les
- * droits, envoie le message et journalise le résultat réel dans student_nudges).
- * Démo → succès simulé (l'UI affiche le toast).
+ * Relance un élève. Démo → succès simulé.
+ * Réel → dépose une notification dans son espace (table `notifications`).
+ *
+ * L'email n'est PAS envoyé d'ici : le CRM a déjà une automatisation
+ * « Candidat inactif 14j → relance ». Doubler l'envoi enverrait deux messages
+ * au même élève pour la même raison.
  * @returns {Promise<{ok: boolean, reason?: string}>}
  */
-export async function nudgeStudent({ studentId, orgId = null, message = '' } = {}) {
+export async function nudgeStudent({ userId, message = '' } = {}) {
   if (isDemoMode()) return { ok: true };
   if (!supabaseReady || !supabase || !isAuthenticated()) return { ok: false, reason: 'not_authenticated' };
-  const { data, error } = await supabase.functions.invoke('send-nudge', {
-    body: { student_id: studentId, org_id: orgId, message },
+  if (!userId) return { ok: false, reason: 'student_has_no_account' };
+
+  const { error } = await supabase.from('notifications').insert({
+    user_id: userId,
+    type: 'coach_nudge',
+    title: 'Ton conseiller t’encourage à continuer',
+    body: message || 'Quelques minutes suffisent pour avancer sur ton CV ou t’entraîner à l’entretien.',
+    data: { from: getCurrentUserId() },
   });
-  if (error || !data?.ok) {
-    const reason = data?.error || error?.message || 'send_failed';
-    console.warn('[cohortServer] nudge:', reason);
-    return { ok: false, reason };
-  }
+  if (error) { console.warn('[cohortServer] nudge:', error.message); return { ok: false, reason: 'send_failed' }; }
   return { ok: true };
 }
 
 /**
- * Met à jour le statut de parcours d'un élève (en formation → diplômé…).
- * Démo → mise à jour du roster simulé.
- * @returns {Promise<boolean>}
+ * Met à jour le statut de parcours.
+ *
+ * ⚠️ Volontairement non implémenté côté réel. Le statut est porté par
+ * `candidates.statut_entreprise` / `statut_admission`, dont les libellés
+ * pilotent les automatisations du CRM (« Contrat signé » déclenche un
+ * workflow). Écrire ici des valeurs choisies par le générateur créerait un
+ * second vocabulaire et casserait ces déclencheurs. Cette action doit passer
+ * par le CRM tant que le référentiel de statuts n'est pas partagé.
+ * @returns {Promise<{ok:boolean, reason?:string}>}
  */
-export async function setOutcome({ studentId, orgId, outcome } = {}) {
-  if (isDemoMode()) { setDemoOutcome(studentId, outcome); return true; }
-  if (!supabaseReady || !supabase || !isAuthenticated()) return false;
-  const { error } = await supabase.from('org_members')
-    .update({ outcome, outcome_updated_at: new Date().toISOString() })
-    .eq('user_id', studentId).eq('org_id', orgId);
-  if (error) { console.warn('[cohortServer] setOutcome:', error.message); return false; }
-  return true;
-}
-
-/** Crée une promo dans l'organisation. Démo → promo locale. */
-export async function createCohort({ orgId, name } = {}) {
-  if (isDemoMode()) return { id: `demo-${Date.now()}`, name };
-  if (!supabaseReady || !supabase || !isAuthenticated() || !orgId) return null;
-  const { data, error } = await supabase.from('cohorts')
-    .insert({ org_id: orgId, name }).select('id, name').single();
-  if (error) { console.warn('[cohortServer] createCohort:', error.message); return null; }
-  return data;
+export async function setOutcome({ studentId, outcome } = {}) {
+  if (isDemoMode()) { setDemoOutcome(studentId, outcome); return { ok: true }; }
+  return { ok: false, reason: 'managed_by_crm' };
 }
 
 /**
- * Nombre de CV produits par accompagné (jamais leur contenu : la vue
- * student_cv_stats n'expose que des compteurs).
+ * Création d'une promo — démo uniquement.
+ *
+ * ⚠️ `cohorts` exige `formation_id` et `start_date` : une promo est rattachée
+ * à une formation du catalogue et à un calendrier, informations que le
+ * générateur n'a pas. Les promos se créent dans le CRM ; ici on les lit.
+ */
+export async function createCohort({ name } = {}) {
+  if (isDemoMode()) return { id: `demo-${Date.now()}`, name };
+  return null;
+}
+
+/**
+ * Nombre de CV produits par élève.
+ * Réel → `cv_history`, comptée par compte utilisateur.
  * @returns {Promise<Record<string, {cv_count:number, last_cv_at:string|null}>>}
  */
-export async function fetchCvStats(studentIds = []) {
+export async function fetchCvStats(userIds = []) {
   const out = {};
-  if (!studentIds.length) return out;
+  const ids = userIds.filter(Boolean);
 
   if (isDemoMode()) {
     const roster = getRoster();
-    for (const id of studentIds) {
+    for (const id of userIds) {
       const s = roster.find((r) => r.id === id);
       out[id] = { cv_count: s?.cvCount ?? 0, last_cv_at: null };
     }
     return out;
   }
 
-  if (!supabaseReady || !supabase || !isAuthenticated()) return out;
-  const { data, error } = await supabase.from('student_cv_stats')
-    .select('student_id, cv_count, last_cv_at')
-    .in('student_id', studentIds);
+  if (!supabaseReady || !supabase || !isAuthenticated() || !ids.length) return out;
+  const { data, error } = await supabase.from('cv_history')
+    .select('user_id, created_at').in('user_id', ids);
   if (error) { console.warn('[cohortServer] cvStats:', error.message); return out; }
-  for (const r of data || []) out[r.student_id] = { cv_count: r.cv_count, last_cv_at: r.last_cv_at };
+  for (const row of data || []) {
+    const cur = out[row.user_id] || { cv_count: 0, last_cv_at: null };
+    cur.cv_count += 1;
+    if (!cur.last_cv_at || row.created_at > cur.last_cv_at) cur.last_cv_at = row.created_at;
+    out[row.user_id] = cur;
+  }
   return out;
 }
 
 /**
- * Marque de l'organisation (logo, couleur, adresse de réponse).
- * @returns {Promise<{logo_url:string|null, brand_color:string|null, reply_to:string|null, name:string}|null>}
+ * Marque de l'organisation (logo, couleur).
+ * OCTO porte déjà ces champs : `organizations.logo_url` et `primary_color`.
+ * @returns {Promise<{logo_url:string|null, primary_color:string|null}|null>}
  */
 export async function fetchOrgBranding(orgId) {
   if (isDemoMode()) {
@@ -117,29 +125,30 @@ export async function fetchOrgBranding(orgId) {
   }
   if (!supabaseReady || !supabase || !isAuthenticated() || !orgId) return null;
   const { data, error } = await supabase.from('organizations')
-    .select('name, logo_url, brand_color, reply_to').eq('id', orgId).maybeSingle();
+    .select('name, logo_url, primary_color').eq('id', orgId).maybeSingle();
   if (error) { console.warn('[cohortServer] branding:', error.message); return null; }
   return data;
 }
 
 /**
- * Enregistre la marque. Passe par une RPC qui ne touche QUE ces colonnes :
- * une policy UPDATE ouverte sur organizations laisserait un coach modifier
- * son tier, ses sièges ou son statut.
+ * Enregistre la marque. La policy `org_update_admin` d'OCTO réserve déjà
+ * l'écriture aux administrateurs de leur propre organisation : on s'appuie
+ * dessus plutôt que d'ajouter un second mécanisme de contrôle.
  * @returns {Promise<boolean>}
  */
-export async function saveOrgBranding({ orgId, logoUrl = '', brandColor = '', replyTo = '' } = {}) {
+export async function saveOrgBranding({ orgId, logoUrl = '', brandColor = '' } = {}) {
   if (isDemoMode()) {
-    try { localStorage.setItem('altio_demo_branding', JSON.stringify({ logo_url: logoUrl, brand_color: brandColor, reply_to: replyTo })); } catch { /* ignore */ }
+    try { localStorage.setItem('altio_demo_branding', JSON.stringify({ logo_url: logoUrl, primary_color: brandColor })); } catch { /* ignore */ }
     return true;
   }
   if (!supabaseReady || !supabase || !isAuthenticated() || !orgId) return false;
-  const { data, error } = await supabase.rpc('update_org_branding', {
-    p_org_id: orgId, p_logo_url: logoUrl || null,
-    p_brand_color: brandColor || null, p_reply_to: replyTo || null,
-  });
+  if (brandColor && !/^#[0-9A-Fa-f]{6}$/.test(brandColor)) return false;
+  const { error } = await supabase.from('organizations').update({
+    logo_url: logoUrl || null,
+    primary_color: brandColor || null,
+  }).eq('id', orgId);
   if (error) { console.warn('[cohortServer] saveBranding:', error.message); return false; }
-  return data === true;
+  return true;
 }
 
 /** Construit un CSV de la cohorte (pur, testable). */

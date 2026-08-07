@@ -12,7 +12,7 @@
 import { supabase, supabaseReady } from './supabase';
 import { isAuthenticated } from './currentUser';
 import { isDemoMode } from './demoMode';
-import { redeemDemoInvite, demoOrgTier, createDemoCoachOrg } from './demoOrg';
+import { redeemDemoInvite, demoOrgTier } from './demoOrg';
 
 const LS_PENDING = 'altio_pending_invite';
 const LS_ORG_NAME = 'altio_org_name';   // nom de l'école rattachée
@@ -83,36 +83,6 @@ export async function redeemPendingInvite() {
     if (res?.ok) onJoined(res.org_name);
     return res || null;
   } catch (e) { console.warn('[orgAccess] redeem:', e?.message); return null; }
-}
-
-/**
- * Crée l'espace d'un coach indépendant et l'y inscrit comme direction.
- * Le serveur (create_coach_org) impose le type et le tier « cowork » : cette
- * fonction ne permet pas de se fabriquer une école.
- * @returns {Promise<{ok:boolean, org_id?:string, org_name?:string, reason:string}>}
- */
-export async function createCoachOrg(name) {
-  const orgName = String(name || '').trim();
-  if (!orgName) return { ok: false, reason: 'name_required' };
-
-  if (isDemoMode()) {
-    const res = createDemoCoachOrg(orgName);
-    if (res.ok) onJoined(res.org_name);
-    return res;
-  }
-
-  if (!supabaseReady || !supabase) return { ok: false, reason: 'offline' };
-  if (!isAuthenticated()) return { ok: false, reason: 'not_authenticated' };
-  try {
-    const { data, error } = await supabase.rpc('create_coach_org', { p_name: orgName });
-    if (error) { console.warn('[orgAccess] createCoachOrg:', error.message); return { ok: false, reason: 'server_error' }; }
-    const res = Array.isArray(data) ? data[0] : data;
-    if (res?.ok) onJoined(orgName);
-    return { ...(res || {}), org_name: orgName, reason: res?.reason || 'server_error' };
-  } catch (e) {
-    console.warn('[orgAccess] createCoachOrg:', e?.message);
-    return { ok: false, reason: 'server_error' };
-  }
 }
 
 /** Tier effectif côté serveur (max perso/parrainage), ou null hors-ligne. */

@@ -89,7 +89,7 @@ export default function CohortDashboard() {
   };
 
   const stats = useMemo(() => {
-    if (!visible.length) return { n: 0, avg: 0, placed: 0, risk: 0 };
+    if (!visible.length) return { n: 0, avg: 0, placed: 0, risk: 0, rate: 0 };
     const hasEmp = visible.every((s) => typeof s.employability === 'number');
     const avg = hasEmp
       ? Math.round(visible.reduce((a, s) => a + s.employability, 0) / visible.length)
@@ -109,11 +109,11 @@ export default function CohortDashboard() {
         <div style={S.header}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <span style={S.eyebrow}>{orgName || 'Espace encadrant'}</span>
-            <h1 style={S.h1}>{isAdmin ? 'Tous les élèves' : 'Mes élèves'}</h1>
+            <h1 style={S.h1}>{!viewer ? 'Espace encadrant' : isAdmin ? 'Tous les élèves' : 'Mes élèves'}</h1>
           </div>
-          {isAdmin && <button style={S.ghostBtn} onClick={() => setBranding(true)}>🎨 Ma marque</button>}
-          <button style={S.ghostBtn} onClick={exportCSV} disabled={!students.length}>⬇ Export</button>
-          <button style={S.inviteBtn} onClick={() => setInvite(true)}>➕ Inviter</button>
+          {viewer && isAdmin && <button style={S.ghostBtn} onClick={() => setBranding(true)}>🎨 Ma marque</button>}
+          {viewer && <button style={S.ghostBtn} onClick={exportCSV} disabled={!students.length}>⬇ Export</button>}
+          {viewer && <button style={S.inviteBtn} onClick={() => setInvite(true)}>➕ Inviter</button>}
         </div>
 
         {/* Switch de persona (démo) */}
@@ -162,9 +162,19 @@ export default function CohortDashboard() {
         {/* Liste */}
         {loading ? (
           <div style={S.empty}>Chargement…</div>
+        ) : !viewer ? (
+          // Ni conseiller ni direction : mieux vaut le dire que de laisser
+          // croire à une cohorte vide.
+          <div style={S.empty}>
+            <p style={{ margin: '0 0 14px' }}>
+              Cet espace est réservé aux conseillers et à la direction.
+              Connecte-toi avec ton compte encadrant pour voir tes élèves.
+            </p>
+            <button style={S.inviteBtn} onClick={() => navigate('/auth')}>Se connecter</button>
+          </div>
         ) : visible.length === 0 ? (
           <div style={S.empty}>
-            {students.length === 0 ? 'Aucun élève pour cette vue.' : 'Aucun élève dans cette promo.'}
+            {students.length === 0 ? 'Aucun élève ne t’est assigné pour le moment.' : 'Aucun élève dans cette promo.'}
           </div>
         ) : (
           <div style={S.list}>

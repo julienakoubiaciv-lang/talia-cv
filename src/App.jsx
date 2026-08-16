@@ -1,12 +1,14 @@
 import React, { lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { ThemeProvider } from './hooks/useTheme.jsx';
 import { SettingsProvider } from './hooks/useSettings.jsx';
 import { AuthProvider, useAuth } from './hooks/useAuth.jsx';
+import { useMembership } from './hooks/useMembership.js';
 import { UpgradeModalProvider } from './components/UpgradeModal.jsx';
 import ThemeToggle from './components/ThemeToggle.jsx';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
 import ProgressSync from './components/ProgressSync.jsx';
+import AccessDenied from './components/AccessDenied.jsx';
 
 // SettingsPanel chargé en lazy : il n'est jamais visible au premier rendu
 // (s'ouvre uniquement sur clic icône ⚙) → hors du bundle initial
@@ -63,12 +65,48 @@ function PageLoader() {
 // (à basculer une fois Twilio configuré). Sinon le code reste dormant.
 const REQUIRE_PHONE = import.meta.env.VITE_REQUIRE_PHONE_VERIFICATION === 'true';
 
-// Barrière : un utilisateur connecté sans téléphone vérifié est forcé
-// vers l'écran de vérification. Les visiteurs anonymes ne sont pas affectés.
+// Routes ouvertes à tous, y compris déconnecté.
+//
+// `/auth` évidemment — sans elle on ne pourrait jamais entrer. Les trois pages
+// légales restent publiques à dessein : des mentions légales accessibles
+// seulement après connexion ne remplissent pas leur office.
+const PUBLIC_PATHS = ['/auth', '/confidentialite', '/mentions-legales', '/cgu'];
+
+// Barrière d'accès. Deux verrous successifs, dans cet ordre :
+//
+//   1. RATTACHEMENT — le générateur est réservé aux écoles, aux coachs et à
+//      leurs étudiants. Un visiteur anonyme voit la page de connexion ; un
+//      compte connecté mais rattaché à aucune organisation voit AccessDenied.
+//      L'usage anonyme d'avant (CV créés sur `device_id` puis migrés à la
+//      première connexion, cf. useAuth) n'est donc plus atteignable.
+//   2. TÉLÉPHONE — inchangé, et toujours derrière son drapeau.
 function GatedRoutes() {
-  const { user, loading, phoneVerified } = useAuth();
+  const { user, loading, phoneVerified, signOut } = useAuth();
+  const membership = useMembership();
+  const { pathname } = useLocation();
 
   if (loading) return <PageLoader />;
+
+  if (!PUBLIC_PATHS.includes(pathname)) {
+    if (!user) {
+      return (
+        <Suspense fallback={<PageLoader />}>
+          <Auth />
+        </Suspense>
+      );
+    }
+    if (membership.loading) return <PageLoader />;
+    if (!membership.isMember) {
+      return (
+        <AccessDenied
+          email={user.email}
+          error={membership.error}
+          onRetry={membership.recheck}
+          onSignOut={signOut}
+        />
+      );
+    }
+  }
 
   if (REQUIRE_PHONE && user && !phoneVerified) {
     return (

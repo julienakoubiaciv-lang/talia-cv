@@ -1,7 +1,19 @@
 /**
- * claude-proxy — Supabase Edge Function (cible : projet OCTO, base unifiée)
+ * claude-proxy — Supabase Edge Function (projet OCTO, base unifiée)
  *
- * Proxy sécurisé vers l'API Anthropic pour le générateur / la plateforme.
+ * Proxy sécurisé vers l'API Anthropic, partagé par les DEUX apps qui parlent
+ * à ce projet Supabase : le CRM (`web-v2`, ce dépôt — actions `generate_cv`
+ * côté candidat via `cvAnalyse.ts` et `crm_cv_generation` via
+ * `lib/actions/cvGenerate.ts`) et le générateur grand public `altio-cv`
+ * (`generate_cv`, `smart_match`, etc., candidats connectés directement).
+ *
+ * ⚠️ CE FICHIER EST DUPLIQUÉ À L'IDENTIQUE dans altio-cv
+ * (`supabase/functions/claude-proxy/index.ts`) : les deux dépôts déploient la
+ * MÊME fonction sur le MÊME projet Supabase (`zxiroikfhrwsyzgqflzb`), donc un
+ * déploiement depuis l'un écrase le résultat du dernier déploiement de
+ * l'autre si le contenu diverge. Toute modification ici doit être reportée
+ * là-bas (et réciproquement) — pas de fork silencieux.
+ *
  * - Auth JWT obligatoire. Contexte (staff | student | guest) via la RPC
  *   SECURITY DEFINER get_user_context() — MÊME source que le front (useUserContext).
  * - STAFF : gate consentement RGPD (candidates.consent_given si candidate_id)
@@ -9,8 +21,8 @@
  * - STUDENT : cap SERVEUR cv_count < max_cv (source = compteur cv_history dans
  *   get_user_context ; le cap front est bypassable). Crédit pro = candidates.max_cv.
  * - GUEST / orphelin : refusé (403 forbidden_no_access).
- * - Enregistre l'usage dans usage_events (schéma OCTO : org_id, action enum,
- *   tokens_used, cost_eur, entity_type/id, metadata). Le trigger increment_org_usage
+ * - Enregistre l'usage dans usage_events (org_id, action enum, tokens_used,
+ *   cost_eur, entity_type/id, metadata). Le trigger increment_org_usage
  *   incrémente alors usage_cv_current / usage_score_current selon l'action.
  *   user_id = FK vers profiles (staff only) → null pour un élève (attribution
  *   via entity_id = sa fiche candidat).
@@ -19,6 +31,12 @@
  * POST /functions/v1/claude-proxy
  * Headers : Authorization: Bearer <supabase_jwt>
  * Body    : { action, messages, model?, system?, max_tokens?, candidate_id?, metadata? }
+ *
+ * `metadata` est libre (jsonb, non typé côté serveur) : les deux générateurs
+ * y déposent `source` ('crm' | 'generator') pour que la Performance CRM
+ * (`lib/cvGeneratorKpis.ts`) sache distinguer une génération faite par le
+ * staff d'une génération faite par le candidat lui-même. Formation et genre
+ * ne sont PAS dans `metadata` — ils se lisent sur `candidates` via entity_id.
  *
  * Secrets requis (dashboard OCTO → Edge Functions → Secrets) :
  *   ANTHROPIC_API_KEY          — sk-ant-...
@@ -49,10 +67,17 @@ const MODEL_PRICING: Record<string, { input: number; output: number }> = {
  * ⚠️ Ne jamais mapper une action non-génération vers 'cv_generation' :
  * le trigger increment_org_usage incrémenterait le quota CV à tort.
  * Les actions absentes de ce mapping ne sont pas loguées (mais restent autorisées).
+ *
+ * `crm_cv_generation` (action envoyée par `web-v2/lib/actions/cvGenerate.ts`,
+ * le générateur natif du CRM) DOIT rester mappée ici : sans ça, ces
+ * générations ne sont ni comptées dans le quota org, ni loguées dans
+ * usage_events — la Performance CRM ne verrait alors qu'une moitié de
+ * l'usage réel du générateur.
  */
 const ACTION_ENUM: Record<string, string> = {
   generate_cv:       'cv_generation',
   cv_generation:     'cv_generation',
+  crm_cv_generation: 'cv_generation',
   smart_match:       'matching',
   matching:          'matching',
   candidate_scoring: 'candidate_scoring',

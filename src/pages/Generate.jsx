@@ -888,6 +888,10 @@ RÈGLES :
         system:     extractPrompt,
         messages:   [{ role: 'user', content: userContent }],
         metadata:   {
+          // Distingue une génération faite par le candidat lui-même d'une
+          // génération faite depuis le CRM (web-v2/lib/actions/cvGenerate.ts,
+          // source: 'crm') — cf. Performance → Générateur CV côté CRM.
+          source:    'generator',
           formation: formationVal,
           poste:     posteVal || null,
           hasAnnonce,

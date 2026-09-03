@@ -1,7 +1,22 @@
 /**
- * claude-proxy — Supabase Edge Function (cible : projet OCTO, base unifiée)
+ * claude-proxy — Supabase Edge Function (projet OCTO, base unifiée)
  *
- * Proxy sécurisé vers l'API Anthropic pour le générateur / la plateforme.
+ * Proxy sécurisé vers l'API Anthropic, partagé par les DEUX apps qui parlent
+ * à ce projet Supabase : le CRM (`web-v2` — actions `generate_cv` côté
+ * candidat via `cvAnalyse.ts` et `crm_cv_generation` via
+ * `lib/actions/cvGenerate.ts`) et le générateur grand public (`altio-cv` —
+ * `generate_cv`, `smart_match`, etc., candidats connectés directement).
+ *
+ * ⚠️ CE FICHIER EST DUPLIQUÉ À L'IDENTIQUE entre `web-v2` et `altio-cv`
+ * (`supabase/functions/claude-proxy/index.ts` dans les deux dépôts) : les
+ * deux déploient la MÊME fonction sur le MÊME projet Supabase
+ * (`zxiroikfhrwsyzgqflzb`), donc un déploiement depuis l'un écrase le
+ * résultat du dernier déploiement de l'autre si le contenu diverge. Toute
+ * modification ici doit être reportée dans l'autre dépôt (et
+ * réciproquement) — pas de fork silencieux. Les deux copies doivent rester
+ * git-identiques (`diff` doit ne rien montrer) ; un écart constaté = l'une
+ * des deux PR de synchronisation a été oubliée.
+ *
  * - Auth JWT obligatoire. Contexte (staff | student | guest) via la RPC
  *   SECURITY DEFINER get_user_context() — MÊME source que le front (useUserContext).
  * - STAFF : gate consentement RGPD (candidates.consent_given si candidate_id)
@@ -9,8 +24,8 @@
  * - STUDENT : cap SERVEUR cv_count < max_cv (source = compteur cv_history dans
  *   get_user_context ; le cap front est bypassable). Crédit pro = candidates.max_cv.
  * - GUEST / orphelin : refusé (403 forbidden_no_access).
- * - Enregistre l'usage dans usage_events (schéma OCTO : org_id, action enum,
- *   tokens_used, cost_eur, entity_type/id, metadata). Le trigger increment_org_usage
+ * - Enregistre l'usage dans usage_events (org_id, action enum, tokens_used,
+ *   cost_eur, entity_type/id, metadata). Le trigger increment_org_usage
  *   incrémente alors usage_cv_current / usage_score_current selon l'action.
  *   user_id = FK vers profiles (staff only) → null pour un élève (attribution
  *   via entity_id = sa fiche candidat).
@@ -19,6 +34,12 @@
  * POST /functions/v1/claude-proxy
  * Headers : Authorization: Bearer <supabase_jwt>
  * Body    : { action, messages, model?, system?, max_tokens?, candidate_id?, metadata? }
+ *
+ * `metadata` est libre (jsonb, non typé côté serveur) : les deux générateurs
+ * y déposent `source` ('crm' | 'generator') pour que la Performance CRM
+ * (`lib/cvGeneratorKpis.ts`) sache distinguer une génération faite par le
+ * staff d'une génération faite par le candidat lui-même. Formation et genre
+ * ne sont PAS dans `metadata` — ils se lisent sur `candidates` via entity_id.
  *
  * Secrets requis (dashboard OCTO → Edge Functions → Secrets) :
  *   ANTHROPIC_API_KEY          — sk-ant-...
@@ -49,14 +70,47 @@ const MODEL_PRICING: Record<string, { input: number; output: number }> = {
  * ⚠️ Ne jamais mapper une action non-génération vers 'cv_generation' :
  * le trigger increment_org_usage incrémenterait le quota CV à tort.
  * Les actions absentes de ce mapping ne sont pas loguées (mais restent autorisées).
+ *
+ * `crm_cv_generation` (action envoyée par `web-v2/lib/actions/cvGenerate.ts`,
+ * le générateur natif du CRM) DOIT rester mappée ici : sans ça, ces
+ * générations ne sont ni comptées dans le quota org, ni loguées dans
+ * usage_events — la Performance CRM ne verrait alors qu'une moitié de
+ * l'usage réel du générateur.
  */
 const ACTION_ENUM: Record<string, string> = {
   generate_cv:       'cv_generation',
   cv_generation:     'cv_generation',
+  crm_cv_generation: 'cv_generation',
   smart_match:       'matching',
   matching:          'matching',
   candidate_scoring: 'candidate_scoring',
   cv_scoring:        'cv_scoring',
+  // Actions du CRM natif restées hors mapping depuis leur création : ni
+  // comptées dans le quota org, ni loguées dans usage_events (coût Anthropic
+  // invisible). `crm_score_profil` rejoint 'candidate_scoring' (même nature
+  // que candidate_scoring/cv_scoring) ; `crm_match` rejoint 'matching' (même
+  // nature que smart_match) ; `crm_referentiel_extraction` n'a pas
+  // d'équivalent — nouvelle valeur d'enum dédiée (migration
+  // 20260829a_usage_action_referentiel_extraction.sql) plutôt qu'un
+  // rattachement approximatif qui fausserait les KPI.
+  crm_score_profil:          'candidate_scoring',
+  crm_match:                 'matching',
+  crm_referentiel_extraction: 'referentiel_extraction',
+  // Analyse IA de l'onglet Performance (lib/actions/performanceAi.ts) —
+  // bucket "free" comme matching/referentiel_extraction (pas de plafond
+  // dédié), mais doit rester loguée dans usage_events (cf. migration
+  // 20260903a_usage_action_performance_analysis.sql).
+  performance_ai_analysis:  'performance_analysis',
+  // Retouches IA de la Messagerie (lib/actions/messagerieAi.ts) — 6 variantes,
+  // une seule valeur d'enum (comme referentiel_extraction). C'était l'action
+  // IA la plus fréquente du CRM restée hors ACTION_ENUM depuis sa création :
+  // ni comptée, ni loguée (cf. migration 20260903b_usage_action_messagerie_ai.sql).
+  crm_messagerie_reformuler:  'messagerie_ai',
+  crm_messagerie_raccourcir:  'messagerie_ai',
+  crm_messagerie_adoucir:     'messagerie_ai',
+  crm_messagerie_corriger:    'messagerie_ai',
+  crm_messagerie_resumer:     'messagerie_ai',
+  crm_messagerie_traduire:    'messagerie_ai',
 };
 
 function estimateCostUsd(model: string, inputTokens: number, cachedTokens: number, outputTokens: number): number {
@@ -95,12 +149,27 @@ Deno.serve(async (req) => {
     const { action, messages, system, max_tokens = 2048, metadata } = body;
     const model = body.model ?? DEFAULT_MODEL;
     const candidateId: string | null = body.candidate_id ?? metadata?.candidate_id ?? null;
+    // Plusieurs candidats ciblés à la fois (ex. `crm_match`, comparateur) —
+    // `candidateId` seul reste supporté pour la rétro-compatibilité.
+    const candidateIds: string[] = Array.isArray(body.candidate_ids)
+      ? (body.candidate_ids as unknown[]).filter((v): v is string => typeof v === 'string')
+      : candidateId
+        ? [candidateId]
+        : [];
 
     if (!action || !messages?.length) {
       return json({ error: 'action et messages requis' }, 400);
     }
 
-    const isCvGen = ACTION_ENUM[action] === 'cv_generation';
+    // Calculé une seule fois : sert à la fois au logging usage_events (plus
+    // bas) et — désormais — à la vérification de quota ORG ci-dessous. La
+    // RPC `check_quota` catégorise sur des noms d'action précis
+    // ('generate_cv'/'cv_generation', 'candidate_scoring'/'cv_scoring'/'score') ;
+    // lui passer l'action BRUTE du front (ex. 'crm_cv_generation',
+    // 'crm_score_profil') la faisait tomber dans son bucket 'free', donc
+    // sans plafond, quel que soit le contenu d'ACTION_ENUM ci-dessus.
+    const enumAction = ACTION_ENUM[action] ?? null;
+    const isCvGen = enumAction === 'cv_generation';
 
     // ── Contexte unifié (staff | student | guest) via RPC SECURITY DEFINER ──
     // Appelée avec le client USER (JWT) : get_user_context() lit auth.uid() en
@@ -133,22 +202,33 @@ Deno.serve(async (req) => {
       // Consentement : l'élève génère SON propre CV (consentement donné à
       // l'inscription) → pas de gate consentement ici.
     } else {
-      // ── STAFF (pro) : gate consentement RGPD (si candidat cible) + quota ORG.
-      if (candidateId && isCvGen) {
-        const { data: cand } = await supabaseAdmin
+      // ── STAFF (pro) : gate consentement RGPD (si un ou plusieurs candidats
+      // ciblés) + quota ORG.
+      //
+      // Portait auparavant sur `isCvGen` seul : `cv_scoring` (le CV réel —
+      // document ou image — est envoyé tel quel à Anthropic), `crm_score_profil`
+      // et `crm_match` (comparaison de plusieurs profils, cf. correction du
+      // 2026-08-29) transmettent tout autant de PII candidat sans jamais être
+      // soumis à ce contrôle. Le consentement est vérifié pour CHAQUE candidat
+      // ciblé par la requête, quelle que soit l'action.
+      if (candidateIds.length) {
+        const { data: cands } = await supabaseAdmin
           .from('candidates')
           .select('id, consent_given')
-          .eq('id', candidateId)
-          .maybeSingle();
-        if (!cand) return json({ error: 'unknown_candidate' }, 400);
-        if (!cand.consent_given) {
-          return json({ error: 'consent_required', candidate_id: candidateId }, 403);
+          .in('id', candidateIds);
+        const consentById = new Map(
+          (cands ?? []).map((c: { id: string; consent_given: boolean }) => [c.id, c.consent_given])
+        );
+        for (const cid of candidateIds) {
+          if (!consentById.has(cid)) return json({ error: 'unknown_candidate' }, 400);
+          if (!consentById.get(cid)) return json({ error: 'consent_required', candidate_id: cid }, 403);
         }
       }
 
-      // Vérification quota org (fail-closed).
+      // Vérification quota org (fail-closed). Action MAPPÉE (cf. `enumAction`
+      // ci-dessus), pas l'action brute — voir le commentaire associé.
       const { data: quota, error: quotaErr } = await supabaseAdmin
-        .rpc('check_quota', { p_user_id: user.id, p_action: action });
+        .rpc('check_quota', { p_user_id: user.id, p_action: enumAction ?? action });
       if (quotaErr || !quota) {
         console.error('[claude-proxy] check_quota error:', quotaErr);
         return json({ error: 'quota_check_failed' }, 503);
@@ -191,7 +271,7 @@ Deno.serve(async (req) => {
     const result = await anthropicRes.json();
 
     // ── Enregistrement usage (uniquement si l'action mappe sur l'enum OCTO) ──
-    const enumAction = ACTION_ENUM[action] ?? null;
+    // `enumAction` déjà calculé plus haut (réutilisé pour le quota).
     if (enumAction) {
       const usage        = result.usage ?? {};
       const inputTokens  = usage.input_tokens ?? 0;

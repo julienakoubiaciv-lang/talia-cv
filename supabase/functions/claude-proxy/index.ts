@@ -123,6 +123,11 @@ const ACTION_ENUM: Record<string, string> = {
   // de plus.
   crm_activite_resume:       'daily_intelligence',
   crm_activite_email:        'accroche_generation',
+  // Structuration des besoins entreprise en texte libre en intitulés de
+  // poste propres (lib/actions/missionRewrite.ts, onglet Placements & Offres
+  // de la fiche entreprise) — dernière des 3 valeurs d'enum posées à
+  // l'origine mais jamais utilisées à trouver un appelant.
+  crm_mission_rewrite:       'mission_rewrite',
 };
 
 function estimateCostUsd(model: string, inputTokens: number, cachedTokens: number, outputTokens: number): number {

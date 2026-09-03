@@ -95,6 +95,10 @@ const ACTION_ENUM: Record<string, string> = {
   // rattachement approximatif qui fausserait les KPI.
   crm_score_profil:          'candidate_scoring',
   crm_match:                 'matching',
+  // Matching de rebond post-rupture (lib/actions/rebondMatching.ts) — même
+  // nature que crm_match, juste inversé (1 candidat → N entreprises au lieu
+  // de N candidats → 1 poste) : même bucket, pas de valeur d'enum dédiée.
+  crm_rebond_match:          'matching',
   crm_referentiel_extraction: 'referentiel_extraction',
   // Analyse IA de l'onglet Performance (lib/actions/performanceAi.ts) —
   // bucket "free" comme matching/referentiel_extraction (pas de plafond
@@ -105,12 +109,35 @@ const ACTION_ENUM: Record<string, string> = {
   // une seule valeur d'enum (comme referentiel_extraction). C'était l'action
   // IA la plus fréquente du CRM restée hors ACTION_ENUM depuis sa création :
   // ni comptée, ni loguée (cf. migration 20260903b_usage_action_messagerie_ai.sql).
+  // Plafonnée depuis (bucket dédié 'messagerie' dans check_quota, 200/mois/org
+  // par défaut — cf. migration 20260903c_quota_messagerie_ai.sql) : c'est
+  // l'action la plus répétée du CRM (à volonté par message), la seule des
+  // actions récemment ajoutées à rester sans filet aurait été un choix, pas
+  // un oubli.
   crm_messagerie_reformuler:  'messagerie_ai',
   crm_messagerie_raccourcir:  'messagerie_ai',
   crm_messagerie_adoucir:     'messagerie_ai',
   crm_messagerie_corriger:    'messagerie_ai',
   crm_messagerie_resumer:     'messagerie_ai',
   crm_messagerie_traduire:    'messagerie_ai',
+  // Boutons IA de l'onglet Activité (lib/actions/activityAi.ts) — jusqu'ici
+  // grisés côté UI (« proxy IA à brancher »), donc jamais appelés. Rejoignent
+  // les deux valeurs d'enum posées dès l'origine mais jamais utilisées
+  // ('daily_intelligence', 'accroche_generation') plutôt que d'en créer deux
+  // de plus.
+  crm_activite_resume:       'daily_intelligence',
+  crm_activite_email:        'accroche_generation',
+  // Structuration des besoins entreprise en texte libre en intitulés de
+  // poste propres (lib/actions/missionRewrite.ts, onglet Placements & Offres
+  // de la fiche entreprise) — dernière des 3 valeurs d'enum posées à
+  // l'origine mais jamais utilisées à trouver un appelant.
+  crm_mission_rewrite:       'mission_rewrite',
+  // Portail candidature externe (lib/actions/candidatureExterne.ts) — appelée
+  // par l'ÉLÈVE (kind=student), donc PAS soumise au quota org de check_quota
+  // (branche staff uniquement, cf. plus bas) : le plafond réel est appliqué
+  // en amont, côté Server Action (candidate_opportunites, 5/mois/élève).
+  // Reste mappée pour que le coût apparaisse dans le dashboard Usage IA.
+  crm_offre_externe_analyse: 'offre_externe_analyse',
 };
 
 function estimateCostUsd(model: string, inputTokens: number, cachedTokens: number, outputTokens: number): number {

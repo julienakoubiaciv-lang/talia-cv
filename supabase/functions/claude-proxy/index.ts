@@ -95,6 +95,10 @@ const ACTION_ENUM: Record<string, string> = {
   // rattachement approximatif qui fausserait les KPI.
   crm_score_profil:          'candidate_scoring',
   crm_match:                 'matching',
+  // Matching de rebond post-rupture (lib/actions/rebondMatching.ts) — même
+  // nature que crm_match, juste inversé (1 candidat → N entreprises au lieu
+  // de N candidats → 1 poste) : même bucket, pas de valeur d'enum dédiée.
+  crm_rebond_match:          'matching',
   crm_referentiel_extraction: 'referentiel_extraction',
   // Analyse IA de l'onglet Performance (lib/actions/performanceAi.ts) —
   // bucket "free" comme matching/referentiel_extraction (pas de plafond

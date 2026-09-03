@@ -132,6 +132,12 @@ const ACTION_ENUM: Record<string, string> = {
   // de la fiche entreprise) — dernière des 3 valeurs d'enum posées à
   // l'origine mais jamais utilisées à trouver un appelant.
   crm_mission_rewrite:       'mission_rewrite',
+  // Portail candidature externe (lib/actions/candidatureExterne.ts) — appelée
+  // par l'ÉLÈVE (kind=student), donc PAS soumise au quota org de check_quota
+  // (branche staff uniquement, cf. plus bas) : le plafond réel est appliqué
+  // en amont, côté Server Action (candidate_opportunites, 5/mois/élève).
+  // Reste mappée pour que le coût apparaisse dans le dashboard Usage IA.
+  crm_offre_externe_analyse: 'offre_externe_analyse',
 };
 
 function estimateCostUsd(model: string, inputTokens: number, cachedTokens: number, outputTokens: number): number {
